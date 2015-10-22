@@ -14,7 +14,7 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/20/15.
  */
-class Saler extends UserInfo {
+class P_Saler extends UserInfo {
   /**
    * 服务语言
    */

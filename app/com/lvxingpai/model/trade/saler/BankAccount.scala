@@ -9,7 +9,7 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/21/15.
  */
-class BankAccount {
+class P_BankAccount {
   /**
    * 银行的SWIFT代码
    */

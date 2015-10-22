@@ -13,7 +13,7 @@ import scala.collection.mutable.{ Map => MutableMap }
  * 订单
  * Created by zephyre on 10/20/15.
  */
-class Order extends BasicEntity {
+class P_Order extends BasicEntity {
 
   /**
    * 对应的商品

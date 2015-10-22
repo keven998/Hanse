@@ -12,7 +12,7 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/20/15.
  */
-class Prepay extends BasicEntity {
+class P_Prepay extends BasicEntity {
 
   /**
    * 对应于哪个支付平台

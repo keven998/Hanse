@@ -13,7 +13,7 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/20/15.
  */
-class Commodity extends BasicEntity {
+class P_Commodity extends BasicEntity {
   /**
    * 商家
    */

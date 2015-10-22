@@ -1,6 +1,6 @@
 package com.lvxingpai.model.trade.saler
 
-import com.lvxingpai.model.trade.saler.{Saler => BasicSaler}
+import com.lvxingpai.model.trade.saler.{P_Saler => BasicSaler}
 
 /**
  * 商家信息

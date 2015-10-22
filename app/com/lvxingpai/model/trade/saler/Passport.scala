@@ -12,7 +12,7 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/21/15.
  */
-class Passport extends IdProof {
+class P_Passport extends IdProof {
   /**
    * 国籍
    */

@@ -1,6 +1,6 @@
 package com.lvxingpai.model.trade.saler
 
-import com.lvxingpai.model.trade.saler.{BankAccount => BasicChineseID}
+import com.lvxingpai.model.trade.saler.{P_ChineseID => BasicChineseID}
 
 
 /**

@@ -1,6 +1,6 @@
 package com.lvxingpai.model.trade.saler
 
-import com.lvxingpai.model.trade.saler.{Saler => BasicRealNameInfo}
+import com.lvxingpai.model.trade.saler.{P_RealNameInfo => BasicRealNameInfo}
 
 /**
  * 用户的实名认证信息

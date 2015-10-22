@@ -1,6 +1,6 @@
 package com.lvxingpai.model.trade.product
 
-import com.lvxingpai.model.trade.product.{Commodity => BasicCommodity}
+import com.lvxingpai.model.trade.product.{P_Commodity => BasicCommodity}
 
 /**
  * 商品

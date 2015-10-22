@@ -1,6 +1,6 @@
 package com.lvxingpai.model.trade.saler
 
-import com.lvxingpai.model.trade.saler.{Saler => BasicPassport}
+import com.lvxingpai.model.trade.saler.{P_Passport => BasicPassport}
 
 /**
  * 护照

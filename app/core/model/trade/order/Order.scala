@@ -1,6 +1,6 @@
 package com.lvxingpai.model.trade.order
 
-import com.lvxingpai.model.trade.order.{Order => BasicOrder}
+import com.lvxingpai.model.trade.order.{P_Order => BasicOrder}
 
 /**
  * 订单

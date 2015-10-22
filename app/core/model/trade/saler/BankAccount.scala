@@ -1,6 +1,6 @@
 package com.lvxingpai.model.trade.saler
 
-import com.lvxingpai.model.trade.saler.{BankAccount => BasicBankAccount}
+import com.lvxingpai.model.trade.saler.{P_BankAccount => BasicBankAccount}
 
 /**
  * 银行卡设置

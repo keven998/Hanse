@@ -11,7 +11,7 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/21/15.
  */
-class ChineseID extends IdProof {
+class P_ChineseID extends IdProof {
   /**
    * 身份证号码（15位或者18位）
    */

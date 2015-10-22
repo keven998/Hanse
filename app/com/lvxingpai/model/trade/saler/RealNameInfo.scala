@@ -13,7 +13,7 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/21/15.
  */
-class RealNameInfo {
+class P_RealNameInfo {
 
   /**
    * 实名认证的状态
