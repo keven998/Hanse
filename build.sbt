@@ -26,3 +26,6 @@ routesGenerator := InjectedRoutesGenerator
 
 fork in run := true
 
+// Using sbt-scalariform
+scalariformSettings
+

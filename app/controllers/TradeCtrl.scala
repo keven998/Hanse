@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject._
+
 import play.api.mvc.{Action, Controller, Result}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +13,7 @@ import scala.concurrent.Future
 @Singleton
 class TradeCtrl extends Controller {
 
-  def add() = Action.async(
+  def createOrder() = Action.async(
     request => {
       val res: Result = null
       Future {
