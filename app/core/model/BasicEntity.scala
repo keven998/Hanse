@@ -2,6 +2,7 @@ package core.model
 
 import org.bson.types.ObjectId
 import org.hibernate.validator.constraints.NotBlank
+import org.mongodb.morphia.annotations.Id
 
 import scala.beans.BeanProperty
 
@@ -14,5 +15,6 @@ class BasicEntity {
    */
   @NotBlank
   @BeanProperty
+  @Id
   var id: ObjectId = null
 }

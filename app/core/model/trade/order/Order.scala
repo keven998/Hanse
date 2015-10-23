@@ -45,7 +45,7 @@ class Order extends BasicEntity {
   /**
    * 支付信息
    */
-  @NotNull
+  // @NotNull
   @BeanProperty
   var payments: util.HashMap[String, Prepay] = null
 
@@ -74,4 +74,14 @@ object Order {
 
   val FD_ID = "id"
   val FD_COMMODITY = "commodity"
+
+  def apply(commodity: Commodity, quantity: Int): Order = {
+    val order = new Order
+    order.commodity = commodity
+    order.totalPrice = commodity.price * quantity
+    order.status = OrderStatus.Pending
+    order.orderTime = System.currentTimeMillis()
+    order.updateTime = System.currentTimeMillis()
+    order
+  }
 }

@@ -40,7 +40,7 @@ class UserInfo extends BasicEntity {
    * 头像
    */
   @BeanProperty
-  var avatar: ImageItem = null
+  var avatar: String = null
 
   /**
    * 性别

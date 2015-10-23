@@ -16,34 +16,9 @@ import scala.beans.BeanProperty
 class RealNameInfo {
 
   /**
-   * 实名认证的状态
-   */
-  object VeriStatus {
-    /**
-     * 未经过实名认证
-     */
-    val Unverified = "unverified"
-
-    /**
-     * 已提交认证申请
-     */
-    val Applied = "applied"
-
-    /**
-     * 通过了实名认证
-     */
-    val Verified = "verified"
-
-    /**
-     * 实名认证被拒绝
-     */
-    val Declined = "declined"
-  }
-
-  /**
    * 姓
    */
-  @NotBlank
+  //@NotBlank
   @Length(min = 1, max = 64)
   @BeanProperty
   var surname: String = null
@@ -51,7 +26,7 @@ class RealNameInfo {
   /**
    * 名
    */
-  @NotBlank
+  //@NotBlank
   @Length(min = 1, max = 256)
   @BeanProperty
   var givenName: String = null
@@ -59,7 +34,7 @@ class RealNameInfo {
   /**
    * 国籍
    */
-  @NotNull
+  //@NotNull
   @BeanProperty
   var nationality: JList[Country] = null
 
@@ -72,14 +47,39 @@ class RealNameInfo {
   /**
    * 实名认证状态
    */
-  @NotNull
+  //@NotNull
   @BeanProperty
   var veriStatus: String = null
 
   /**
    * 实名认证信息更新时间
    */
-  @NotNull
+  //@NotNull
   @BeanProperty
   var updateTime: Long = 0
 }
+
+///**
+// * 实名认证的状态
+// */
+//object VeriStatus {
+//  /**
+//   * 未经过实名认证
+//   */
+//  val Unverified = "unverified"
+//
+//  /**
+//   * 已提交认证申请
+//   */
+//  val Applied = "applied"
+//
+//  /**
+//   * 通过了实名认证
+//   */
+//  val Verified = "verified"
+//
+//  /**
+//   * 实名认证被拒绝
+//   */
+//  val Declined = "declined"
+//}

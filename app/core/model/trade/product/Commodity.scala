@@ -42,3 +42,16 @@ class Commodity extends BasicEntity {
   @BeanProperty
   var price: Float = 0.0f
 }
+object Commodity {
+
+  val FD_ID = "id"
+
+  def apply(saler: Saler, title: String, detail: String, price: Float): Commodity = {
+    val commodity = new Commodity()
+    commodity.saler = saler
+    commodity.title = title
+    commodity.detail = detail
+    commodity.price = price
+    commodity
+  }
+}

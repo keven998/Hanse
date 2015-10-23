@@ -25,14 +25,14 @@ class Saler extends UserInfo {
   /**
    * 服务区域，可以是国家，也可以是目的地
    */
-  @NotNull
+  //@NotNull
   @BeanProperty
   var serviceZone: JList[GeoEntity] = null
 
   /**
    * 实名信息
    */
-  @NotNull
+  //@NotNull
   @BeanProperty
   var realNameInfo: RealNameInfo = null
 
@@ -45,7 +45,7 @@ class Saler extends UserInfo {
   /**
    * 店铺名称
    */
-  @NotBlank
+  //@NotBlank
   @Length(min = 1, max = 128)
   @BeanProperty
   var shopTitle: String = null
