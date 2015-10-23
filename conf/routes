@@ -6,14 +6,16 @@
 #GET        /                    controllers.Application.index
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                      controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
 
 #----------支付接口----------
 #POST        /orders/{order_id}/payments        @controllers.TradeCtrl.createOrder()
 
 
 # 创建商品
-POST        /commodities                       @controllers.TradeCtrl.createCommodity()
+POST        /commodities         @controllers.TradeCtrl.createCommodity()
 
 # 创建订单
-POST        /orders                            @controllers.TradeCtrl.createOrder()
+POST        /orders              @controllers.TradeCtrl.createOrder()
+
+GET         /privateKey          @controllers.TradeCtrl.privateKey()
