@@ -1,26 +1,77 @@
-package com.lvxingpai.model.trade.order
+package core.model.trade.order
 
-import java.beans.Transient
+import java.util
+import javax.validation.constraints.{ Min, NotNull }
 
-import com.lvxingpai.model.trade.order.{ P_Order => BasicOrder }
-import org.bson.types.ObjectId
+import core.model.BasicEntity
+import core.model.trade.product.Commodity
+
+import scala.beans.BeanProperty
 
 /**
  * 订单
- *
- * Created by topy on 10/22/15.
+ * Created by zephyre on 10/20/15.
  */
-class Order extends BasicOrder {
+class Order extends BasicEntity {
 
-  var _id: ObjectId = null
+  /**
+   * 对应的商品
+   */
+  @NotNull
+  @BeanProperty
+  var commodity: Commodity = null
 
+  /**
+   * 订单总价
+   */
+  @Min(value = 0)
+  @BeanProperty
+  var totalPrice: Float = 0
+
+  /**
+   * 折扣
+   */
+  @Min(value = 0)
+  @BeanProperty
+  var discount: Float = 0
+
+  /**
+   * 商品数量
+   */
+  @Min(value = 1)
+  @BeanProperty
+  var quantity: Int = 0
+
+  /**
+   * 支付信息
+   */
+  @NotNull
+  @BeanProperty
+  var payments: util.HashMap[String, Prepay] = null
+
+  /**
+   * 订单状态
+   */
+  @NotNull
+  @BeanProperty
+  var status: String = null
+
+  /**
+   * 下单时间
+   */
+  @NotNull
+  @BeanProperty
+  var orderTime: Long = 0
+
+  /**
+   * 订单信息更新时间
+   */
+  @NotNull
+  @BeanProperty
+  var updateTime: Long = 0
 }
-
 object Order {
 
-  @Transient
-  var FD_ID: String = "id"
-
-  @Transient
-  var FD_COMMODITY: String = "commodity"
+  val FD_ID = "id"
+  val FD_COMMODITY = "commodity"
 }

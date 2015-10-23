@@ -1,6 +1,7 @@
 package core.api
 
-import com.lvxingpai.model.trade.order.Order
+import core.model.trade.order.Order
+
 import scala.concurrent.Future
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore

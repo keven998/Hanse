@@ -1,12 +1,22 @@
-package com.lvxingpai.model.trade.saler
+package core.model.trade.saler
 
-import com.lvxingpai.model.trade.saler.{ P_ChineseID => BasicChineseID }
+import javax.validation.constraints.Pattern
+
+import org.hibernate.validator.constraints.NotBlank
+
+import scala.beans.BeanProperty
 
 /**
  * 由中国大陆颁发的身份证件
  *
- * Created by topy on 10/22/15.
+ * Created by zephyre on 10/21/15.
  */
-class ChineseID extends BasicChineseID {
-
+class ChineseID extends IdProof {
+  /**
+   * 身份证号码（15位或者18位）
+   */
+  @NotBlank
+  @Pattern(regexp = "([\\d]{17}[\\dX]|[\\d]{15})")
+  @BeanProperty
+  var number: String = null
 }
