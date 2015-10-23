@@ -2,15 +2,14 @@ package controllers
 
 import javax.inject._
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import core.api.{ CommodityAPI, OrderAPI }
 import core.misc.HanseResult
 import core.model.trade.order.Order
-import core.model.trade.product.Commodity
-import org.bson.types.ObjectId
-import play.api.mvc.{ Action, Controller, Result }
+import play.api.mvc.{ Action, Controller }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import core.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Created by topy on 2015/10/22.
@@ -19,31 +18,36 @@ import core.Implicits._
 class TradeCtrl extends Controller {
 
   /**
-   * 根据订单商品Id取得商品信息
-   * @param cmyId
+   * 创建商品
    * @return
    */
-  def getCommodityInfo(cmyId: String): Commodity = {
-    val cmyInfo = new Commodity()
-    cmyInfo
-  }
-  def createOrder(cmyId: String, qty: Int): Order = {
-    val orderInfo = new Order()
-    val cmyInfo = getCommodityInfo(cmyId)
-    orderInfo.id = new ObjectId()
-    orderInfo.commodity = cmyInfo
-    orderInfo.totalPrice = cmyInfo.price * qty
-    // TODO  save
-
-    orderInfo
-  }
+  def createCommodity() = Action.async(
+    request => {
+      val futureCmy = for {
+        body <- request.body.asJson
+        salerId <- (body \ "salerId").asOpt[Long]
+        title <- (body \ "title").asOpt[String]
+        detail <- (body \ "detail").asOpt[String]
+        price <- (body \ "price").asOpt[Float]
+      } yield {
+        CommodityAPI.addCommodity(salerId, title, detail, price)
+      }
+      val mapper = new ObjectMapper()
+      val node = mapper.createObjectNode()
+      for {
+        cmy <- futureCmy.get
+      } yield {
+        node.put("commodityId", cmy.id.toString)
+        node.put("title", cmy.title)
+        HanseResult(data = Some(node))
+      }
+    })
   /**
-   * create the order info. 创建订单信息
-   *
+   * 根据订单信息生成订单字符串
+   * @param orderInfo 订单信息
+   * @return
    */
-  def getOrderStr(cmyId: String, qty: Int): String = {
-
-    val orderInfo = createOrder(cmyId: String, qty: Int)
+  def getOrderStr(orderInfo: Order): String = {
 
     // 签约合作者身份ID
     val partnerStr = "partner=" + "\"" + TradeCtrl.partner + "\""
@@ -109,15 +113,27 @@ class TradeCtrl extends Controller {
    */
   def createOrder() = Action.async(
     request => {
-      val orderInfo = for {
+      val cmyPara = for {
         body <- request.body.asJson
         cmyId <- (body \ "cmyId").asOpt[String]
         qty <- (body \ "qty").asOpt[Int]
-      } yield {
-        getOrderStr(cmyId, qty)
+      } yield cmyId -> qty
+
+      val mapper = new ObjectMapper()
+      val node = mapper.createObjectNode()
+
+      if (cmyPara isEmpty) Future { HanseResult.unprocessable() }
+      else {
+        for {
+          order <- OrderAPI.addOrder(cmyPara.get._1, cmyPara.get._2)
+        } yield {
+          val orderStr = getOrderStr(order)
+          node.put("orderId", order.id.toString)
+          node.put("hanse", orderStr)
+          node.put("timestamp", order.orderTime)
+          HanseResult(data = Some(node))
+        }
       }
-      orderInfo getOrElse Future(HanseResult.unprocessable())
-      null
     }
   )
 }
@@ -125,26 +141,26 @@ class TradeCtrl extends Controller {
 object TradeCtrl {
 
   // 服务接口名称， 固定值
-  val service = ""
+  val service = "service"
 
   // 签约合作者身份ID
-  val partner = ""
+  val partner = "partner"
 
   // 签约卖家支付宝账号
-  val seller = ""
+  val seller = "seller"
 
   // 异步回调路径
-  val asyncPath = ""
+  val asyncPath = "asyncPath"
 
   // 支付类型， 固定值
-  val paymentType = ""
+  val paymentType = "paymentType"
 
   // 设置未付款交易的超时时间
-  val itBPay = ""
+  val itBPay = "itBPay"
 
   // 支付完，跳转到此Url
-  val returnUrl = ""
+  val returnUrl = "returnUrl"
 
   // 签名
-  val sign = ""
+  val sign = "sign"
 }
