@@ -1,6 +1,6 @@
 package com.lvxingpai.model.mixin
 
-import javax.validation.constraints.{Min, Max}
+import javax.validation.constraints.{ Min, Max }
 
 import scala.beans.BeanProperty
 

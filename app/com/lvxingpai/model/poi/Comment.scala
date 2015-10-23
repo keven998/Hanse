@@ -1,6 +1,6 @@
 package com.lvxingpai.model.poi
 
-import javax.validation.constraints.{Min, NotNull}
+import javax.validation.constraints.{ Min, NotNull }
 
 import com.lvxingpai.model.BasicEntity
 import com.lvxingpai.model.mixin.RatingEnabled

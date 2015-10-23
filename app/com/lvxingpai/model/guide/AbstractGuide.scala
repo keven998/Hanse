@@ -1,8 +1,8 @@
 package com.lvxingpai.model.guide
 
 import com.lvxingpai.model.BasicEntity
-import com.lvxingpai.model.mixin.{LocalitiesEnabled, ImagesEnabled}
-import com.lvxingpai.model.poi.{Restaurant, Shopping}
+import com.lvxingpai.model.mixin.{ LocalitiesEnabled, ImagesEnabled }
+import com.lvxingpai.model.poi.{ Restaurant, Shopping }
 import org.hibernate.validator.constraints.NotBlank
 
 import scala.beans.BeanProperty

@@ -1,6 +1,8 @@
 package com.lvxingpai.model.trade.product
 
-import com.lvxingpai.model.trade.product.{P_Commodity => BasicCommodity}
+import com.lvxingpai.model.trade.product.{ P_Commodity => BasicCommodity }
+
+import scala.beans.BeanProperty
 
 /**
  * 商品
@@ -9,4 +11,9 @@ import com.lvxingpai.model.trade.product.{P_Commodity => BasicCommodity}
  */
 class Commodity extends BasicCommodity {
 
+  /**
+   * 商品价格
+   */
+  @BeanProperty
+  var price: Int = 0
 }

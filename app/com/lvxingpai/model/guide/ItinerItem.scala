@@ -1,6 +1,6 @@
 package com.lvxingpai.model.guide
 
-import javax.validation.constraints.{NotNull, Min}
+import javax.validation.constraints.{ NotNull, Min }
 
 import com.lvxingpai.model.poi.AbstractPOI
 import org.hibernate.validator.constraints.NotBlank

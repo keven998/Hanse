@@ -6,7 +6,7 @@ import com.lvxingpai.model.misc.Contact
 import com.lvxingpai.model.mixin._
 import org.hibernate.validator.constraints.NotBlank
 
-import scala.beans.{BeanProperty, BooleanBeanProperty}
+import scala.beans.{ BeanProperty, BooleanBeanProperty }
 
 /**
  * Created by pengyt on 2015/10/19.

@@ -1,13 +1,13 @@
 package com.lvxingpai.model.misc
 
-import javax.validation.constraints.{Min, NotNull}
+import javax.validation.constraints.{ Min, NotNull }
 
 import com.lvxingpai.model.BasicEntity
-import com.lvxingpai.model.mixin.{HotnessEnabled, ImagesEnabled, RatingEnabled}
+import com.lvxingpai.model.mixin.{ HotnessEnabled, ImagesEnabled, RatingEnabled }
 import org.hibernate.validator.constraints.NotBlank
 import org.joda.time.Instant
 
-import scala.beans.{BeanProperty, BooleanBeanProperty}
+import scala.beans.{ BeanProperty, BooleanBeanProperty }
 
 /**
  * Created by pengyt on 2015/10/19.

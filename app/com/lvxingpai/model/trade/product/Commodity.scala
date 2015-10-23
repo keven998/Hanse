@@ -27,4 +27,11 @@ class P_Commodity extends BasicEntity {
   @NotBlank
   @BeanProperty
   var title: String = null
+
+  /**
+   * 商品详情
+   */
+  @NotBlank
+  @BeanProperty
+  var detail: String = null
 }

@@ -2,7 +2,7 @@ package com.lvxingpai.model.misc
 
 import javax.validation.constraints.Min
 
-import com.lvxingpai.model.geo.{Country, Locality}
+import com.lvxingpai.model.geo.{ Country, Locality }
 
 import scala.beans.BeanProperty
 
