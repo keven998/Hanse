@@ -1,19 +1,44 @@
-package com.lvxingpai.model.trade.product
+package core.model.trade.product
 
-import com.lvxingpai.model.trade.product.{ P_Commodity => BasicCommodity }
+import javax.validation.constraints.{ Min, NotNull }
+
+import core.model.BasicEntity
+import core.model.trade.saler.Saler
+import org.hibernate.validator.constraints.NotBlank
 
 import scala.beans.BeanProperty
 
 /**
  * 商品
  *
- * Created by topy on 10/22/15.
+ * Created by zephyre on 10/20/15.
  */
-class Commodity extends BasicCommodity {
+class Commodity extends BasicEntity {
+  /**
+   * 商家
+   */
+  @NotNull
+  @BeanProperty
+  var saler: Saler = null
+
+  /**
+   * 商品描述
+   */
+  @NotBlank
+  @BeanProperty
+  var title: String = null
+
+  /**
+   * 商品详情
+   */
+  @NotBlank
+  @BeanProperty
+  var detail: String = null
 
   /**
    * 商品价格
    */
+  @Min(value = 0)
   @BeanProperty
-  var price: Int = 0
+  var price: Float = 0.0f
 }

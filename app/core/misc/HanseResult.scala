@@ -1,19 +1,21 @@
-package core.utils
+package core.misc
 
-import com.fasterxml.jackson.databind.{ ObjectMapper, JsonNode }
+import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import play.api.http.Status._
-import play.api.mvc.{ Results, Result }
+import play.api.mvc.{ Result, Results }
+
+import scala.language.postfixOps
 
 /**
- * Created by pengyt on 2015/10/23.
+ * Created by topy on 10/23/15.
  */
-object HanseResults {
+object HanseResult {
 
   object RetCode extends Enumeration {
-
     val OK = Value(0)
-
     val INVALID_ARGUMENTS = Value(100, "Invalid arguments")
+    val FORBIDDEN = Value(403, "Forbidden")
+
   }
 
   /**
@@ -44,9 +46,13 @@ object HanseResults {
   }
 
   def ok(retCode: RetCode.Value = RetCode.OK, data: Option[JsonNode] = None, errorMsg: Option[String] = None): Result =
-    HanseResults(OK, retCode, data, errorMsg)
+    HanseResult(OK, retCode, data, errorMsg)
 
   def unprocessable(retCode: RetCode.Value = RetCode.INVALID_ARGUMENTS, data: Option[JsonNode] = None,
     errorMsg: Option[String] = None): Result =
-    HanseResults(UNPROCESSABLE_ENTITY, retCode, data, errorMsg)
+    HanseResult(UNPROCESSABLE_ENTITY, retCode, data, errorMsg)
+
+  def forbidden(retCode: RetCode.Value = RetCode.FORBIDDEN, data: Option[JsonNode] = None,
+    errorMsg: Option[String] = None): Result =
+    HanseResult(FORBIDDEN, retCode, data, errorMsg)
 }

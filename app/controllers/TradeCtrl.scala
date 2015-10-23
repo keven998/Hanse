@@ -2,13 +2,15 @@ package controllers
 
 import javax.inject._
 
-import com.lvxingpai.model.trade.order.Order
-import com.lvxingpai.model.trade.product.Commodity
+import core.misc.HanseResult
+import core.model.trade.order.Order
+import core.model.trade.product.Commodity
 import org.bson.types.ObjectId
 import play.api.mvc.{ Action, Controller, Result }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import core.Implicits._
 
 /**
  * Created by topy on 2015/10/22.
@@ -28,7 +30,7 @@ class TradeCtrl extends Controller {
   def createOrder(cmyId: String, qty: Int): Order = {
     val orderInfo = new Order()
     val cmyInfo = getCommodityInfo(cmyId)
-    orderInfo.id = new ObjectId().toString
+    orderInfo.id = new ObjectId()
     orderInfo.commodity = cmyInfo
     orderInfo.totalPrice = cmyInfo.price * qty
     // TODO  save
@@ -112,13 +114,12 @@ class TradeCtrl extends Controller {
         cmyId <- (body \ "cmyId").asOpt[String]
         qty <- (body \ "qty").asOpt[Int]
       } yield {
-          getOrderStr(cmyId, qty)
-        }
-      val res: Result = null
-      Future {
-        res
+        getOrderStr(cmyId, qty)
       }
-    })
+      orderInfo getOrElse Future(HanseResult.unprocessable())
+      null
+    }
+  )
 }
 
 object TradeCtrl {
