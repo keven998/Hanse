@@ -1,8 +1,8 @@
 package core.db
 
-import com.lvxingpai.model.trade.order.{ Order, Prepay }
 import com.mongodb._
 import core.misc.Global
+import core.model.trade.order.{ Prepay, Order }
 import org.mongodb.morphia.Morphia
 
 import scala.collection.JavaConversions._
