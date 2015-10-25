@@ -3,10 +3,10 @@ package core.api
 import core.db.MorphiaFactory
 import core.model.trade.order.Order
 import core.sign.RSA
-
-import scala.concurrent.Future
 import org.bson.types.ObjectId
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
+import scala.concurrent.Future
 
 /**
  * Created by topy on 2015/10/22.
@@ -138,4 +138,5 @@ object OrderAPI {
     }
     result
   }
+
 }
