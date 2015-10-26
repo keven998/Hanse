@@ -17,5 +17,3 @@ POST        /commodities         @controllers.TradeCtrl.createCommodity()
 
 # 创建订单
 POST        /orders              @controllers.TradeCtrl.createOrder()
-
-GET         /privateKey          @controllers.TradeCtrl.privateKey()

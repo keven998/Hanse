@@ -1,8 +1,10 @@
 package core.api
 
 import core.db.MorphiaFactory
+import core.misc.Global
 import core.model.trade.order.Order
 import core.sign.RSA
+import play.api.Configuration
 
 import scala.concurrent.Future
 import org.bson.types.ObjectId
@@ -15,28 +17,22 @@ object OrderAPI {
 
   val ds = MorphiaFactory.datastore
   // 服务接口名称， 固定值
-  val service = "service"
+  val service = "mobile.securitypay.pay"
 
   // 签约合作者身份ID
-  val partner = "partner"
+  val partner = Global.conf.getString("alipayAPI.partner").get
 
   // 签约卖家支付宝账号
-  val seller = "seller"
+  val seller = Global.conf.getString("alipayAPI.seller").get
 
   // 异步回调路径
-  val asyncPath = "asyncPath"
+  val notifyUrl = Global.conf.getString("alipayAPI.notifyUrl").get
 
   // 支付类型， 固定值
   val paymentType = "1"
 
   // 设置未付款交易的超时时间
-  val itBPay = "itBPay"
-
-  // 支付完，跳转到此Url
-  val returnUrl = "returnUrl"
-
-  // 签名
-  val sign = "sign"
+  val itBPay = "1440m"
 
   def getOrder(orderId: ObjectId): Future[Unit] = {
     Future {
@@ -87,7 +83,7 @@ object OrderAPI {
     val totalFeeStr = "&total_fee=" + "\"" + orderInfo.totalPrice + "\""
 
     // 服务器异步通知页面路径
-    val notifyUrlStr = "&notify_url=" + "\"" + asyncPath + "\""
+    val notifyUrlStr = "&notify_url=" + "\"" + notifyUrl + "\""
 
     // 服务接口名称， 固定值
     val serviceStr = "&service=\"" + service + "\""
@@ -108,22 +104,21 @@ object OrderAPI {
     // extern_token为经过快登授权获取到的alipay_open_id,带上此参数用户将使用授权的账户进行支付
     // orderInfo += "&extern_token=" + "\"" + extern_token + "\"";
 
-    // 支付宝处理完请求后，当前页面跳转到商户指定页面的路径，可空
-    val returnUrlStr = "&return_url=\"" + returnUrl + "\""
-
     // 调用银行卡支付，需配置此参数，参与签名， 固定值 （需要签约《无线银行卡快捷支付》才能使用）
     // orderInfo += "&paymethod=\"expressGateway\"";
+
+    val orderInfoStr = partnerStr + sellerStr + orderIdStr + cmyNameStr + cmyDetailStr + totalFeeStr + notifyUrlStr + serviceStr +
+      paymentTypeStr + inputCharset + itBPayStr
+
+    // 签名
+    val signStr = "&sign=\"" + RSA.sign(orderInfoStr, privateKey(), "utf-8") + "\""
 
     // 加密算法
     val signTypeStr = "&sign_type=\"RSA\""
 
-    // 签名
-    val signStr = "&sign=\"" + RSA.sign("", privateKey(), "utf-8") + "\""
+    val result = orderInfoStr + signStr + signTypeStr
 
-    val orderInfoStr = partnerStr + sellerStr + orderIdStr + cmyNameStr + cmyDetailStr + totalFeeStr + notifyUrlStr + serviceStr +
-      paymentTypeStr + inputCharset + itBPayStr + returnUrlStr + signStr
-
-    orderInfoStr
+    result
   }
 
   /**
@@ -131,11 +126,6 @@ object OrderAPI {
    * @return 私钥字符串
    */
   def privateKey(): String = {
-    val src = scala.io.Source.fromFile("conf/rsa_private_key.pem").getLines()
-    var result: String = ""
-    while (src.hasNext) {
-      result += src.next()
-    }
-    result
+    scala.io.Source.fromFile("conf/rsa_private_key.pem").getLines().mkString("")
   }
 }
