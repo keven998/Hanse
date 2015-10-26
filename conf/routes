@@ -17,3 +17,6 @@ POST        /commodities         @controllers.TradeCtrl.createCommodity()
 
 # 创建订单
 POST        /orders              @controllers.TradeCtrl.createOrder()
+
+# 预支付
+POST        /prePay              @controllers.TradeCtrl.prePay()

@@ -4,7 +4,6 @@ import core.db.MorphiaFactory
 import core.misc.Global
 import core.model.trade.order.Order
 import core.sign.RSA
-import play.api.Configuration
 
 import scala.concurrent.Future
 import org.bson.types.ObjectId
@@ -17,26 +16,31 @@ object OrderAPI {
 
   val ds = MorphiaFactory.datastore
   // 服务接口名称， 固定值
-  val service = "mobile.securitypay.pay"
+  val aliService = "mobile.securitypay.pay"
 
   // 签约合作者身份ID
-  val partner = Global.conf.getString("alipayAPI.partner").get
+  val aliPartner = Global.conf.getString("alipayAPI.partner").get
 
   // 签约卖家支付宝账号
-  val seller = Global.conf.getString("alipayAPI.seller").get
+  val aliSeller = Global.conf.getString("alipayAPI.seller").get
 
   // 异步回调路径
-  val notifyUrl = Global.conf.getString("alipayAPI.notifyUrl").get
+  val aliNotifyUrl = Global.conf.getString("alipayAPI.notifyUrl").get
 
   // 支付类型， 固定值
-  val paymentType = "1"
+  val aliPaymentType = "1"
 
   // 设置未付款交易的超时时间
-  val itBPay = "1440m"
+  val aliItBPay = "1440m"
 
-  def getOrder(orderId: ObjectId): Future[Unit] = {
+  /**
+   * 根据订单id查询订单信息
+   * @param orderId 订单id
+   * @return 订单信息
+   */
+  def getOrder(orderId: ObjectId): Future[Order] = {
     Future {
-      ds.find(classOf[Order], Order.FD_COMMODITY, orderId).asList()
+      ds.find(classOf[Order], Order.FD_ID, orderId).get
     }
   }
 
@@ -58,17 +62,17 @@ object OrderAPI {
   }
 
   /**
-   * 根据订单信息生成订单字符串
+   * 根据订单信息生成支付宝所需信息的字符串
    * @param orderInfo 订单信息
-   * @return
+   * @return 支付宝支付所需信息
    */
-  def getOrderStr(orderInfo: Order): String = {
+  def getAlipayPrePayStr(orderInfo: Order): String = {
 
     // 签约合作者身份ID
-    val partnerStr = "partner=" + "\"" + partner + "\""
+    val partnerStr = "partner=" + "\"" + aliPartner + "\""
 
     // 签约卖家支付宝账号
-    val sellerStr = "&seller_id=" + "\"" + seller + "\""
+    val sellerStr = "&seller_id=" + "\"" + aliSeller + "\""
 
     // 商户网站唯一订单号
     val orderIdStr = "&out_trade_no=" + "\"" + orderInfo.id + "\""
@@ -83,13 +87,13 @@ object OrderAPI {
     val totalFeeStr = "&total_fee=" + "\"" + orderInfo.totalPrice + "\""
 
     // 服务器异步通知页面路径
-    val notifyUrlStr = "&notify_url=" + "\"" + notifyUrl + "\""
+    val notifyUrlStr = "&notify_url=" + "\"" + aliNotifyUrl + "\""
 
     // 服务接口名称， 固定值
-    val serviceStr = "&service=\"" + service + "\""
+    val serviceStr = "&service=\"" + aliService + "\""
 
     // 支付类型， 固定值
-    val paymentTypeStr = "&payment_type=\"" + paymentType + "\""
+    val paymentTypeStr = "&payment_type=\"" + aliPaymentType + "\""
 
     // 参数编码， 固定值
     val inputCharset = "&_input_charset=\"utf-8\""
@@ -99,7 +103,7 @@ object OrderAPI {
     // 取值范围：1m～15d。
     // m-分钟，h-小时，d-天，1c-当天（无论交易何时创建，都在0点关闭）。
     // 该参数数值不接受小数点，如1.5h，可转换为90m。
-    val itBPayStr = "&it_b_pay=\"" + itBPay + "\""
+    val itBPayStr = "&it_b_pay=\"" + aliItBPay + "\""
 
     // extern_token为经过快登授权获取到的alipay_open_id,带上此参数用户将使用授权的账户进行支付
     // orderInfo += "&extern_token=" + "\"" + extern_token + "\"";
@@ -122,10 +126,47 @@ object OrderAPI {
   }
 
   /**
+   * 根据订单信息生成微信所需信息的字符串
+   * @param orderInfo 订单信息
+   * @return 微信支付所需信息
+   */
+  def getWeixinPrePayStr(orderInfo: Order): String = {
+    ""
+  }
+
+  /**
+   * 根据订单信息生成银联所需信息的字符串
+   * @param orderInfo 订单信息
+   * @return 银联支付所需信息
+   */
+  def getUnionPrePayStr(orderInfo: Order): String = {
+    ""
+  }
+
+  /**
    * 取得私钥字符串
    * @return 私钥字符串
    */
   def privateKey(): String = {
     scala.io.Source.fromFile("conf/rsa_private_key.pem").getLines().mkString("")
+  }
+
+  /**
+   * 预支付
+   * @param payMerchant 支付商
+   * @param orderId 订单ID
+   * @return 预支付信息
+   */
+  def prePay(payMerchant: String, orderId: String): Future[String] = {
+    // 取得订单信息
+    val futureOrderInfo = getOrder(new ObjectId(orderId))
+
+    // 根据不同的支付商家, 返回不同的串
+    payMerchant match {
+      case "alipay" => futureOrderInfo map (orderInfo => getAlipayPrePayStr(orderInfo))
+      case "weixin" => futureOrderInfo map (orderInfo => getWeixinPrePayStr(orderInfo))
+      case "union" => futureOrderInfo map (orderInfo => getUnionPrePayStr(orderInfo))
+      case _ => throw new IllegalArgumentException
+    }
   }
 }

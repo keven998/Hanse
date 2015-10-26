@@ -63,13 +63,44 @@ class TradeCtrl extends Controller {
         for {
           order <- OrderAPI.addOrder(cmyPara.get._1, cmyPara.get._2)
         } yield {
-          val orderStr = OrderAPI.getOrderStr(order)
           node.put("orderId", order.id.toString)
-          node.put("hanse", orderStr)
-          node.put("timestamp", order.orderTime)
+          node.put("cmyTitle", order.commodity.title)
+          node.put("cmyPrice", order.commodity.price)
+          node.put("cmyDetail", order.commodity.detail)
+          //          node.put("salerName", order.commodity.saler.realNameInfo.givenName)
+          node.put("discount", order.discount)
+          node.put("quantity", order.quantity)
+          node.put("status", order.status)
+          node.put("totalPrice", order.totalPrice)
+          node.put("orderTime", order.orderTime)
           HanseResult(data = Some(node))
         }
       }
-    }
-  )
+    })
+
+  /**
+   * 预支付
+   * @return 带签名的字符串
+   */
+  def prePay() = Action.async(
+    request => {
+      val orderPara = for {
+        body <- request.body.asJson
+        orderId <- (body \ "orderId").asOpt[String]
+        payType <- (body \ "payType").asOpt[String]
+      } yield orderId -> payType
+
+      val mapper = new ObjectMapper()
+      val node = mapper.createObjectNode()
+
+      if (orderPara isEmpty) Future { HanseResult.unprocessable() }
+      else {
+        for {
+          str <- OrderAPI.prePay(orderPara.get._2, orderPara.get._1)
+        } yield {
+          node.put("result", str)
+          HanseResult(data = Some(node))
+        }
+      }
+    })
 }
