@@ -15,6 +15,13 @@ GET         /assets/*file        controllers.Assets.versioned(path="/public", fi
 # 创建商品
 POST        /commodities         @controllers.TradeCtrl.createCommodity()
 
+# 获取商品列表
+#GET         /commodities
+#
+#/app/api/index.jsp?action=getCommodities&sort=2..
+#
+#REST
+
 # 创建订单
 POST        /orders              @controllers.TradeCtrl.createOrder()
 
