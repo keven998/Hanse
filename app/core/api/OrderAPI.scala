@@ -38,9 +38,9 @@ object OrderAPI {
   // 签名
   val sign = "sign"
 
-  def getOrder(orderId: ObjectId): Future[Unit] = {
+  def getOrder(orderId: ObjectId) = {
     Future {
-      ds.find(classOf[Order], Order.FD_COMMODITY, orderId).asList()
+      ds.find(classOf[Order], Order.FD_COMMODITY, orderId).get()
     }
   }
 
