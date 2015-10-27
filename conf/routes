@@ -20,3 +20,5 @@ POST        /orders                     @controllers.TradeCtrl.createOrder()
 
 # GET         /privateKey          @controllers.TradeCtrl.privateKey()
 
+# 预支付
+POST        /prePay                     @controllers.TradeCtrl.prePay()
