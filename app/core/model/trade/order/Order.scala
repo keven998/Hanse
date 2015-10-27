@@ -74,6 +74,8 @@ object Order {
 
   val FD_ID = "id"
   val FD_COMMODITY = "commodity"
+  val FD_PAYMENTS = "payments"
+  val FD_STATUS = "status"
 
   def apply(commodity: Commodity, quantity: Int): Order = {
     val order = new Order
