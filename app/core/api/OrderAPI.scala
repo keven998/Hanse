@@ -292,6 +292,13 @@ object OrderAPI {
     ds.update(query, updateOps)
   }
 
+  def aliOrderStatus2OrderStatus(aliTradeStatus: String): String = {
+    aliTradeStatus match {
+      case "TRADE_SUCCESS" | "TRADE_FINISHED" => OrderStatus.Finished
+      case "WAIT_BUYER_PAY" => OrderStatus.Pending
+      case "TRADE_CLOSED" => OrderStatus.Close
+    }
+  }
   /**
    * 根据订单号查询订单支付状态, 如果支付成功, 直接返回, 其他状态
    * @param orderId 订单号
@@ -303,8 +310,9 @@ object OrderAPI {
       val order = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(new ObjectId(orderId)).get
       if (order.status.equals(OrderStatus.Finished)) order.status
       else {
-        val alipayStatus = getAlipayOrderStatus(orderId)
-        if (alipayStatus != null && !alipayStatus.equals(OrderStatus.Pending)) {
+        // 订单未完成, 去支付宝查询订单状态, 核对订单状态
+        val alipayStatus = aliOrderStatus2OrderStatus(getAlipayOrderStatus(orderId))
+        if (!alipayStatus.equals(order.status)) {
           updateOrderStatus(orderId, alipayStatus)
           alipayStatus
         } else order.status

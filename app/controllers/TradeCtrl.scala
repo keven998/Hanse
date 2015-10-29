@@ -5,7 +5,7 @@ import javax.inject._
 import com.fasterxml.jackson.databind.ObjectMapper
 import core.api.{ CommodityAPI, OrderAPI }
 import core.misc.HanseResult
-import core.model.trade.order.Order
+import core.model.trade.order.{ OrderStatus, Order }
 import core.sign.{ Base64, RSA }
 import org.bson.types.ObjectId
 import play.api.mvc.{ Results, Action, Controller }
@@ -154,9 +154,11 @@ class TradeCtrl extends Controller {
           // 验证支付宝签名
           // 支付宝公钥
           if (OrderAPI.verifyAlipay(contents, sign)) {
+            // 系统的订单状态
+            val orderStatus = OrderAPI.aliOrderStatus2OrderStatus(trade_status)
             // 验证通过
             // 根据支付宝的回调结果修改订单状态
-            OrderAPI.updateOrderStatus(out_trade_no, trade_status)
+            OrderAPI.updateOrderStatus(out_trade_no, orderStatus)
             // 返回支付宝信息
             Results.Ok("success")
           } else {
