@@ -10,6 +10,7 @@ GET         /assets/*file               controllers.Assets.versioned(path="/publ
 
 #----------支付接口----------
 POST        /orders/:id/payments        @controllers.PaymentCtrl.createPayments(id:String)
+POST       /payment-webhook/wechat      @controllers.PaymentCtrl.wechatCallback()
 
 
 # 创建商品
