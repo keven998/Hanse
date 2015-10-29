@@ -47,12 +47,6 @@ object PaymentService {
       .withRequestTimeout(30000)
       .post(body.toString)
     ret
-    //    val rr = ret.map {
-    //      response =>
-    //        val u = response.body
-    //      //response.xml \ "message"
-    //    }
-    //    rr
   }
 
   def genSign(content: Map[String, String]) = {

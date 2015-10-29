@@ -6,20 +6,33 @@
 #GET        /                    controllers.Application.index
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
 
-#----------支付接口----------
-POST        /orders/:id/payments        @controllers.PaymentCtrl.createPayments(id:String)
-POST       /payment-webhook/wechat      @controllers.PaymentCtrl.wechatCallback()
+
 
 
 # 创建商品
-POST        /commodities                @controllers.TradeCtrl.createCommodity()
+POST        /commodities                   @controllers.TradeCtrl.createCommodity()
+
+# 获取商品列表
+#GET         /commodities
+#
+#/app/api/index.jsp?action=getCommodities&sort=2..
+#
+#REST
 
 # 创建订单
-POST        /orders                     @controllers.TradeCtrl.createOrder()
-
+POST        /orders                        @controllers.TradeCtrl.createOrder()
 # GET         /privateKey          @controllers.TradeCtrl.privateKey()
 
+#----------支付接口----------
+#微信预支付
+POST        /orders/:id/payments           @controllers.PaymentCtrl.createPayments(id:String)
+#微信回调
+POST        /payment-webhook/wechat        @controllers.PaymentCtrl.wechatCallback()
+
 # 预支付
-POST        /prePay                     @controllers.TradeCtrl.prePay()
+POST        /prePay                        @controllers.TradeCtrl.prePay()
+# 支付结果回调
+POST        /notifyResult                  @controllers.TradeCtrl.notifyResult()
+
