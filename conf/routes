@@ -17,3 +17,7 @@ POST        /commodities         @controllers.TradeCtrl.createCommodity()
 
 # 创建订单
 POST        /orders              @controllers.TradeCtrl.createOrder()
+
+POST        /redis/keys          @controllers.Application.setRedisKey()
+
+GET         /redis/keys/:key     @controllers.Application.getRedisData(key:String)

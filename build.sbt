@@ -4,7 +4,8 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.4"
+
 val morphiaVersion = "1.0.0"
 
 libraryDependencies ++= Seq(
@@ -15,6 +16,7 @@ libraryDependencies ++= Seq(
   "com.lvxingpai" %% "appconfig" % "0.2.1-SNAPSHOT",
   "com.lvxingpai" %% "core-model" % "0.1.0-SNAPSHOT",
   "com.twitter" %% "util-collection" % "6.27.0",
+  "com.typesafe.play.modules" %% "play-modules-redis" % "2.4.1",
   "org.mongodb.morphia" % "morphia" % morphiaVersion,
   "org.mongodb.morphia" % "morphia-validation" % morphiaVersion
 )
