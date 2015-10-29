@@ -287,11 +287,13 @@ object OrderAPI {
    * @param status 订单状态
    */
   def updateOrderStatus(orderId: String, status: String): Unit = {
-
+    val query = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(new ObjectId(orderId))
+    val updateOps = ds.createUpdateOperations(classOf[Order]).set(Order.FD_STATUS, status)
+    ds.update(query, updateOps)
   }
 
   /**
-   * 根据订单号查询订单支付状态
+   * 根据订单号查询订单支付状态, 如果支付成功, 直接返回, 其他状态
    * @param orderId 订单号
    * @return 订单状态
    */
@@ -299,31 +301,23 @@ object OrderAPI {
     // 根据订单号查询订单支付信息
     Future {
       val order = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(new ObjectId(orderId)).get
-      if (order.status.equals(OrderStatus.Pending)) {
+      if (order.status.equals(OrderStatus.Finished)) order.status
+      else {
         val alipayStatus = getAlipayOrderStatus(orderId)
         if (alipayStatus != null && !alipayStatus.equals(OrderStatus.Pending)) {
           updateOrderStatus(orderId, alipayStatus)
           alipayStatus
         } else order.status
-      } else order.status
+      }
     }
   }
 
-  // 验证是否是支付宝返回来的结果
-  def isAlipayResult(partner: String, notifyId: String): Boolean = {
-    // 获取验证url
-    val verifyUrl = "https://mapi.alipay.com/gateway.do?service=notify_verify&partner=" + aliPartner + "&notify_id=" + notifyId
-    //    val request = url(verifyUrl)
-    val holder = WS.url(verifyUrl)
-    val futureResponse = holder.get()
-    for {
-      response <- futureResponse
-    } yield {
-      response.body
-    }
-    true
-  }
-
+  /**
+   * 验证支付宝签名
+   * @param content 签名所需的数据
+   * @param sign 签名
+   * @return 签名是否通过
+   */
   def verifyAlipay(content: String, sign: String): Boolean = {
     val ali_public_key = Global.conf.getString("alipayAPI.aliPubKey").get
     val input_charset = "utf-8"

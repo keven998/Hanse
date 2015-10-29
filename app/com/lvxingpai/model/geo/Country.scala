@@ -11,7 +11,7 @@ import scala.beans.BeanProperty
  * Created by zephyre on 10/27/15.
  */
 @Entity
-class Country extends  GeoEntity{
+class Country extends GeoEntity {
   /**
    * ISO 3166-2标准的国家代码
    */

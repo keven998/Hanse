@@ -6,7 +6,7 @@ import com.lvxingpai.model.geo.Country
 import com.lvxingpai.model.misc.ImageItem
 import org.hibernate.validator.constraints.NotBlank
 import org.mongodb.morphia.annotations.Embedded
-import java.util.{List=>JList}
+import java.util.{ List => JList }
 
 /**
  *
@@ -30,7 +30,7 @@ class IdProof {
    * 国籍
    */
   @NotNull
-  val nationality:Country = null
+  val nationality: Country = null
 
   /**
    * 档案材料
