@@ -1,4 +1,4 @@
-package core
+package core.misc
 
 import com.twitter.{ util => twitter }
 import core.db.MorphiaFactory
@@ -6,12 +6,56 @@ import core.db.MorphiaFactory
 import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.language.implicitConversions
 import scala.util.{ Failure, Success, Try }
+import scala.xml.{ Elem, Node, NodeSeq }
+
 /**
  * Created by zephyre on 7/10/15.
  */
 object Implicits {
 
   implicit lazy val ds = MorphiaFactory.datastore
+
+  implicit def long2String(v: Long) = {
+    v.toString
+  }
+
+  implicit def int2String(v: Int) = {
+    v.toString
+  }
+
+  implicit def float2String(v: Float) = {
+    v.toString
+  }
+
+  implicit def Node2String(body: Node) = {
+    body match {
+      case NodeSeq.Empty => ""
+      case _ => body.toString()
+    }
+  }
+
+  implicit def NodeSeq2String(body: NodeSeq) = {
+    body match {
+      case NodeSeq.Empty => ""
+      case _ => body.toString()
+    }
+  }
+
+  implicit def NodeSeq2Int(body: NodeSeq) = {
+    body match {
+      case NodeSeq.Empty => 0
+      case _ => body.toString().toInt
+    }
+  }
+
+  implicit class ElemChild(ns: NodeSeq) {
+    def \* = ns flatMap {
+      _ match {
+        case e: Elem => e.child
+        case _ => NodeSeq.Empty
+      }
+    }
+  }
 
   object TwitterConverter {
     implicit def scalaToTwitterTry[T](t: Try[T]): twitter.Try[T] = t match {

@@ -44,4 +44,9 @@ object OrderStatus {
    * 订单已完成
    */
   val Finished = "finished"
+
+  /**
+   * 交易关闭
+   */
+  val Close = "close"
 }

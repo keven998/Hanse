@@ -21,7 +21,6 @@ object MorphiaFactory {
 
   lazy val client = {
     val conf = Global.conf
-
     val mongoBackends = conf.getConfig("backends.mongo").get
     val services = mongoBackends.subKeys.toSeq map (mongoBackends.getConfig(_).get)
 

@@ -18,7 +18,7 @@ object Global {
     val playConf = Configuration(ConfigFactory.load())
 
     // 确定runlevel
-    val runlevel = playConf.getString("runlevel").orNull
+    val runlevel = "dev"
 
     import scala.concurrent.ExecutionContext.Implicits._
     val etcdFuture = Future.sequence[Config, Seq](runlevel match {

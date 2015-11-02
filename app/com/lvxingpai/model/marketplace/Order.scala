@@ -1,10 +1,10 @@
-package core.model.trade.order
+package com.lvxingpai.model.marketplace
 
 import java.util
 import javax.validation.constraints.{ Min, NotNull }
 
-import core.model.BasicEntity
-import core.model.trade.product.Commodity
+import org.bson.types.ObjectId
+import org.mongodb.morphia.annotations.{ Entity, Id }
 
 import scala.beans.BeanProperty
 
@@ -12,13 +12,10 @@ import scala.beans.BeanProperty
  * 订单
  * Created by zephyre on 10/20/15.
  */
-class Order extends BasicEntity {
-
-  /**
-   * 订单名称
-   */
-  @BeanProperty
-  var name: String = null
+@Entity
+class Order {
+  @Id
+  var id: ObjectId = null
 
   /**
    * 对应的商品
@@ -77,20 +74,3 @@ class Order extends BasicEntity {
   var updateTime: Long = 0
 }
 
-object Order {
-
-  val FD_ID = "id"
-  val FD_COMMODITY = "commodity"
-  val FD_PAYMENTS = "payments"
-  val FD_STATUS = "status"
-
-  def apply(commodity: Commodity, quantity: Int): Order = {
-    val order = new Order
-    order.commodity = commodity
-    order.totalPrice = commodity.price * quantity
-    order.status = OrderStatus.Pending
-    order.orderTime = System.currentTimeMillis()
-    order.updateTime = System.currentTimeMillis()
-    order
-  }
-}
