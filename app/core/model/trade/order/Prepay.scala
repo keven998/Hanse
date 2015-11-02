@@ -14,6 +14,32 @@ import scala.beans.BeanProperty
 class Prepay extends BasicEntity {
 
   /**
+   * 第三方系统中的订单号
+   */
+  @NotNull
+  @BeanProperty
+  var prepayId: String = null
+
+  /**
+   * 随机字符串
+   */
+  @BeanProperty
+  var nonceString: String = null
+
+  /**
+   * 签名
+   */
+  @BeanProperty
+  var sign: String = null
+
+  /**
+   * 交易类型
+   */
+  @NotNull
+  @BeanProperty
+  var tradeType: String = null
+
+  /**
    * 对应于哪个支付平台
    */
   @NotNull
@@ -33,4 +59,11 @@ class Prepay extends BasicEntity {
   @NotNull
   @BeanProperty
   var timestamp: Long = 0
+
+  /**
+   * 预支付结果
+   */
+  @NotNull
+  @BeanProperty
+  var result: String = null
 }

@@ -2,12 +2,8 @@ package core.api
 
 import core.db.MorphiaFactory
 import core.misc.Global
-import core.model.trade.order.{ OrderStatus, Prepay, PaymentVendor, Order }
+import core.model.trade.order.{ Order, OrderStatus, PaymentVendor, Prepay }
 import core.sign.RSA
-import play.api.libs.ws.WS
-import play.api.Play.current
-
-import scala.concurrent.Future
 import org.bson.types.ObjectId
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
@@ -51,6 +47,18 @@ object OrderAPI {
   def getOrder(orderId: ObjectId): Future[Order] = {
     Future {
       ds.find(classOf[Order], Order.FD_ID, orderId).get
+    }
+  }
+
+  def savePrepay(prepay: Option[Prepay], order: Order) = {
+    Future {
+      if (prepay.nonEmpty) {
+        val pm = new java.util.HashMap[String, Prepay]
+        pm.put(prepay.get.getVendor, prepay.get)
+        val query = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(order.id)
+        val updateOps = ds.createUpdateOperations(classOf[Order]).set(Order.FD_PAYMENTS, pm)
+        ds.updateFirst(query, updateOps)
+      }
     }
   }
 
@@ -294,10 +302,12 @@ object OrderAPI {
    * @param orderId 订单号
    * @param status 订单状态
    */
-  def updateOrderStatus(orderId: String, status: String): Unit = {
-    val query = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(new ObjectId(orderId))
-    val updateOps = ds.createUpdateOperations(classOf[Order]).set(Order.FD_STATUS, status)
-    ds.update(query, updateOps)
+  def updateOrderStatus(orderId: String, status: String) = {
+    Future {
+      val query = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(new ObjectId(orderId))
+      val updateOps = ds.createUpdateOperations(classOf[Order]).set(Order.FD_STATUS, status)
+      ds.update(query, updateOps)
+    }
   }
 
   def aliOrderStatus2OrderStatus(aliTradeStatus: String): String = {

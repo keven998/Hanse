@@ -8,9 +8,6 @@
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
 
-
-
-
 # 创建商品
 POST        /commodities                   @controllers.TradeCtrl.createCommodity()
 
@@ -28,6 +25,8 @@ POST        /orders                        @controllers.TradeCtrl.createOrder()
 #----------支付接口----------
 #微信预支付
 POST        /orders/:id/payments           @controllers.PaymentCtrl.createPayments(id:String)
+#查询订单
+GET         /orders/:id/payments           @controllers.PaymentCtrl.getPayments(id:String)
 #微信回调
 POST        /payment-webhook/wechat        @controllers.PaymentCtrl.wechatCallback()
 

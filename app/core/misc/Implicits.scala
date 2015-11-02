@@ -6,7 +6,7 @@ import core.db.MorphiaFactory
 import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.language.implicitConversions
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, NodeSeq }
+import scala.xml.{ Elem, Node, NodeSeq }
 
 /**
  * Created by zephyre on 7/10/15.
@@ -27,7 +27,28 @@ object Implicits {
     v.toString
   }
 
-  implicit class ChildSelectable(ns: NodeSeq) {
+  implicit def Node2String(body: Node) = {
+    body match {
+      case NodeSeq.Empty => ""
+      case _ => body.toString()
+    }
+  }
+
+  implicit def NodeSeq2String(body: NodeSeq) = {
+    body match {
+      case NodeSeq.Empty => ""
+      case _ => body.toString()
+    }
+  }
+
+  implicit def NodeSeq2Int(body: NodeSeq) = {
+    body match {
+      case NodeSeq.Empty => 0
+      case _ => body.toString().toInt
+    }
+  }
+
+  implicit class ElemChild(ns: NodeSeq) {
     def \* = ns flatMap {
       _ match {
         case e: Elem => e.child
