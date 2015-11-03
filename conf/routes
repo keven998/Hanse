@@ -11,6 +11,9 @@ GET         /assets/*file                  controllers.Assets.versioned(path="/p
 # 创建商品
 POST        /commodities                   @controllers.TradeCtrl.createCommodity()
 
+# 商品详情
+GET         /commodities/$cmyid<[0-9a-f]{24}>               @controllers.CommodityCtrl.getCommodityDetail(cmyid: String)
+
 # 获取商品列表
 #GET         /commodities
 #
