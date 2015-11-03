@@ -19,3 +19,5 @@ server.pid
 
 activator*
 project/*
+conf/credentials.conf
+conf/*.pem

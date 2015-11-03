@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
   ws,
   specs2 % Test,
   "com.lvxingpai" %% "appconfig" % "0.2.1-SNAPSHOT",
-  "com.lvxingpai" %% "core-model" % "0.1.0-SNAPSHOT",
+  "com.lvxingpai" %% "core-model" % "0.1.2-SNAPSHOT",
   "com.twitter" %% "util-collection" % "6.27.0",
   "org.mongodb.morphia" % "morphia" % morphiaVersion,
   "org.mongodb.morphia" % "morphia-validation" % morphiaVersion
