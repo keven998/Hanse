@@ -1,7 +1,6 @@
 package com.lvxingpai.model.marketplace
 
-
-import java.util.{List => JList}
+import java.util.{ List => JList }
 
 import com.lvxingpai.model.geo.Country
 import org.hibernate.validator.constraints.Length
@@ -17,30 +16,30 @@ import scala.beans.BeanProperty
 @Embedded
 class RealNameInfo {
 
-//  /**
-//   * 实名认证的状态
-//   */
-//  object VeriStatus {
-//    /**
-//     * 未经过实名认证
-//     */
-//    val Unverified = "unverified"
-//
-//    /**
-//     * 已提交认证申请
-//     */
-//    val Applied = "applied"
-//
-//    /**
-//     * 通过了实名认证
-//     */
-//    val Verified = "verified"
-//
-//    /**
-//     * 实名认证被拒绝
-//     */
-//    val Declined = "declined"
-//  }
+  //  /**
+  //   * 实名认证的状态
+  //   */
+  //  object VeriStatus {
+  //    /**
+  //     * 未经过实名认证
+  //     */
+  //    val Unverified = "unverified"
+  //
+  //    /**
+  //     * 已提交认证申请
+  //     */
+  //    val Applied = "applied"
+  //
+  //    /**
+  //     * 通过了实名认证
+  //     */
+  //    val Verified = "verified"
+  //
+  //    /**
+  //     * 实名认证被拒绝
+  //     */
+  //    val Declined = "declined"
+  //  }
 
   /**
    * 姓
@@ -85,5 +84,4 @@ class RealNameInfo {
   @BeanProperty
   var updateTime: Long = 0
 }
-
 

@@ -1,6 +1,6 @@
 package com.lvxingpai.model.marketplace
 
-import javax.validation.constraints.{Max, Min, NotNull}
+import javax.validation.constraints.{ Max, Min, NotNull }
 
 import org.hibernate.validator.constraints.NotBlank
 import org.mongodb.morphia.annotations.Id

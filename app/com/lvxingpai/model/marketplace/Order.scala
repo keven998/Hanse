@@ -1,10 +1,10 @@
 package com.lvxingpai.model.marketplace
 
 import java.util
-import javax.validation.constraints.{Min, NotNull}
+import javax.validation.constraints.{ Min, NotNull }
 
 import org.bson.types.ObjectId
-import org.mongodb.morphia.annotations.{Entity, Id}
+import org.mongodb.morphia.annotations.{ Entity, Id }
 
 import scala.beans.BeanProperty
 
@@ -15,7 +15,7 @@ import scala.beans.BeanProperty
 @Entity
 class Order {
   @Id
-  var id:ObjectId=null
+  var id: ObjectId = null
 
   /**
    * 对应的商品

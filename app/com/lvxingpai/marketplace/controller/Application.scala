@@ -1,7 +1,7 @@
 package com.lvxingpai.marketplace.controller
 
-import play.api.mvc.{Action, Controller, Results}
-
+import play.api.mvc.{ Action, Controller, Results }
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**

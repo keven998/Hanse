@@ -12,10 +12,10 @@ class PhoneNumber {
   /**
    * 国家代码
    */
-  var countryCode:Int=86
+  var countryCode: Int = 86
 
   /**
    * 电话号码
    */
-  var nationalNumber:Long=0
+  var nationalNumber: Long = 0
 }

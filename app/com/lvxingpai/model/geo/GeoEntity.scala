@@ -2,7 +2,7 @@ package com.lvxingpai.model.geo
 
 import org.bson.types.ObjectId
 import org.hibernate.validator.constraints.NotBlank
-import org.mongodb.morphia.annotations.{Entity, Id}
+import org.mongodb.morphia.annotations.{ Entity, Id }
 
 import scala.beans.BeanProperty
 

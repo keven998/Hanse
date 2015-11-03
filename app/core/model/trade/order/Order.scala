@@ -15,6 +15,12 @@ import scala.beans.BeanProperty
 class Order extends BasicEntity {
 
   /**
+   * 订单名称
+   */
+  @BeanProperty
+  var name: String = null
+
+  /**
    * 对应的商品
    */
   @NotNull
@@ -70,10 +76,13 @@ class Order extends BasicEntity {
   @BeanProperty
   var updateTime: Long = 0
 }
+
 object Order {
 
   val FD_ID = "id"
   val FD_COMMODITY = "commodity"
+  val FD_PAYMENTS = "payments"
+  val FD_STATUS = "status"
 
   def apply(commodity: Commodity, quantity: Int): Order = {
     val order = new Order

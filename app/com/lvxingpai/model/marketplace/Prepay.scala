@@ -1,7 +1,6 @@
 package com.lvxingpai.model.marketplace
 
-
-import javax.validation.constraints.{Min, NotNull}
+import javax.validation.constraints.{ Min, NotNull }
 
 import org.mongodb.morphia.annotations.Embedded
 

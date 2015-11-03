@@ -1,10 +1,10 @@
 package com.lvxingpai.model.marketplace
 
-import java.util.{List => JList}
+import java.util.{ List => JList }
 
 import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.misc.PhoneNumber
-import org.hibernate.validator.constraints.{NotBlank, Email, Length}
+import org.hibernate.validator.constraints.{ NotBlank, Email, Length }
 import org.mongodb.morphia.annotations.Entity
 
 import scala.beans.BeanProperty
@@ -34,11 +34,11 @@ class Seller {
   @BeanProperty
   var realNameInfo: RealNameInfo = null
 
-//  /**
-//   * 银行账户信息
-//   */
-//  @BeanProperty
-//  var bankAccounts: JList[BankAccount] = null
+  //  /**
+  //   * 银行账户信息
+  //   */
+  //  @BeanProperty
+  //  var bankAccounts: JList[BankAccount] = null
 
   /**
    * 店铺名称
