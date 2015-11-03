@@ -18,3 +18,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-mocha" % "1.1.0")
 // Installing sbt-scalariform
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")
+
+//
+addSbtPlugin("com.twitter" %% "scrooge-sbt-plugin" % "4.2.0")
