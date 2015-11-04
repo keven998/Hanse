@@ -1,9 +1,10 @@
 package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
-import com.lvxingpai.model.marketplace.product.{CommodityPlan, Commodity}
+import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
+import com.lvxingpai.model.marketplace.product.{ CommodityPlan, Commodity }
 import com.lvxingpai.model.marketplace.seller.Seller
+import scala.collection.JavaConversions._
 
 /**
  * Created by pengyt on 2015/11/3.

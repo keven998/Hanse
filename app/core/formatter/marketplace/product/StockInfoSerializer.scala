@@ -2,7 +2,7 @@ package core.formatter.marketplace.product
 
 import scala.collection.JavaConversions._
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{SerializerProvider, JsonSerializer}
+import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
 import com.lvxingpai.model.marketplace.product.StockInfo
 
 /**
@@ -18,8 +18,8 @@ class StockInfoSerializer extends JsonSerializer[StockInfo] {
 
     gen.writeFieldName("timeRange")
     gen.writeStartArray()
-    if(stockInfo.timeRange != null) {
-      for(t <- stockInfo.timeRange)
+    if (stockInfo.timeRange != null) {
+      for (t <- stockInfo.timeRange)
         gen.writeNumber(t.getTime)
     }
     gen.writeEndArray()

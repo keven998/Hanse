@@ -1,12 +1,12 @@
 package core.formatter.marketplace.product
 
-import com.lvxingpai.model.marketplace.product.{StockInfo, Pricing, Commodity, CommodityPlan}
-import com.lvxingpai.model.marketplace.seller.{BankAccount, Seller}
+import com.lvxingpai.model.marketplace.product.{ StockInfo, Pricing, Commodity, CommodityPlan }
+import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.PhoneNumber
 import core.formatter.BaseFormatter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
-import core.formatter.marketplace.seller.{BankAccountSerializer, SellerSerializer}
+import core.formatter.marketplace.seller.{ BankAccountSerializer, SellerSerializer }
 import core.formatter.misc.PhoneNumberSerializer
 
 /**

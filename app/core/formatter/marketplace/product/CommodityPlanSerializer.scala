@@ -1,8 +1,8 @@
 package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{SerializerProvider, JsonSerializer}
-import com.lvxingpai.model.marketplace.product.{StockInfo, Pricing, CommodityPlan}
+import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
+import com.lvxingpai.model.marketplace.product.{ StockInfo, Pricing, CommodityPlan }
 import scala.collection.JavaConversions._
 
 /**
@@ -14,9 +14,9 @@ class CommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
     gen.writeStartObject()
 
     gen.writeStringField("planId", commodityPlan.planId)
-    if(commodityPlan.title != null)
+    if (commodityPlan.title != null)
       gen.writeStringField("title", commodityPlan.title)
-    if(commodityPlan.desc != null)
+    if (commodityPlan.desc != null)
       gen.writeStringField("desc", commodityPlan.desc)
 
     gen.writeFieldName("pricing")
@@ -46,8 +46,8 @@ class CommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
 
     gen.writeFieldName("timeRange")
     gen.writeStartArray()
-    if(commodityPlan.timeRange != null) {
-      for(t <- commodityPlan.timeRange)
+    if (commodityPlan.timeRange != null) {
+      for (t <- commodityPlan.timeRange)
         gen.writeNumber(t.getTime)
     }
     gen.writeEndArray()

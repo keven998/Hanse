@@ -1,9 +1,9 @@
 package core.formatter.marketplace.seller
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
+import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.geo.GeoEntity
-import com.lvxingpai.model.marketplace.seller.{BankAccount, Seller}
+import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.PhoneNumber
 import scala.collection.JavaConversions._
 
@@ -19,8 +19,8 @@ class SellerSerializer extends JsonSerializer[Seller] {
 
     gen.writeFieldName("lang")
     gen.writeStartArray()
-    if(seller.lang != null) {
-      for(l: String <- seller.lang)
+    if (seller.lang != null) {
+      for (l: String <- seller.lang)
         gen.writeString(l)
     }
     gen.writeEndArray()
@@ -52,8 +52,8 @@ class SellerSerializer extends JsonSerializer[Seller] {
 
     gen.writeFieldName("email")
     gen.writeStartArray()
-    if(seller.email != null) {
-      for(e <- seller.email)
+    if (seller.email != null) {
+      for (e <- seller.email)
         gen.writeString(e)
     }
     gen.writeEndArray()
@@ -69,7 +69,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
     }
     gen.writeEndArray()
 
-    if(seller.address != null)
+    if (seller.address != null)
       gen.writeStringField("address", seller.address)
 
     gen.writeNumberField("favorCnt", seller.favorCnt)

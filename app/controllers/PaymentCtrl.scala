@@ -18,11 +18,6 @@ import scala.xml.NodeSeq
 @Singleton
 class PaymentCtrl extends Controller {
 
-object Global {
-  val ds: Datastore = play.api.Play.application.injector.instanceOf(classOf[Datastore])
-  new Application(ds)
-}
-
   def createPayments(orderId: String) = Action.async(
     request => {
       val ret = for {
