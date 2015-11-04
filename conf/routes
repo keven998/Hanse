@@ -12,7 +12,7 @@ GET         /assets/*file                   controllers.Assets.versioned(path="/
 POST        /commodities                    @controllers.TradeCtrl.createCommodity()
 
 # 商品详情
-GET         /commodities/$cmyid<[0-9a-f]{24}>               @controllers.CommodityCtrl.getCommodityDetail(cmyid: String)
+GET         /commodities/$cmyid<\d+>               @controllers.CommodityCtrl.getCommodityDetail(cmyid: Long)
 
 # 获取商品列表
 #GET         /commodities
