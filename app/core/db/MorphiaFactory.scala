@@ -1,5 +1,6 @@
 package core.db
 
+import com.lvxingpai.model.marketplace.seller.Seller
 import com.mongodb._
 import core.misc.Global
 import core.model.trade.order.{ Prepay, Order }
@@ -15,7 +16,7 @@ object MorphiaFactory {
 
   lazy val morphia = {
     val m = new Morphia()
-    m.map(classOf[Order], classOf[Prepay])
+    m.map(classOf[Order], classOf[Prepay], classOf[Seller])
     m
   }
 

@@ -6,7 +6,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.6"
 val morphiaVersion = "1.0.0"
-val finagleVersion = "6.25.0"
+val finagleVersion = "6.30.0"
 
 libraryDependencies ++= Seq(
   jdbc,

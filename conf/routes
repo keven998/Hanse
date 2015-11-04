@@ -6,10 +6,10 @@
 #GET        /                    controllers.Application.index
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file                   controllers.Assets.versioned(path="/public", file: Asset)
 
 # 创建商品
-POST        /commodities                   @controllers.TradeCtrl.createCommodity()
+POST        /commodities                    @controllers.TradeCtrl.createCommodity()
 
 # 获取商品列表
 #GET         /commodities
@@ -19,19 +19,26 @@ POST        /commodities                   @controllers.TradeCtrl.createCommodit
 #REST
 
 # 创建订单
-POST        /orders                        @controllers.TradeCtrl.createOrder()
+POST        /orders                         @controllers.TradeCtrl.createOrder()
 # GET         /privateKey          @controllers.TradeCtrl.privateKey()
 
 #----------支付接口----------
 #微信预支付
-POST        /orders/:id/payments           @controllers.PaymentCtrl.createPayments(id:String)
+POST        /orders/:id/payments            @controllers.PaymentCtrl.createPayments(id:String)
 #查询订单
-GET         /orders/:id/payments           @controllers.PaymentCtrl.getPayments(id:String)
+GET         /orders/:id/payments            @controllers.PaymentCtrl.getPayments(id:String)
 #微信回调
-POST        /payment-webhook/wechat        @controllers.PaymentCtrl.wechatCallback()
+POST        /payment-webhook/wechat         @controllers.PaymentCtrl.wechatCallback()
 
 # 预支付
-POST        /prePay                        @controllers.TradeCtrl.prePay()
+POST        /prePay                         @controllers.TradeCtrl.prePay()
 # 支付结果回调
-POST        /notifyResult                  @controllers.TradeCtrl.notifyResult()
+POST        /notifyResult                   @controllers.TradeCtrl.notifyResult()
+
+#----------商家接口----------
+#商家详情
+GET         /sellers/:id/                   @controllers.SellerCtrl.getSeller(id:String)
+#商家的商品列表
+GET         /sellers/:id/commodities        @controllers.SellerCtrl.getCommoditiesOfSeller(id:String)
+
 
