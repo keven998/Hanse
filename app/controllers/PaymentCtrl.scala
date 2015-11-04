@@ -8,6 +8,7 @@ import core.misc.Implicits._
 import core.model.trade.order._
 import core.service.PaymentService
 import org.bson.types.ObjectId
+import org.mongodb.morphia.Datastore
 import play.api.mvc.{ Action, Controller }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,6 +17,11 @@ import scala.xml.NodeSeq
 
 @Singleton
 class PaymentCtrl extends Controller {
+
+object Global {
+  val ds: Datastore = play.api.Play.application.injector.instanceOf(classOf[Datastore])
+  new Application(ds)
+}
 
   def createPayments(orderId: String) = Action.async(
     request => {

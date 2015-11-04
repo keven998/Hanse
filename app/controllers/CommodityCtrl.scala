@@ -19,7 +19,7 @@ class CommodityCtrl extends Controller {
   def getCommodityDetail(commodityId: String) = Action.async(
     request => {
       val cmyFormatter = null
-      val cmyInfo = for{
+      val cmyInfo = for {
         cmy <- CommodityAPI.getCommodityById(commodityId)
       } yield cmy
 
