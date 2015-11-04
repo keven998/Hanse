@@ -1,7 +1,7 @@
 package controllers
 
 import com.fasterxml.jackson.databind.JsonNode
-import core.api.CommodityAPI
+import core.api.CommodityAPINew
 import core.misc.HanseResult
 import play.api.mvc.{ Action, Controller }
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,11 +17,11 @@ class CommodityCtrl extends Controller {
    * @param commodityId 商品Id
    * @return 商品详细信息
    */
-  def getCommodityDetail(commodityId: String) = Action.async(
+  def getCommodityDetail(commodityId: Long) = Action.async(
     request => {
       val commodityMapper = (new CommodityFormatter).objectMapper
       for {
-        cmy <- CommodityAPI.getCommodityById(commodityId)
+        cmy <- CommodityAPINew.getCommodityById(commodityId)
       } yield {
         val node = commodityMapper.valueToTree[JsonNode](cmy)
         HanseResult(data = Some(node))

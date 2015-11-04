@@ -26,6 +26,9 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
 
     gen.writeStringField("title", commodity.title)
 
+    if (commodity.desc != null)
+      gen.writeStringField("desc", commodity.desc)
+
     // 商品套餐
     gen.writeFieldName("plans")
     gen.writeStartArray()
