@@ -8,7 +8,6 @@ import scala.concurrent.Future
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-
 /**
  * Created by topy on 2015/11/3.
  */

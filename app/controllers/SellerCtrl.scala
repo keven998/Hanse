@@ -7,6 +7,7 @@ import core.api.SellerAPI
 import core.finagle.FinagleFactory
 import play.api.mvc.{ Action, Controller }
 import core.misc.Implicits._
+import core.misc.Implicits.TwitterConverter._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**

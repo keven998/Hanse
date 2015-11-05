@@ -43,7 +43,8 @@ class TradeCtrl extends Controller {
         node.put("title", cmy.title)
         HanseResult(data = Some(node))
       }
-    })
+    }
+  )
 
   /**
    * 创建订单
@@ -78,7 +79,8 @@ class TradeCtrl extends Controller {
           HanseResult(data = Some(node))
         }
       }
-    })
+    }
+  )
 
   /**
    * 预支付
@@ -104,7 +106,8 @@ class TradeCtrl extends Controller {
           HanseResult(data = Some(node))
         }
       }
-    })
+    }
+  )
 
   /**
    * 根据订单号查询订单的支付结果, 如果支付成功, 直接返回, 如果不成功, 主动请求支付宝查询接口, 如果支付成功则修改订单状态, 否则直接返回未支付
@@ -125,7 +128,8 @@ class TradeCtrl extends Controller {
         node.put("status", status)
         HanseResult(data = Some(node))
       }
-    })
+    }
+  )
 
   /**
    * 支付宝回调接口
@@ -168,5 +172,6 @@ class TradeCtrl extends Controller {
           HanseResult.forbidden(HanseResult.RetCode.FORBIDDEN, errorMsg = Some("invaild request"))
         }
       }
-    })
+    }
+  )
 }

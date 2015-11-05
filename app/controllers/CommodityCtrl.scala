@@ -26,5 +26,6 @@ class CommodityCtrl extends Controller {
         val node = commodityMapper.valueToTree[JsonNode](cmy)
         HanseResult(data = Some(node))
       }
-    })
+    }
+  )
 }

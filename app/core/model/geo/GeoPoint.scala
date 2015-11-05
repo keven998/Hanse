@@ -9,6 +9,8 @@ import scala.beans.BeanProperty
  *
  * Created by pengyt on 2015/10/19.
  */
-case class GeoPoint(@Min(value = -90)@Max(value = 90)@BeanProperty lat: Double,
-  @Min(value = -180)@Max(value = 180)@BeanProperty lng: Double) extends GeoLocation
+case class GeoPoint(
+  @Min(value = -90)@Max(value = 90)@BeanProperty lat: Double,
+  @Min(value = -180)@Max(value = 180)@BeanProperty lng: Double
+) extends GeoLocation
 

@@ -31,14 +31,18 @@ class PaymentCtrl extends Controller {
         for {
           orderValue <- OrderAPI.getOrder(new ObjectId(orderId))
           wcResponse <- PaymentService.unifiedOrder(
-            Map(WechatPrepay.FD_OUT_TRADE_NO -> orderId,
+            Map(
+              WechatPrepay.FD_OUT_TRADE_NO -> orderId,
               WechatPrepay.FD_SPBILL_CREATE_IP -> ip,
               WechatPrepay.FD_BODY -> name,
               WechatPrepay.FD_TRADE_TYPE -> tradeType,
-              WechatPrepay.FD_TOTAL_FEE -> (orderValue.getTotalPrice * 100).toInt))
+              WechatPrepay.FD_TOTAL_FEE -> (orderValue.getTotalPrice * 100).toInt
+            )
+          )
           result <- OrderAPI.savePrepay(
             PaymentService.xml2Obj(new String(wcResponse.bodyAsBytes, "UTF8")),
-            orderValue)
+            orderValue
+          )
         } yield {
           val str = new String(wcResponse.bodyAsBytes, "UTF8")
           Ok(str)
@@ -153,7 +157,8 @@ class PaymentCtrl extends Controller {
         orderValue <- OrderAPI.getOrder(new ObjectId(orderId))
         wcResponse <- PaymentService.queryOrder(
           Map(WechatPrepay.FD_TRANSACTION_ID ->
-            orderValue.getPayments.get(PaymentVendor.Wechat).getPrepayId))
+            orderValue.getPayments.get(PaymentVendor.Wechat).getPrepayId)
+        )
       } yield {
         val str = orderValue.getStatus
         Ok(str)
@@ -168,7 +173,8 @@ class PaymentCtrl extends Controller {
         orderValue <- OrderAPI.getOrder(new ObjectId(orderId))
         wcResponse <- PaymentService.queryOrder(
           Map(WechatPrepay.FD_TRANSACTION_ID ->
-            orderValue.getPayments.get(PaymentVendor.Wechat).getPrepayId))
+            orderValue.getPayments.get(PaymentVendor.Wechat).getPrepayId)
+        )
       } yield {
         val str = orderValue.getStatus
         Ok(str)
