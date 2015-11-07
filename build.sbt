@@ -15,8 +15,9 @@ libraryDependencies ++= Seq(
   cache,
   ws,
   specs2 % Test,
-  "com.lvxingpai" %% "appconfig" % "0.2.1-SNAPSHOT",
   "com.lvxingpai" %% "core-model" % "0.1.2-SNAPSHOT",
+  "com.lvxingpai" %% "etcd-store-play" % "0.1.1-SNAPSHOT",
+  "com.lvxingpai" %% "morphia-play-injector" % "0.1.3-SNAPSHOT",
   "org.mongodb.morphia" % "morphia" % morphiaVersion,
   "org.mongodb.morphia" % "morphia-validation" % morphiaVersion,
   //thrift

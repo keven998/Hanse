@@ -8,6 +8,8 @@
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                   controllers.Assets.versioned(path="/public", file: Asset)
 
+GET         /ping                           @controllers.Application.ping
+
 # 创建商品
 POST        /commodities                    @controllers.TradeCtrl.createCommodity()
 
