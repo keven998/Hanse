@@ -1,7 +1,6 @@
 package core.misc
 
 import com.twitter.{ util => twitter }
-import core.db.MorphiaFactory
 
 import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.language.implicitConversions
@@ -12,8 +11,6 @@ import scala.xml.{ Elem, Node, NodeSeq }
  * Created by zephyre on 7/10/15.
  */
 object Implicits {
-
-  implicit lazy val ds = MorphiaFactory.datastore
 
   implicit def long2String(v: Long) = {
     v.toString

@@ -5,6 +5,7 @@ import java.net.InetSocketAddress
 import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.thrift.ThriftClientFramedCodec
+import com.typesafe.config.ConfigFactory
 import core.misc.Global
 import org.apache.thrift.protocol.TBinaryProtocol
 
@@ -14,6 +15,7 @@ import org.apache.thrift.protocol.TBinaryProtocol
 object FinagleFactory {
 
   lazy val client = {
+    val e = ConfigFactory.load()
     val conf = Global.conf
     val backends = conf.getConfig("backends.yunkai").get
     val services = backends.subKeys.toSeq map (backends.getConfig(_).get)

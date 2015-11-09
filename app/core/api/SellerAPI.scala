@@ -4,9 +4,9 @@ import com.lvxingpai.model.marketplace.seller.Seller
 import core.model.trade.product.Commodity
 import org.mongodb.morphia.Datastore
 
-import scala.concurrent.Future
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by topy on 2015/11/3.
@@ -15,7 +15,8 @@ object SellerAPI {
 
   def getSeller(id: Long)(implicit ds: Datastore): Future[Seller] = {
     Future {
-      ds.find(classOf[Seller], "id", id).get
+      //ds.createQuery(classOf[Seller]).field("id").equal(id).get
+      ds.find(classOf[Seller], "_id", id).get
     }
   }
 

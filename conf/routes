@@ -14,7 +14,7 @@ GET         /ping                           @controllers.Application.ping
 POST        /commodities                    @controllers.TradeCtrl.createCommodity()
 
 # 商品详情
-GET         /commodities/$cmyid<\d+>               @controllers.CommodityCtrl.getCommodityDetail(cmyid: Long)
+GET         /commodities/$cmyid<\d+>        @controllers.CommodityCtrl.getCommodityDetail(cmyid: Long)
 
 # 获取商品列表
 #GET         /commodities
@@ -42,7 +42,7 @@ POST        /notifyResult                   @controllers.TradeCtrl.notifyResult(
 
 #----------商家接口----------
 #商家详情
-GET         /sellers/:id/                   @controllers.SellerCtrl.getSeller(id:String)
+GET         /sellers/:id/                   @controllers.SellerCtrl.getSeller(id:Long)
 #商家的商品列表
 GET         /sellers/:id/commodities        @controllers.SellerCtrl.getCommoditiesOfSeller(id:String)
 
