@@ -1,21 +1,20 @@
-package core.formatter.misc
+package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.lvxingpai.model.marketplace.product.Commodity
 import core.formatter.BaseFormatter
-import core.model.misc.ColumnGroup
 
 /**
  * Created by pengyt on 2015/11/13.
  */
-class ColumnGroupFormatter extends BaseFormatter {
+class SimpleCommodityFormatter extends BaseFormatter {
 
   override val objectMapper = {
     val mapper = new ObjectMapper()
     val module = new SimpleModule()
-    module.addSerializer(classOf[ColumnGroup], new ColumnGroupSerializer)
+    module.addSerializer(classOf[Commodity], new SimpleCommoditySerializer)
     mapper.registerModule(module)
     mapper
   }
 }
-

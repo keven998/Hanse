@@ -3,9 +3,9 @@ package controllers
 import javax.inject._
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import core.api.{CommodityAPI, OrderAPI}
+import core.api.{ CommodityAPI, OrderAPI }
 import core.misc.HanseResult
-import play.api.mvc.{Action, Controller, Results}
+import play.api.mvc.{ Action, Controller, Results }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -172,7 +172,13 @@ class TradeCtrl extends Controller {
     }
   )
 
-  def testhanse(): Unit = {
+  def testhanse() = Action.async(
+    request => {
       println("牛逼, 测试成功!")
+
+      Future {
+        null
+      }
     }
+  )
 }

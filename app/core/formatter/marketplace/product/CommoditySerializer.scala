@@ -14,7 +14,8 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
   override def serialize(commodity: Commodity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeNumberField("id", commodity.id)
+    gen.writeStringField("id", commodity.id.toString)
+    gen.writeNumberField("commodityId", commodity.commodityId)
 
     // 商家
     gen.writeFieldName("seller")
@@ -26,8 +27,8 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
 
     gen.writeStringField("title", commodity.title)
 
-    if (commodity.desc != null)
-      gen.writeStringField("desc", commodity.desc)
+    //    if (commodity.desc != null)
+    //      gen.writeStringField("desc", commodity.desc)
 
     // 商品套餐
     gen.writeFieldName("plans")

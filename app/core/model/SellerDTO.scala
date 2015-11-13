@@ -28,7 +28,7 @@ object SellerDTO {
     sDTO.signature = u.signature.getOrElse("")
     sDTO.userPhone = u.tel.getOrElse("")
     sDTO.id = s.id
-    sDTO.shopTitle = s.shopTitle
+    sDTO.name = s.name
     sDTO.lang = s.lang
     sDTO.serviceZones = s.serviceZones
     sDTO.phone = s.phone
@@ -41,8 +41,8 @@ object SellerDTO {
     sDTO.avatar = ""
     sDTO.nickName = ""
     sDTO.signature = ""
-    sDTO.id = s.id
-    sDTO.shopTitle = s.shopTitle
+    sDTO.sellerId = s.sellerId
+    sDTO.name = s.name
     sDTO.lang = s.lang
     sDTO.serviceZones = s.serviceZones
     sDTO.phone = s.phone

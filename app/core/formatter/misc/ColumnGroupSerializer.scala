@@ -1,13 +1,13 @@
 package core.formatter.misc
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{SerializerProvider, JsonSerializer}
-import core.model.misc.{Column, ColumnGroup}
+import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
+import core.model.misc.{ Column, ColumnGroup }
 
 /**
  * Created by pengyt on 2015/11/13.
  */
-class ColumnGroupSerializer  extends JsonSerializer[ColumnGroup] {
+class ColumnGroupSerializer extends JsonSerializer[ColumnGroup] {
 
   override def serialize(columnGroup: ColumnGroup, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
