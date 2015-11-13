@@ -3,15 +3,12 @@ package controllers
 import javax.inject._
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import core.api.{ CommodityAPI, OrderAPI }
+import core.api.{CommodityAPI, OrderAPI}
 import core.misc.HanseResult
-import core.model.trade.order.{ OrderStatus, Order }
-import core.sign.{ Base64, RSA }
-import org.bson.types.ObjectId
-import play.api.mvc.{ Results, Action, Controller }
+import play.api.mvc.{Action, Controller, Results}
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by topy on 2015/10/22.
@@ -174,4 +171,8 @@ class TradeCtrl extends Controller {
       }
     }
   )
+
+  def testhanse(): Unit = {
+      println("牛逼, 测试成功!")
+    }
 }

@@ -46,4 +46,8 @@ GET         /sellers/:id/                   @controllers.SellerCtrl.getSeller(id
 #商家的商品列表
 GET         /sellers/:id/commodities        @controllers.SellerCtrl.getCommoditiesOfSeller(id:String)
 
+#测试接口转发
+GET         /testhanse                      @controllers.TradeCtrl.testhanse()
 
+#首页专题
+GET         /columns                        @controllers.MiscCtrl.getColumns(columnType: String)
