@@ -14,7 +14,7 @@ GET         /ping                           @controllers.Application.ping
 POST        /commodities                    @controllers.TradeCtrl.createCommodity()
 
 # 商品详情
-GET         /commodities/$cmyid<\d+>        @controllers.CommodityCtrl.getCommodityDetail(cmyid: Long)
+GET         /commodities/$commodityId<\d+>  @controllers.CommodityCtrl.getCommodityDetail(commodityId: Long)
 
 # 获取商品列表
 #GET         /commodities
@@ -53,7 +53,7 @@ GET         /testhanse                      @controllers.TradeCtrl.testhanse()
 GET         /columns                        @controllers.MiscCtrl.getColumns()
 
 #首页专题商品列表
-GET          /columns/commodities           @controllers.MiscCtrl.getSpecialCommodities(topicType: String)
+GET         /columns/commodities            @controllers.MiscCtrl.getSpecialCommodities(topicType: String)
 
 #首页推荐商品列表
-GET          /recommend                     @controllers.MiscCtrl.getRecommendCommodities()
+GET         /recommend                      @controllers.MiscCtrl.getRecommendCommodities()

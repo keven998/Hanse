@@ -27,9 +27,9 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
     request => {
       val commodityMapper = (new CommodityFormatter).objectMapper
       for {
-        cmy <- CommodityAPINew.getCommodityById(commodityId)
+        commodity <- CommodityAPINew.getCommodityById(commodityId)
       } yield {
-        val node = commodityMapper.valueToTree[JsonNode](cmy)
+        val node = commodityMapper.valueToTree[JsonNode](commodity)
         HanseResult(data = Some(node))
       }
     }
