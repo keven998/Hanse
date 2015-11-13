@@ -1,6 +1,6 @@
 package controllers
 
-import com.fasterxml.jackson.databind.{ ObjectMapper, JsonNode }
+import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import core.api.MiscAPI
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnGroupFormatter
@@ -8,7 +8,6 @@ import core.misc.HanseResult
 import core.model.misc.ColumnGroup
 import play.api.mvc.{ Action, Controller }
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -68,8 +67,36 @@ class MiscCtrl extends Controller {
    */
   def getRecommendCommodities() = Action.async(
     request => {
-      Future {
-        null
+      val arrayNode = new ObjectMapper().createArrayNode()
+
+      val simpleCommodityMapper = new SimpleCommodityFormatter().objectMapper
+      for {
+        discountCommodities <- MiscAPI.getSpecialCommodities("discount")
+        editRecommendCommodities <- MiscAPI.getSpecialCommodities("editRecommend")
+        hotPlayCommodities <- MiscAPI.getSpecialCommodities("hotPlay")
+      } yield {
+        if (discountCommodities != null && discountCommodities.nonEmpty) {
+          val node = new ObjectMapper().createObjectNode()
+          node.put("recommendType", "discount")
+          node.put("topicTitle", discountCommodities.head.topicTitle)
+          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](discountCommodities))
+          arrayNode.add(node)
+        }
+        if (editRecommendCommodities != null && editRecommendCommodities.nonEmpty) {
+          val node = new ObjectMapper().createObjectNode()
+          node.put("recommendType", "editRecommend")
+          node.put("topicTitle", editRecommendCommodities.head.topicTitle)
+          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](editRecommendCommodities))
+          arrayNode.add(node)
+        }
+        if (hotPlayCommodities != null && hotPlayCommodities.nonEmpty) {
+          val node = new ObjectMapper().createObjectNode()
+          node.put("recommendType", "hotPlay")
+          node.put("topicTitle", hotPlayCommodities.head.topicTitle)
+          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](hotPlayCommodities))
+          arrayNode.add(node)
+        }
+        HanseResult(data = Some(arrayNode))
       }
     }
   )
