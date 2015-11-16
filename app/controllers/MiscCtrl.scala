@@ -1,7 +1,7 @@
 package controllers
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
-import core.api.MiscAPI
+import core.api.{ CommodityAPINew, MiscAPI }
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnGroupFormatter
 import core.misc.HanseResult
@@ -97,6 +97,24 @@ class MiscCtrl extends Controller {
           arrayNode.add(node)
         }
         HanseResult(data = Some(arrayNode))
+      }
+    }
+  )
+
+  /**
+   * 根据目的地id查找商品分类。对目的地的所有商品遍历查找商品的去重分类，放置缓存中，每隔一段时间更新一次缓存
+   * @param localityId 目的地id
+   * @return 分类列表
+   */
+  def getCommodityCategoryList(localityId: String) = Action.async(
+    request => {
+      val node = new ObjectMapper().createObjectNode()
+      for {
+        category <- CommodityAPINew.getCommodityCategoryList(localityId)
+      } yield {
+        node.put("locality", localityId)
+        node.set("category", new ObjectMapper().valueToTree(category))
+        HanseResult(data = Some(node))
       }
     }
   )
