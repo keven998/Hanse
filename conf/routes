@@ -69,3 +69,6 @@ GET         /commodities/$localityId<\d+>/category        @controllers.MiscCtrl.
 
 #目的地商品列表
 GET         /commodities/$localityId<\d+>                 @controllers.CommodityCtrl.getCommoditiesByLocalityId(localityId: String, sortBy: String, sort: String, start: Int, count: Int)
+
+#添加旅客信息
+POST        /traveller                                    @controllers.TravellerCtrl.addTraveller()
