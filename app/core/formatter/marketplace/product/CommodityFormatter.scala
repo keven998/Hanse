@@ -3,11 +3,11 @@ package core.formatter.marketplace.product
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.lvxingpai.model.marketplace.product.Commodity
-import com.lvxingpai.model.marketplace.seller.{BankAccount, Seller}
-import com.lvxingpai.model.misc.{PhoneNumber, RichText}
+import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
+import com.lvxingpai.model.misc.{ PhoneNumber, RichText }
 import core.formatter.BaseFormatter
-import core.formatter.marketplace.seller.{BankAccountSerializer, SellerSerializer}
-import core.formatter.misc.{PhoneNumberSerializer, RichTextSerializer}
+import core.formatter.marketplace.seller.{ BankAccountSerializer, SellerSerializer }
+import core.formatter.misc.{ PhoneNumberSerializer, RichTextSerializer }
 
 /**
  * Created by pengyt on 2015/11/3.

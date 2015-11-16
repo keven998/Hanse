@@ -14,7 +14,7 @@ class ColumnGroupSerializer extends JsonSerializer[ColumnGroup] {
 
     gen.writeStringField("columnType", columnGroup.columnType)
 
-    // images
+    // columns
     gen.writeFieldName("columns")
     gen.writeStartArray()
     val columns = columnGroup.columns

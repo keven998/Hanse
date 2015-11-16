@@ -9,7 +9,7 @@ import core.misc.HanseResult
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
 import scala.concurrent.ExecutionContext.Implicits.global
-import core.formatter.marketplace.product.CommodityFormatter
+import core.formatter.marketplace.product.{ SimpleCommodityFormatter, CommodityFormatter }
 
 /**
  * Created by pengyt on 2015/11/3.
@@ -30,6 +30,28 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         commodity <- CommodityAPINew.getCommodityById(commodityId)
       } yield {
         val node = commodityMapper.valueToTree[JsonNode](commodity)
+        HanseResult(data = Some(node))
+      }
+    }
+  )
+
+  /**
+   * 根据店铺id查找商品列表
+   * @param sellerId 店铺id
+   * @param sortBy 比如：按照销量排序
+   * @param sort 正序或者逆序
+   * @param start 返回商品列表的起始位置
+   * @param count 返回商品的个数
+   * @return 返回商品列表
+   */
+  def getCommodities(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int) = Action.async(
+    request => {
+
+      val commodityObjectMapper = new SimpleCommodityFormatter().objectMapper
+      for {
+        commodities <- CommodityAPINew.getCommodities(sellerId, sortBy, sort, start, count)
+      } yield {
+        val node = commodityObjectMapper.valueToTree[JsonNode](commodities)
         HanseResult(data = Some(node))
       }
     }
