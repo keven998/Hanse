@@ -49,4 +49,20 @@ object TravellerAPI {
       key -> person
     }
   }
+
+  /**
+   * 删除旅客信息
+   * @param userId 用户id
+   * @param key 旅客信息键值
+   * @return 空
+   */
+  def deleteTraveller(userId: Long, key: String): Future[String] = {
+
+    val query = ds.createQuery(classOf[UserInfo])
+    val opsRm = ds.createUpdateOperations(classOf[UserInfo]).removeAll("travellers", key)
+    Future {
+      ds.updateFirst(query, opsRm)
+      key
+    }
+  }
 }

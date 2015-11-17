@@ -66,7 +66,11 @@ class TravellerCtrl extends Controller {
     }
   )
 
-  def updateTraveller() = Action.async(
+  /**
+   * 更新旅客信息
+   * @return 旅客信息和key
+   */
+  def updateTraveller(key: String) = Action.async(
     request => {
 
       val person = new Person()
@@ -74,6 +78,7 @@ class TravellerCtrl extends Controller {
       val ret = for {
         body <- request.body.asJson
         userId <- (body \ "userId").asOpt[Long]
+        key <- (body \ "key").asOpt[String]
         surname <- (body \ "surname").asOpt[String]
         givenName <- (body \ "givenName").asOpt[String]
         gender <- (body \ "gender").asOpt[String]
@@ -98,10 +103,40 @@ class TravellerCtrl extends Controller {
       }
       if (ret.nonEmpty) {
         for {
-          traveller <- TravellerAPI.addTraveller(ret.get._1, ret.get._2)
+          traveller <- TravellerAPI.updateTraveller(ret.get._1, key, ret.get._2)
         } yield {
-          node.put("key", traveller._1)
+          node.put("key", key)
           //            node.set("traveller", personNode)
+          HanseResult(data = Some(node))
+        }
+      } else {
+        Future {
+          HanseResult(data = Some(node))
+        }
+      }
+
+    }
+  )
+
+  /**
+   * 删除旅客信息
+   * @return key
+   */
+  def deleteTraveller(key: String) = Action.async(
+    request => {
+
+      val node = new ObjectMapper().createObjectNode()
+      val ret = for {
+        body <- request.body.asJson
+        userId <- (body \ "userId").asOpt[Long]
+      } yield {
+        userId
+      }
+      if (ret.nonEmpty) {
+        for {
+          key <- TravellerAPI.deleteTraveller(ret.get, key)
+        } yield {
+          node.put("key", key)
           HanseResult(data = Some(node))
         }
       } else {
