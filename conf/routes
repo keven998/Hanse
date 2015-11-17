@@ -72,3 +72,6 @@ GET         /commodities/$localityId<\d+>                 @controllers.Commodity
 
 #添加旅客信息
 POST        /traveller                                    @controllers.TravellerCtrl.addTraveller()
+
+#修改旅客信息
+PUT         /traveller/travellerId                        @controllers.TravellerCtrl.updateTraveller()

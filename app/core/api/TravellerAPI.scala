@@ -31,4 +31,22 @@ object TravellerAPI {
       key -> person
     }
   }
+
+  /**
+   * 修改旅客信息
+   * @param userId 用户id
+   * @param person 旅客信息
+   * @return 旅客键值和旅客信息
+   */
+  def updateTraveller(userId: Long, key: String, person: Person): Future[(String, Person)] = {
+
+    val query = ds.createQuery(classOf[UserInfo])
+    val opsRm = ds.createUpdateOperations(classOf[UserInfo]).removeAll("travellers", key -> person)
+    val opsAdd = ds.createUpdateOperations(classOf[UserInfo]).add("travellers", key -> person, false)
+    Future {
+      ds.findAndModify(query, opsRm, false, true)
+      ds.findAndModify(query, opsAdd, false, true)
+      key -> person
+    }
+  }
 }
