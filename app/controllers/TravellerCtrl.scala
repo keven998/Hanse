@@ -144,7 +144,69 @@ class TravellerCtrl extends Controller {
           HanseResult(data = Some(node))
         }
       }
+    }
+  )
 
+  /**
+   * 获取旅客信息
+   * @return key
+   */
+  def getTraveller(key: String) = Action.async(
+    request => {
+
+      val node = new ObjectMapper().createObjectNode()
+      val ret = for {
+        body <- request.body.asJson
+        userId <- (body \ "userId").asOpt[Long]
+      } yield {
+        userId
+      }
+      if (ret.nonEmpty) {
+        for {
+          traveller <- TravellerAPI.getTraveller(ret.get, key)
+        } yield {
+          node.put("key", key)
+          // node.set("traveller", travellerNode)
+          HanseResult(data = Some(node))
+        }
+      } else {
+        Future {
+          HanseResult(data = Some(node))
+        }
+      }
+    }
+  )
+
+  /**
+   * 获取旅客信息列表
+   * @return 旅客信息列表
+   */
+  def getTravellerList() = Action.async(
+    request => {
+      val arrayNode = new ObjectMapper().createArrayNode()
+      val node = new ObjectMapper().createObjectNode()
+      val ret = for {
+        body <- request.body.asJson
+        userId <- (body \ "userId").asOpt[Long]
+      } yield {
+        userId
+      }
+      if (ret.nonEmpty) {
+        for {
+          travellers <- TravellerAPI.getTravellerList(ret.get)
+        } yield {
+          travellers map (traveller => {
+            node.put("key", traveller._1)
+            // ....
+            arrayNode.add(node)
+          })
+          HanseResult(data = Some(arrayNode))
+        }
+      } else {
+        Future {
+          HanseResult(data = Some(arrayNode))
+        }
+      }
     }
   )
 }

@@ -65,4 +65,32 @@ object TravellerAPI {
       key
     }
   }
+
+  /**
+   * 根据用户id和旅客键值取得旅客信息
+   * @param userId 用户id
+   * @param key 旅客信息键值
+   * @return 旅客信息
+   */
+  def getTraveller(userId: Long, key: String): Future[Person] = {
+
+    val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
+
+    Future {
+      query.get().travellers(key)
+    }
+  }
+
+  /**
+   * 根据用户id取得所有旅客信息
+   * @param userId 用户id
+   * @return 旅客信息列表
+   */
+  def getTravellerList(userId: Long): Future[Map[String, Person]] = {
+
+    val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
+    Future {
+      query.get.travellers
+    }
+  }
 }
