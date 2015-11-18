@@ -25,11 +25,12 @@ class MiscCtrl extends Controller {
       val columnSlideGroup = new ColumnGroup
       val columnSpecialGroup = new ColumnGroup
       for {
-        columnsSlide <- MiscAPI.getColumns("slide")
-        columnsSpecial <- MiscAPI.getColumns("special")
+        columns <- MiscAPI.getColumns() //"slide")
       } yield {
+        val columnsSlide = columns.filter(_.columnType.equalsIgnoreCase("slide"))
         columnSlideGroup.columnType = "slide"
         columnSlideGroup.columns = columnsSlide
+        val columnsSpecial = columns.filter(_.columnType.equalsIgnoreCase("special"))
         columnSpecialGroup.columnType = "special"
         columnSpecialGroup.columns = columnsSpecial
         val node = columnGroupMapper.valueToTree[JsonNode](Seq(columnSlideGroup, columnSpecialGroup))

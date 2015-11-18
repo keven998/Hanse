@@ -16,11 +16,10 @@ object MiscAPI {
 
   /**
    * 取得运营位列表
-   * @param columnType 运营位类型
    * @return 运营位列表
    */
-  def getColumns(columnType: String): Future[Seq[Column]] = {
-    val query = ds.createQuery(classOf[Column]).field("columnType").equal(columnType)
+  def getColumns(): Future[Seq[Column]] = {
+    val query = ds.createQuery(classOf[Column])
     Future {
       if (query != null || query.isEmpty)
         query.asList().toSeq

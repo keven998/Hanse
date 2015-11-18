@@ -3,6 +3,7 @@ package controllers
 import javax.inject._
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.lvxingpai.model.marketplace.order.Person
 import core.api.{ CommodityAPI, OrderAPI }
 import core.misc.HanseResult
 import play.api.mvc.{ Action, Controller, Results }
@@ -51,8 +52,16 @@ class TradeCtrl extends Controller {
     request => {
       val cmyPara = for {
         body <- request.body.asJson
-        commodityId <- (body \ "commodityId").asOpt[String]
+        commodityId <- (body \ "commodityId").asOpt[Long]
+        planId <- (body \ "planId").asOpt[String]
+        rendezvousTime <- (body \ "rendezvousTime").asOpt[String]
         quantity <- (body \ "quantity").asOpt[Int]
+        //        travellers <- (body \ "travellers").asOpt[Array[Person]]
+        name <- (body \ "name").asOpt[Seq[String]]
+        phone <- (body \ "contact.phone").asOpt[String]
+        email <- (body \ "contact.email").asOpt[String]
+        address <- (body \ "contact.address").asOpt[String]
+        comment <- (body \ "contact.comment").asOpt[String]
       } yield commodityId -> quantity
 
       val mapper = new ObjectMapper()
