@@ -1,13 +1,9 @@
 package controllers
 
-import java.text.SimpleDateFormat
-
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
-import com.lvxingpai.model.account.Gender
 import core.api.TravellerAPI
 import core.formatter.misc.{ PersonFormatter, PersonParser }
 import core.misc.HanseResult
-import core.model.trade.order.Person
 import play.api.mvc.{ Action, Controller }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -51,49 +47,23 @@ class TravellerCtrl extends Controller {
    */
   def updateTraveller(key: String) = Action.async(
     request => {
-
-      val person = new Person()
       val node = new ObjectMapper().createObjectNode()
-      val ret = for {
+      val travellerMapper = new PersonFormatter().objectMapper
+      val result = for {
         body <- request.body.asJson
         userId <- (body \ "userId").asOpt[Long]
         key <- (body \ "key").asOpt[String]
-        surname <- (body \ "surname").asOpt[String]
-        givenName <- (body \ "givenName").asOpt[String]
-        gender <- (body \ "gender").asOpt[String]
-        birthday <- (body \ "birthday").asOpt[String]
-        idType <- (body \ "idType").asOpt[String]
-        idProof <- (body \ "idProof").asOpt[String]
       } yield {
-        person.surname = surname
-        person.givenName = givenName
-        person.gender = if (gender == "男") Gender.Male else Gender.Female
-        person.birthday = new SimpleDateFormat("yyyy-MM-dd").parse(birthday)
-        //          idType match {
-        //            case "chineseID" => val i = new ChineseID
-        //              i.number = idProof
-        //              person.idProof = i
-        //            case "passport" => val i = new Passport
-        //              i.number = idProof
-        //              i.nation = null
-        //              person.idProof = i
-        //          }
-        userId -> person
-      }
-      if (ret.nonEmpty) {
+        val person = PersonParser.apply(body.toString())
         for {
-          traveller <- TravellerAPI.updateTraveller(ret.get._1, key, ret.get._2)
+          traveller <- TravellerAPI.updateTraveller(userId, key, person)
         } yield {
-          node.put("key", key)
-          //            node.set("traveller", personNode)
-          HanseResult(data = Some(node))
-        }
-      } else {
-        Future {
+          node.put("key", traveller._1)
+          node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller._2))
           HanseResult(data = Some(node))
         }
       }
-
+      if (result.nonEmpty) result.get else Future { HanseResult.unprocessable() }
     }
   )
 
