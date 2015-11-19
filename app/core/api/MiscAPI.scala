@@ -19,13 +19,13 @@ object MiscAPI {
    * 取得运营位列表
    * @return 运营位列表
    */
-  def getColumns(): Future[Seq[Column]] = {
+  def getColumns(): Future[Map[String, Seq[Column]]] = {
     val query = ds.createQuery(classOf[Column])
     Future {
-      if (query != null || query.isEmpty)
-        query.asList().toSeq
-      else
-        Seq()
+      if (query != null || query.isEmpty) {
+        query.asList().groupBy(_.columnType) map (columnMap => columnMap._1 -> columnMap._2.toSeq)
+      } else
+        Map()
     }
   }
 

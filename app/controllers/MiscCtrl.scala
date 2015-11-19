@@ -3,9 +3,8 @@ package controllers
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import core.api.{ CommodityAPINew, MiscAPI }
 import core.formatter.marketplace.product.SimpleCommodityFormatter
-import core.formatter.misc.ColumnGroupFormatter
+import core.formatter.misc.ColumnFormatter
 import core.misc.HanseResult
-import core.model.misc.ColumnGroup
 import play.api.mvc.{ Action, Controller }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,20 +20,19 @@ class MiscCtrl extends Controller {
    */
   def getColumns() = Action.async(
     request => {
-      val columnGroupMapper = new ColumnGroupFormatter().objectMapper
-      val columnSlideGroup = new ColumnGroup
-      val columnSpecialGroup = new ColumnGroup
+      val arrayNode = new ObjectMapper().createArrayNode()
+      val columnMapper = new ColumnFormatter().objectMapper
+      val columnTypes = Seq("slide", "special")
       for {
-        columns <- MiscAPI.getColumns() //"slide")
+        columnsMap <- MiscAPI.getColumns() //"slide")
       } yield {
-        val columnsSlide = columns.filter(_.columnType.equalsIgnoreCase("slide"))
-        columnSlideGroup.columnType = "slide"
-        columnSlideGroup.columns = columnsSlide
-        val columnsSpecial = columns.filter(_.columnType.equalsIgnoreCase("special"))
-        columnSpecialGroup.columnType = "special"
-        columnSpecialGroup.columns = columnsSpecial
-        val node = columnGroupMapper.valueToTree[JsonNode](Seq(columnSlideGroup, columnSpecialGroup))
-        HanseResult(data = Some(node))
+        columnTypes map (columnType => {
+          val node = new ObjectMapper().createObjectNode()
+          node.put("columnType", columnType)
+          node.set("columns", columnMapper.valueToTree[JsonNode](columnsMap(columnType)))
+          arrayNode.add(node)
+        })
+        HanseResult(data = Some(arrayNode))
       }
     }
   )
