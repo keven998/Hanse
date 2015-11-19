@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
-import com.lvxingpai.model.misc.RichText
+import com.lvxingpai.model.misc.{ImageItem, RichText}
 
 import scala.collection.JavaConversions._
 
@@ -23,6 +23,28 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeNumberField("salesVolume", commodity.salesVolume)
     gen.writeNumberField("marketPrice", commodity.marketPrice)
     gen.writeNumberField("price", commodity.price)
+
+
+    // cagegories
+    gen.writeFieldName("category")
+    gen.writeStartArray()
+    val cagegories = commodity.category
+    if (cagegories.nonEmpty) {
+      for (cagegory <- cagegories)
+        gen.writeString(cagegory)
+    }
+    gen.writeEndArray()
+
+    // images
+    gen.writeFieldName("images")
+    gen.writeStartArray()
+    val images = commodity.images
+    if (images.nonEmpty) {
+      val ret = serializers.findValueSerializer(classOf[ImageItem], null)
+      for (image <- images)
+        ret.serialize(image, gen, serializers)
+    }
+    gen.writeEndArray()
 
     // 商家
     gen.writeFieldName("seller")
