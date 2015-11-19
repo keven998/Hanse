@@ -1,5 +1,6 @@
 package core.api
 
+import com.lvxingpai.model.geo.Country
 import core.db.MorphiaFactory
 import core.model.account.UserInfo
 import core.model.trade.order.Person
@@ -91,6 +92,16 @@ object TravellerAPI {
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {
       query.get.travellers
+    }
+  }
+
+  /**
+   * 根据国家id取得国家信息
+   */
+  def getCountryById(id: ObjectId): Future[Country] = {
+    val query = ds.createQuery(classOf[Country]).field("id").equal(id)
+    Future {
+      query.get
     }
   }
 }

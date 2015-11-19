@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
-import com.lvxingpai.model.misc.{ImageItem, RichText}
+import com.lvxingpai.model.misc.{ ImageItem, RichText }
 
 import scala.collection.JavaConversions._
 
@@ -23,7 +23,6 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeNumberField("salesVolume", commodity.salesVolume)
     gen.writeNumberField("marketPrice", commodity.marketPrice)
     gen.writeNumberField("price", commodity.price)
-
 
     // cagegories
     gen.writeFieldName("category")
