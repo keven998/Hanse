@@ -19,25 +19,11 @@ class TopicCommodity {
   var id: ObjectId = _
 
   /**
-   * 推荐主题类型
-   */
-  @NotBlank
-  @BeanProperty
-  var recommendType: String = _
-
-  /**
    * 话题类型
    */
   @NotBlank
   @BeanProperty
   var topicType: String = _
-
-  /**
-   * 话题标题
-   */
-  @NotBlank
-  @BeanProperty
-  var topicTitle: String = _
 
   /**
    * 商品id列表

@@ -1,7 +1,8 @@
 package core.api
 
+import com.lvxingpai.model.marketplace.product.Commodity
 import core.db.MorphiaFactory
-import core.model.misc.{ Column, TopicCommodity }
+import core.model.misc.{ RecommendCategory, Column, TopicCommodity }
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,31 +31,62 @@ object MiscAPI {
 
   /**
    * 根据话题类型查找商品列表
-   * @param topicType 话题类型
    * @return 商品列表
    */
-  def getSpecialCommodities(topicType: String): Future[Seq[TopicCommodity]] = {
+  def getCommoditiesByTopic(topicType: String): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[TopicCommodity]).field("topicType").equal(topicType)
-    Future {
-      if (query != null || query.isEmpty)
-        query.asList().toSeq
-      else
-        Seq()
-    }
+
+    if (query != null || query.isEmpty) {
+      CommodityAPINew.getCommoditiesByIdList(query.get.commoditieIds)
+    } else
+      Future { Seq() }
   }
 
   /**
    * 根据话题类型查找商品列表
-   * @param recommendType 话题类型
    * @return 商品列表
    */
-  def getRecommendCommodities(recommendType: String): Future[Seq[TopicCommodity]] = {
-    val query = ds.createQuery(classOf[TopicCommodity]).field("recommendType").equal(recommendType)
+  def getRecommendCommodities(categories: Seq[String]): Future[Map[String, Seq[Commodity]]] = {
+    val query = ds.createQuery(classOf[TopicCommodity]).field("topicType").in(categories)
+
     Future {
-      if (query != null || query.isEmpty)
-        query.asList().toSeq
-      else
-        Seq()
+      val topicEntries = query.asList().toSeq
+
+      val topicIdsMap = Map(topicEntries map (v => {
+        v.topicType -> v
+      }): _*)
+
+      // 获得所有相关的商品id
+      val allIds = topicEntries.foldLeft(Seq[Long]())((l, tc) => {
+        l ++ tc.commoditieIds
+      })
+
+      val futureAllCommodities = CommodityAPINew.getCommoditiesByIdList(allIds)
+
+      futureAllCommodities map (allCommodities => {
+        val idCommodityMap = Map(allCommodities map (commodity => {
+          commodity.commodityId -> commodity
+        }): _*)
+
+        Map(categories map (topic => {
+          topic -> (topicIdsMap(topic).commoditieIds map (id => {
+            idCommodityMap(id)
+          }))
+        }): _*)
+
+      })
+    } flatMap (topicCommoditiesMap => topicCommoditiesMap)
+    //val ret = query.asList().groupBy(_.topicType)
+  }
+
+  /**
+   * 取得推荐商品分类
+   * @return 推荐分类
+   */
+  def getRecommendCategories(): Future[Seq[String]] = {
+    val query = ds.createQuery(classOf[RecommendCategory])
+    Future {
+      query.get().categories.toSeq
     }
   }
 }

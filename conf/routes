@@ -56,7 +56,7 @@ GET           /testhanse                                             @controller
 GET           /columns                                               @controllers.MiscCtrl.getColumns()
 
 #首页专题商品列表
-GET           /columns/commodities                                   @controllers.MiscCtrl.getSpecialCommodities(topicType: String)
+GET           /columns/commodities                                   @controllers.MiscCtrl.getCommoditiesByTopic(topicType: String)
 
 #首页推荐商品列表
 GET           /recommend                                             @controllers.MiscCtrl.getRecommendCommodities()
@@ -83,4 +83,4 @@ DELETE        /travellers/$key<[0-9a-f]{24}>                         @controller
 GET           /travellers/$key<[0-9a-f]{24}>                         @controllers.TravellerCtrl.getTraveller(key: String)
 
 #获取旅客信息列表
-GET          /travellers                                            @controllers.TravellerCtrl.getTravellerList()
+GET           /travellers                                            @controllers.TravellerCtrl.getTravellerList()

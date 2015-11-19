@@ -44,20 +44,16 @@ class MiscCtrl extends Controller {
    * @param topicType 话题类型
    * @return 商品列表
    */
-  def getSpecialCommodities(topicType: String) = Action.async(
+  def getCommoditiesByTopic(topicType: String) = Action.async(
     request => {
       val simpleCommodityMapper = new SimpleCommodityFormatter().objectMapper
       val node = new ObjectMapper().createObjectNode()
       for {
-        commodities <- MiscAPI.getSpecialCommodities(topicType)
+        commodities <- MiscAPI.getCommoditiesByTopic(topicType)
       } yield {
-        if (commodities != null && commodities.nonEmpty) {
-          node.put("topicTitle", commodities.head.topicTitle)
-          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](commodities))
-          HanseResult(data = Some(node))
-        } else {
-          HanseResult.unprocessable()
-        }
+        node.put("topicType", topicType)
+        node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](commodities))
+        HanseResult(data = Some(node))
       }
     }
   )
@@ -69,34 +65,18 @@ class MiscCtrl extends Controller {
   def getRecommendCommodities() = Action.async(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
-
       val simpleCommodityMapper = new SimpleCommodityFormatter().objectMapper
       for {
-        discountCommodities <- MiscAPI.getSpecialCommodities("discount")
-        editRecommendCommodities <- MiscAPI.getSpecialCommodities("editRecommend")
-        hotPlayCommodities <- MiscAPI.getSpecialCommodities("hotPlay")
+        categories <- MiscAPI.getRecommendCategories()
+        topicCommoditiesMap <- MiscAPI.getRecommendCommodities(categories)
       } yield {
-        if (discountCommodities != null && discountCommodities.nonEmpty) {
+        categories map (topic => {
+          val commodities = topicCommoditiesMap(topic)
           val node = new ObjectMapper().createObjectNode()
-          node.put("recommendType", "discount")
-          node.put("topicTitle", discountCommodities.head.topicTitle)
-          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](discountCommodities))
+          node.put("topicType", topic)
+          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](commodities))
           arrayNode.add(node)
-        }
-        if (editRecommendCommodities != null && editRecommendCommodities.nonEmpty) {
-          val node = new ObjectMapper().createObjectNode()
-          node.put("recommendType", "editRecommend")
-          node.put("topicTitle", editRecommendCommodities.head.topicTitle)
-          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](editRecommendCommodities))
-          arrayNode.add(node)
-        }
-        if (hotPlayCommodities != null && hotPlayCommodities.nonEmpty) {
-          val node = new ObjectMapper().createObjectNode()
-          node.put("recommendType", "hotPlay")
-          node.put("topicTitle", hotPlayCommodities.head.topicTitle)
-          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](hotPlayCommodities))
-          arrayNode.add(node)
-        }
+        })
         HanseResult(data = Some(arrayNode))
       }
     }

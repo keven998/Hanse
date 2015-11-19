@@ -4,7 +4,6 @@ import com.lvxingpai.model.marketplace.product.Commodity
 import com.mongodb.BasicDBObjectBuilder
 import core.db.MorphiaFactory
 import org.bson.types.ObjectId
-import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,10 +21,22 @@ object CommodityAPINew {
    * @param cmyId
    * @return
    */
-  def getCommodityById(cmyId: Long)(implicit ds: Datastore): Future[Commodity] = {
+  def getCommodityById(cmyId: Long): Future[Commodity] = {
     val query = ds.createQuery(classOf[Commodity]).field("id").equal(cmyId)
     Future {
       query.get
+    }
+  }
+
+  /**
+   * 根据商品Id取得商品信息
+   * @param ids
+   * @return
+   */
+  def getCommoditiesByIdList(ids: Seq[Long]): Future[Seq[Commodity]] = {
+    val query = ds.createQuery(classOf[Commodity]).field("id").in(ids)
+    Future {
+      query.asList()
     }
   }
 
