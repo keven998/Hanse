@@ -5,13 +5,10 @@ import javax.inject._
 import com.fasterxml.jackson.databind.ObjectMapper
 import core.api.{ CommodityAPI, OrderAPI }
 import core.misc.HanseResult
-import core.model.trade.order.{ OrderStatus, Order }
-import core.sign.{ Base64, RSA }
-import org.bson.types.ObjectId
-import play.api.mvc.{ Results, Action, Controller }
+import play.api.mvc.{ Action, Controller, Results }
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by topy on 2015/10/22.
@@ -54,8 +51,16 @@ class TradeCtrl extends Controller {
     request => {
       val cmyPara = for {
         body <- request.body.asJson
-        commodityId <- (body \ "commodityId").asOpt[String]
+        commodityId <- (body \ "commodityId").asOpt[Long]
+        planId <- (body \ "planId").asOpt[String]
+        rendezvousTime <- (body \ "rendezvousTime").asOpt[String]
         quantity <- (body \ "quantity").asOpt[Int]
+        //        travellers <- (body \ "travellers").asOpt[Array[Person]]
+        name <- (body \ "name").asOpt[Seq[String]]
+        phone <- (body \ "contact.phone").asOpt[String]
+        email <- (body \ "contact.email").asOpt[String]
+        address <- (body \ "contact.address").asOpt[String]
+        comment <- (body \ "contact.comment").asOpt[String]
       } yield commodityId -> quantity
 
       val mapper = new ObjectMapper()
@@ -171,6 +176,16 @@ class TradeCtrl extends Controller {
         } else {
           HanseResult.forbidden(HanseResult.RetCode.FORBIDDEN, errorMsg = Some("invaild request"))
         }
+      }
+    }
+  )
+
+  def testhanse() = Action.async(
+    request => {
+      println("牛逼, 测试成功!")
+
+      Future {
+        null
       }
     }
   )

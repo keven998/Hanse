@@ -15,7 +15,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
   override def serialize(seller: Seller, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeNumberField("id", seller.id)
+    gen.writeNumberField("sellerId", seller.sellerId)
 
     gen.writeFieldName("lang")
     gen.writeStartArray()
@@ -48,7 +48,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
     }
     gen.writeEndArray()
 
-    gen.writeStringField("shopTitle", seller.shopTitle)
+    gen.writeStringField("name", seller.name)
 
     gen.writeFieldName("email")
     gen.writeStartArray()

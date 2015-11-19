@@ -2,8 +2,9 @@ package core.model.account
 
 import javax.validation.constraints.{ Min, NotNull }
 
+import core.model.trade.order.Person
 import core.model.BasicEntity
-import core.model.misc.{ ImageItem, PhoneNumber }
+import core.model.misc.PhoneNumber
 import org.hibernate.validator.constraints.{ Length, NotBlank }
 
 import scala.beans.BeanProperty
@@ -54,4 +55,9 @@ class UserInfo extends BasicEntity {
   @Length(max = 1024)
   @BeanProperty
   var signagure: String = null
+
+  /**
+   * 旅客信息
+   */
+  var travellers: Map[String, Person] = _
 }

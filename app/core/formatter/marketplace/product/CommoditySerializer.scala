@@ -2,8 +2,10 @@ package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.marketplace.product.{ CommodityPlan, Commodity }
+import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
+import com.lvxingpai.model.misc.{ImageItem, RichText}
+
 import scala.collection.JavaConversions._
 
 /**
@@ -14,7 +16,35 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
   override def serialize(commodity: Commodity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeNumberField("id", commodity.id)
+    gen.writeStringField("id", commodity.id.toString)
+    gen.writeNumberField("commodityId", commodity.commodityId)
+    gen.writeStringField("title", commodity.title)
+    gen.writeNumberField("rating", commodity.rating)
+    gen.writeNumberField("salesVolume", commodity.salesVolume)
+    gen.writeNumberField("marketPrice", commodity.marketPrice)
+    gen.writeNumberField("price", commodity.price)
+
+
+    // cagegories
+    gen.writeFieldName("category")
+    gen.writeStartArray()
+    val cagegories = commodity.category
+    if (cagegories.nonEmpty) {
+      for (cagegory <- cagegories)
+        gen.writeString(cagegory)
+    }
+    gen.writeEndArray()
+
+    // images
+    gen.writeFieldName("images")
+    gen.writeStartArray()
+    val images = commodity.images
+    if (images.nonEmpty) {
+      val ret = serializers.findValueSerializer(classOf[ImageItem], null)
+      for (image <- images)
+        ret.serialize(image, gen, serializers)
+    }
+    gen.writeEndArray()
 
     // 商家
     gen.writeFieldName("seller")
@@ -24,20 +54,40 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
       retSeller.serialize(seller, gen, serializers)
     }
 
-    gen.writeStringField("title", commodity.title)
+    gen.writeFieldName("desc")
+    val desc = commodity.desc
+    if (desc != null) {
+      val retDesc = serializers.findValueSerializer(classOf[RichText], null)
+      retDesc.serialize(desc, gen, serializers)
+    }
 
-    if (commodity.desc != null)
-      gen.writeStringField("desc", commodity.desc)
-
-    // 商品套餐
-    gen.writeFieldName("plans")
+    // notice
+    gen.writeFieldName("notice")
     gen.writeStartArray()
-    val plans = commodity.plans
-    if (plans != null && !plans.isEmpty) {
-      val retPlans = serializers.findValueSerializer(classOf[CommodityPlan], null)
-      for (plan <- plans) {
-        retPlans.serialize(plan, gen, serializers)
-      }
+    val notice = commodity.notice
+    if (notice.nonEmpty) {
+      val ret = serializers.findValueSerializer(classOf[RichText], null)
+      for (n <- notice)
+        ret.serialize(n, gen, serializers)
+    }
+    gen.writeEndArray()
+
+    // refundPolicy
+    gen.writeFieldName("refundPolicy")
+    gen.writeStartArray()
+    val refundPolicy = commodity.refundPolicy
+    if (refundPolicy.nonEmpty) {
+      val ret = serializers.findValueSerializer(classOf[RichText], null)
+      for (r <- refundPolicy)
+        ret.serialize(r, gen, serializers)
+    }
+    gen.writeEndArray()
+
+    gen.writeFieldName("trafficInfo")
+    val trafficInfo = commodity.trafficInfo
+    if (trafficInfo != null) {
+      val retTrafficInfo = serializers.findValueSerializer(classOf[RichText], null)
+      retTrafficInfo.serialize(trafficInfo, gen, serializers)
     }
     gen.writeEndArray()
 

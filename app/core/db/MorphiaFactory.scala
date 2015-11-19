@@ -5,6 +5,7 @@ import com.mongodb._
 import core.misc.Global
 import core.model.trade.order.{ Prepay, Order }
 import org.mongodb.morphia.Morphia
+import org.mongodb.morphia.annotations.Property
 
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
@@ -61,5 +62,15 @@ object MorphiaFactory {
     ds.ensureIndexes()
     ds.ensureCaps()
     ds
+  }
+
+  def getCollection[T](cls: Class[T]): DBCollection = {
+    val annotation = cls.getAnnotation(classOf[Property])
+    val colName = if (annotation != null)
+      annotation.value()
+    else
+      cls.getSimpleName
+    val db = datastore.getDB
+    db.getCollection(colName)
   }
 }

@@ -68,7 +68,7 @@ object OrderAPI {
    * @param qty 商品数量
    * @return
    */
-  def addOrder(cmyId: String, qty: Int): Future[Order] = {
+  def addOrder(cmyId: Long, qty: Int): Future[Order] = {
     val futureCmy = CommodityAPI.getCommodityById(cmyId)
     for {
       cmy <- futureCmy

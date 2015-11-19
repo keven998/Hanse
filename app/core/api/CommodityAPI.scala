@@ -3,10 +3,9 @@ package core.api
 import core.db.MorphiaFactory
 import core.model.trade.product.Commodity
 import core.model.trade.saler.Saler
-import org.bson.types.ObjectId
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by pengyt on 2015/10/23.
@@ -19,9 +18,8 @@ object CommodityAPI {
    * @param cmyId
    * @return
    */
-  def getCommodityById(cmyId: String): Future[Commodity] = {
-    val id = new ObjectId(cmyId)
-    val query = ds.createQuery(classOf[Commodity]).field(Commodity.FD_ID).equal(id)
+  def getCommodityById(cmyId: Long): Future[Commodity] = {
+    val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId)
     Future {
       query.get
     }
