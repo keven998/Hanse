@@ -11,9 +11,10 @@ class PhoneNumberSerializer extends JsonSerializer[PhoneNumber] {
 
   override def serialize(phoneNumber: PhoneNumber, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-
-    gen.writeNumberField("dialCode", phoneNumber.dialCode)
-    gen.writeNumberField("number", phoneNumber.number)
+    if (phoneNumber.dialCode != null)
+      gen.writeNumberField("dialCode", phoneNumber.dialCode)
+    if (phoneNumber.number != null)
+      gen.writeNumberField("number", phoneNumber.number)
 
     gen.writeEndObject()
   }

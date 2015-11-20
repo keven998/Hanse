@@ -5,6 +5,7 @@ import core.db.MorphiaFactory
 import core.model.account.UserInfo
 import core.model.trade.order.Person
 import org.bson.types.ObjectId
+import org.mongodb.morphia.Datastore
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,7 +23,7 @@ object TravellerAPI {
    * @param person 旅客信息
    * @return 旅客键值和旅客信息
    */
-  def addTraveller(userId: Long, person: Person): Future[(String, Person)] = {
+  def addTraveller(userId: Long, person: Person)(implicit ds: Datastore): Future[(String, Person)] = {
     val query = ds.createQuery(classOf[UserInfo])
     val key = new ObjectId().toString
 

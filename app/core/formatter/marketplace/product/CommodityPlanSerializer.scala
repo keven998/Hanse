@@ -13,7 +13,9 @@ class CommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
   override def serialize(commodityPlan: CommodityPlan, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeStringField("planId", commodityPlan.planId)
+    if (commodityPlan.planId != null)
+      gen.writeStringField("planId", commodityPlan.planId)
+
     if (commodityPlan.title != null)
       gen.writeStringField("title", commodityPlan.title)
     if (commodityPlan.desc != null)
@@ -30,8 +32,10 @@ class CommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
     }
     gen.writeEndArray()
 
-    gen.writeNumberField("marketPrice", commodityPlan.marketPrice)
-    gen.writeNumberField("price", commodityPlan.price)
+    if (commodityPlan.marketPrice != null)
+      gen.writeNumberField("marketPrice", commodityPlan.marketPrice)
+    if (commodityPlan.price != null)
+      gen.writeNumberField("price", commodityPlan.price)
 
     gen.writeFieldName("stockInfo")
     gen.writeStartArray()

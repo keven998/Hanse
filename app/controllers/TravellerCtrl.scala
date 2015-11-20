@@ -1,9 +1,13 @@
 package controllers
 
+import javax.inject.{ Named, Inject }
+
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
+import com.lvxingpai.inject.morphia.MorphiaMap
 import core.api.TravellerAPI
 import core.formatter.misc.{ PersonFormatter, PersonParser }
 import core.misc.HanseResult
+import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,10 +16,9 @@ import scala.concurrent.Future
 /**
  * Created by pengyt on 2015/11/16.
  */
-class TravellerCtrl extends Controller {
+class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
 
-  case class PreIdProof(number: String, nation: Option[Nation])
-  case class Nation(id: String)
+  implicit lazy val ds = datastore.map.get("yunkai-dev").get
   /**
    * 添加旅客信息
    * @return

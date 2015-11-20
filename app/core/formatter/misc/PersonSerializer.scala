@@ -13,10 +13,14 @@ class PersonSerializer extends JsonSerializer[Person] {
 
   override def serialize(person: Person, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-    gen.writeStringField("surname", person.surname)
-    gen.writeStringField("givenName", person.givenName)
-    gen.writeStringField("gender", if (person.gender == Gender.Male) "male" else "female")
-    gen.writeStringField("birthday", person.birthday.toString)
+    if (person.surname != null)
+      gen.writeStringField("surname", person.surname)
+    if (person.givenName != null)
+      gen.writeStringField("givenName", person.givenName)
+    if (person.gender != null)
+      gen.writeStringField("gender", if (person.gender == Gender.Male) "male" else "female")
+    if (person.birthday != null)
+      gen.writeStringField("birthday", person.birthday.toString)
     if (person.fullName != null)
       gen.writeStringField("fullName", person.fullName)
 
@@ -33,7 +37,8 @@ class PersonSerializer extends JsonSerializer[Person] {
       val retTel = serializers.findValueSerializer(classOf[PhoneNumber], null)
       retTel.serialize(tel, gen, serializers)
     }
-    gen.writeStringField("email", person.email)
+    if (person.email != null)
+      gen.writeStringField("email", person.email)
     gen.writeEndObject()
   }
 }

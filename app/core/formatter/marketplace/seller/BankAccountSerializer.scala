@@ -12,16 +12,18 @@ class BankAccountSerializer extends JsonSerializer[BankAccount] {
   override def serialize(bankAccount: BankAccount, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeBooleanField("domestic", bankAccount.domestic)
+    if (bankAccount.domestic != null)
+      gen.writeBooleanField("domestic", bankAccount.domestic)
     if (bankAccount.swift != null)
       gen.writeStringField("swift", bankAccount.swift)
-    gen.writeStringField("accountNumber", bankAccount.accountNumber)
+    if (bankAccount.accountNumber != null)
+      gen.writeStringField("accountNumber", bankAccount.accountNumber)
     if (bankAccount.bankName != null)
       gen.writeStringField("bankName", bankAccount.bankName)
     if (bankAccount.branchName != null)
       gen.writeStringField("branchName", bankAccount.branchName)
-
-    gen.writeStringField("cardHolder", bankAccount.cardHolder)
+    if (bankAccount.cardHolder != null)
+      gen.writeStringField("cardHolder", bankAccount.cardHolder)
 
     if (bankAccount.billingAddress != null)
       gen.writeStringField("billingAddress", bankAccount.billingAddress)

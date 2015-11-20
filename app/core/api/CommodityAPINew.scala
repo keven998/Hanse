@@ -4,6 +4,7 @@ import com.lvxingpai.model.marketplace.product.Commodity
 import com.mongodb.BasicDBObjectBuilder
 import core.db.MorphiaFactory
 import org.bson.types.ObjectId
+import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,15 +15,13 @@ import scala.concurrent.Future
  */
 object CommodityAPINew {
 
-  val ds = MorphiaFactory.datastore
-
   /**
    * 根据商品Id取得商品信息
    * @param cmyId
    * @return
    */
-  def getCommodityById(cmyId: Long): Future[Commodity] = {
-    val query = ds.createQuery(classOf[Commodity]).field("id").equal(cmyId)
+  def getCommodityById(cmyId: Long)(implicit ds: Datastore): Future[Commodity] = {
+    val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId)
     Future {
       query.get
     }
@@ -33,8 +32,8 @@ object CommodityAPINew {
    * @param ids
    * @return
    */
-  def getCommoditiesByIdList(ids: Seq[Long]): Future[Seq[Commodity]] = {
-    val query = ds.createQuery(classOf[Commodity]).field("id").in(ids)
+  def getCommoditiesByIdList(ids: Seq[Long])(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    val query = ds.createQuery(classOf[Commodity]).field("commodityId").in(seqAsJavaList(ids))
     Future {
       query.asList()
     }
@@ -45,7 +44,7 @@ object CommodityAPINew {
    * @param localityId 目的地id
    * @return 商品分类
    */
-  def getCommodityCategoryList(localityId: String): Future[Seq[String]] = {
+  def getCommodityCategoryList(localityId: String)(implicit ds: Datastore): Future[Seq[String]] = {
 
     Future {
       val col = MorphiaFactory.getCollection(classOf[Commodity])
@@ -69,7 +68,7 @@ object CommodityAPINew {
    * @param count 返回商品的个数
    * @return 返回商品列表
    */
-  def getCommoditiesBySellerId(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int): Future[Seq[Commodity]] = {
+  def getCommoditiesBySellerId(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity]).field("seller.sellerId").equal(sellerId).offset(start).limit(count)
     Future {
       query.asList()
@@ -85,7 +84,7 @@ object CommodityAPINew {
    * @param count 返回商品的个数
    * @return 返回商品列表
    */
-  def getCommoditiesByLocalityId(localityId: String, sortBy: String, sort: String, start: Int, count: Int): Future[Seq[Commodity]] = {
+  def getCommoditiesByLocalityId(localityId: String, sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity]).field("locality.id").equal(new ObjectId(localityId)).offset(start).limit(count)
     Future {
       query.asList()

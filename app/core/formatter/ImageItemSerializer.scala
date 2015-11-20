@@ -16,11 +16,13 @@ class ImageItemSerializer extends JsonSerializer[ImageItem] {
     gen.writeStartObject()
     //    gen.writeStringField("caption", if (imageItem.caption != null) imageItem.caption else "")
 
-    gen.writeStringField("key", if (imageItem.key != null) imageItem.key else "")
+    if (imageItem.key != null)
+      gen.writeStringField("key", if (imageItem.key != null) imageItem.key else "")
     //    gen.writeStringField("bucket", if(imageItem.bucket != null) imageItem.bucket else "")
-
-    gen.writeNumberField("width", imageItem.width)
-    gen.writeNumberField("height", imageItem.height)
+    if (imageItem.width != null)
+      gen.writeNumberField("width", imageItem.width)
+    if (imageItem.height != null)
+      gen.writeNumberField("height", imageItem.height)
     //    val // http://7sbm17.com1.z0.glb.clouddn.com/lvxingpai-cover-20151009-480-800.png?imageView/1/w/1440/h/2392/q/85/format/jpg/interlace/1
     //    gen.writeStringField("url", f"$fullUrl%s?imageView2/2/w/$maxWidth%d")
 
