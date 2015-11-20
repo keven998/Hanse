@@ -4,7 +4,8 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.marketplace.seller.{ Seller, BankAccount }
-import com.lvxingpai.model.misc.PhoneNumber
+import com.lvxingpai.model.misc.{ RichText, PhoneNumber }
+import com.lvxingpai.yunkai.UserInfo
 
 import scala.collection.JavaConversions._
 
@@ -19,10 +20,33 @@ class SellerSerializer extends JsonSerializer[Seller] {
     gen.writeNumberField("sellerId", seller.sellerId)
     gen.writeStringField("name", seller.name)
 
+    gen.writeFieldName("desc")
+    val desc = seller.desc
+    if (desc != null) {
+      val retDesc = serializers.findValueSerializer(classOf[RichText], null)
+      retDesc.serialize(desc, gen, serializers)
+    }
+
+    gen.writeFieldName("user")
+    val userInfo = seller.userInfo
+    if (userInfo != null) {
+      val retIdProof = serializers.findValueSerializer(classOf[UserInfo], null)
+      retIdProof.serialize(userInfo, gen, serializers)
+    }
+
     gen.writeFieldName("lang")
     gen.writeStartArray()
     if (seller.lang != null) {
       for (l: String <- seller.lang)
+        gen.writeString(l)
+    }
+    gen.writeEndArray()
+
+    // 商户资质
+    gen.writeFieldName("qualifications")
+    gen.writeStartArray()
+    if (seller.qualifications != null) {
+      for (l: String <- seller.qualifications)
         gen.writeString(l)
     }
     gen.writeEndArray()
@@ -73,6 +97,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
       gen.writeStringField("address", seller.address)
 
     gen.writeNumberField("favorCnt", seller.favorCnt)
+    gen.writeNumberField("rating", seller.rating)
 
     gen.writeEndObject()
   }
