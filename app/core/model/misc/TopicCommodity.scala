@@ -1,8 +1,10 @@
 package core.model.misc
 
+import java.util.{ List => JList }
+
 import org.bson.types.ObjectId
 import org.hibernate.validator.constraints.NotBlank
-import org.mongodb.morphia.annotations.{ Id, Entity }
+import org.mongodb.morphia.annotations.{ Entity, Id }
 
 import scala.beans.BeanProperty
 
@@ -29,5 +31,5 @@ class TopicCommodity {
    * 商品id列表
    */
   @BeanProperty
-  var commoditieIds: Seq[Long] = _
+  var commodities: JList[Long] = _
 }

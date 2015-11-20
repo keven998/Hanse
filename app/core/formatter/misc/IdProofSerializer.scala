@@ -13,9 +13,12 @@ class IdProofSerializer extends JsonSerializer[IdProof] {
   override def serialize(idProof: IdProof, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
     idProof match {
-      case chineseID: ChineseID => gen.writeStringField("number", chineseID.number)
+      case chineseID: ChineseID =>
+        if (chineseID.number != null)
+          gen.writeStringField("number", chineseID.number)
       case passport: Passport =>
-        gen.writeStringField("number", passport.number)
+        if (passport.number != null)
+          gen.writeStringField("number", passport.number)
         gen.writeFieldName("nation")
         val nation = passport.nation
         if (nation != null) {

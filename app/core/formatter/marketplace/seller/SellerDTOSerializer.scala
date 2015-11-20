@@ -16,13 +16,17 @@ class SellerDTOSerializer extends JsonSerializer[SellerDTO] {
 
   override def serialize(seller: SellerDTO, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
+    if (seller.sellerId != null)
+      gen.writeNumberField("sellerId", seller.sellerId)
 
-    gen.writeNumberField("sellerId", seller.sellerId)
-
-    gen.writeStringField("avatar", seller.avatar)
-    gen.writeStringField("nickName", seller.nickName)
-    gen.writeStringField("signature", seller.signature)
-    gen.writeStringField("userPhone", seller.userPhone)
+    if (seller.avatar != null)
+      gen.writeStringField("avatar", seller.avatar)
+    if (seller.nickName != null)
+      gen.writeStringField("nickName", seller.nickName)
+    if (seller.signature != null)
+      gen.writeStringField("signature", seller.signature)
+    if (seller.userPhone != null)
+      gen.writeStringField("userPhone", seller.userPhone)
 
     gen.writeFieldName("lang")
     gen.writeStartArray()
@@ -55,7 +59,8 @@ class SellerDTOSerializer extends JsonSerializer[SellerDTO] {
     }
     gen.writeEndArray()
 
-    gen.writeStringField("name", seller.name)
+    if (seller.name != null)
+      gen.writeStringField("name", seller.name)
 
     gen.writeFieldName("email")
     gen.writeStartArray()
@@ -79,7 +84,8 @@ class SellerDTOSerializer extends JsonSerializer[SellerDTO] {
     if (seller.address != null)
       gen.writeStringField("address", seller.address)
 
-    gen.writeNumberField("favorCnt", seller.favorCnt)
+    if (seller.favorCnt != null)
+      gen.writeNumberField("favorCnt", seller.favorCnt)
 
     gen.writeEndObject()
   }

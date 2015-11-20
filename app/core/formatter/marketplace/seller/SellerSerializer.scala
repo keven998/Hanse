@@ -15,7 +15,8 @@ class SellerSerializer extends JsonSerializer[Seller] {
   override def serialize(seller: Seller, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeNumberField("sellerId", seller.sellerId)
+    if (seller.sellerId != null)
+      gen.writeNumberField("sellerId", seller.sellerId)
 
     gen.writeFieldName("lang")
     gen.writeStartArray()
@@ -48,7 +49,8 @@ class SellerSerializer extends JsonSerializer[Seller] {
     }
     gen.writeEndArray()
 
-    gen.writeStringField("name", seller.name)
+    if (seller.name != null)
+      gen.writeStringField("name", seller.name)
 
     gen.writeFieldName("email")
     gen.writeStartArray()
@@ -72,7 +74,8 @@ class SellerSerializer extends JsonSerializer[Seller] {
     if (seller.address != null)
       gen.writeStringField("address", seller.address)
 
-    gen.writeNumberField("favorCnt", seller.favorCnt)
+    if (seller.favorCnt != null)
+      gen.writeNumberField("favorCnt", seller.favorCnt)
 
     gen.writeEndObject()
   }

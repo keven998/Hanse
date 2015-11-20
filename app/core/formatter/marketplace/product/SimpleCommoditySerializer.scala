@@ -13,12 +13,16 @@ class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
 
   override def serialize(commodity: Commodity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-
-    gen.writeStringField("title", commodity.title)
-    gen.writeNumberField("marketPrice", commodity.marketPrice)
-    gen.writeNumberField("price", commodity.price)
-    gen.writeNumberField("rating", commodity.rating)
-    gen.writeNumberField("salesVolume", commodity.salesVolume)
+    if (commodity.title != null)
+      gen.writeStringField("title", commodity.title)
+    if (commodity.marketPrice != null)
+      gen.writeNumberField("marketPrice", commodity.marketPrice)
+    if (commodity.price != null)
+      gen.writeNumberField("price", commodity.price)
+    if (commodity.rating != null)
+      gen.writeNumberField("rating", commodity.rating)
+    if (commodity.salesVolume != null)
+      gen.writeNumberField("salesVolume", commodity.salesVolume)
     // images
     gen.writeFieldName("images")
     gen.writeStartArray()

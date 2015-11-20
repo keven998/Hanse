@@ -1,20 +1,17 @@
 package core.api
 
-import com.lvxingpai.model.geo.Country
-import core.db.MorphiaFactory
 import core.model.account.UserInfo
 import core.model.trade.order.Person
 import org.bson.types.ObjectId
+import org.mongodb.morphia.Datastore
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by pengyt on 2015/11/16.
  */
 object TravellerAPI {
-
-  val ds = MorphiaFactory.datastore
 
   /**
    * 添加旅客信息
@@ -22,7 +19,7 @@ object TravellerAPI {
    * @param person 旅客信息
    * @return 旅客键值和旅客信息
    */
-  def addTraveller(userId: Long, person: Person): Future[(String, Person)] = {
+  def addTraveller(userId: Long, person: Person)(implicit ds: Datastore): Future[(String, Person)] = {
     val query = ds.createQuery(classOf[UserInfo])
     val key = new ObjectId().toString
 
@@ -39,10 +36,9 @@ object TravellerAPI {
    * @param person 旅客信息
    * @return 旅客键值和旅客信息
    */
-  def updateTraveller(userId: Long, key: String, person: Person): Future[(String, Person)] = {
+  def updateTraveller(userId: Long, key: String, person: Person)(implicit ds: Datastore): Future[(String, Person)] = {
 
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
-    //    val travellers = query.get.travellers + key -> person
     val ops = ds.createUpdateOperations(classOf[UserInfo]).set(s"travellers.$key", person)
     Future {
       ds.updateFirst(query, ops)
@@ -56,13 +52,12 @@ object TravellerAPI {
    * @param key 旅客信息键值
    * @return 空
    */
-  def deleteTraveller(userId: Long, key: String): Future[String] = {
+  def deleteTraveller(userId: Long, key: String)(implicit ds: Datastore): Future[Unit] = {
 
     val query = ds.createQuery(classOf[UserInfo])
-    val opsRm = ds.createUpdateOperations(classOf[UserInfo]).removeAll("travellers", key)
+    val opsRm = ds.createUpdateOperations(classOf[UserInfo]).unset(s"travellers.$key")
     Future {
       ds.updateFirst(query, opsRm)
-      key
     }
   }
 
@@ -72,7 +67,7 @@ object TravellerAPI {
    * @param key 旅客信息键值
    * @return 旅客信息
    */
-  def getTraveller(userId: Long, key: String): Future[Person] = {
+  def getTraveller(userId: Long, key: String)(implicit ds: Datastore): Future[Person] = {
 
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
 
@@ -86,21 +81,11 @@ object TravellerAPI {
    * @param userId 用户id
    * @return 旅客信息列表
    */
-  def getTravellerList(userId: Long): Future[Map[String, Person]] = {
+  def getTravellerList(userId: Long)(implicit ds: Datastore): Future[Map[String, Person]] = {
 
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {
       query.get.travellers
-    }
-  }
-
-  /**
-   * 根据国家id取得国家信息
-   */
-  def getCountryById(id: ObjectId): Future[Country] = {
-    val query = ds.createQuery(classOf[Country]).field("id").equal(id)
-    Future {
-      query.get
     }
   }
 }

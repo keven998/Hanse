@@ -32,7 +32,7 @@ object MiscAPI {
     val query = ds.createQuery(classOf[TopicCommodity]).field("topicType").equal(topicType)
 
     if (query != null || query.isEmpty) {
-      CommodityAPINew.getCommoditiesByIdList(query.get.commoditieIds)
+      CommodityAPINew.getCommoditiesByIdList(query.get.commodities)
     } else
       Future { Seq() }
   }
@@ -53,7 +53,7 @@ object MiscAPI {
 
       // 获得所有相关的商品id
       val allIds = topicEntries.foldLeft(Seq[Long]())((l, tc) => {
-        l ++ tc.commoditieIds
+        l ++ tc.commodities
       })
 
       val futureAllCommodities = CommodityAPINew.getCommoditiesByIdList(allIds)
@@ -64,7 +64,7 @@ object MiscAPI {
         }): _*)
 
         Map(categories map (topic => {
-          topic -> (topicIdsMap(topic).commoditieIds map (id => {
+          topic -> (topicIdsMap(topic).commodities map (id => {
             idCommodityMap(id)
           }))
         }): _*)

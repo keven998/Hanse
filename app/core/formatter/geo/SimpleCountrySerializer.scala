@@ -10,10 +10,12 @@ class SimpleCountrySerializer extends JsonSerializer[Country] {
   override def serialize(country: Country, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeStringField("id", country.id.toString)
-
-    gen.writeStringField("zhName", country.zhName)
-    gen.writeStringField("enName", country.enName)
+    if (country.id != null)
+      gen.writeStringField("id", country.id.toString)
+    if (country.zhName != null)
+      gen.writeStringField("zhName", country.zhName)
+    if (country.enName != null)
+      gen.writeStringField("enName", country.enName)
 
     gen.writeEndObject()
   }

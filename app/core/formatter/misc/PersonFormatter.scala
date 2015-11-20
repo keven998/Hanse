@@ -6,8 +6,8 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.geo.Country
 import core.formatter.BaseFormatter
 import core.formatter.geo.SimpleCountrySerializer
-import core.model.trade.order.Person
 import com.lvxingpai.model.misc.IdProof
+import com.lvxingpai.model.marketplace.order.Person
 
 /**
  * Created by pengyt on 2015/11/19.
