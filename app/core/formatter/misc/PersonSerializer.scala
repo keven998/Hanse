@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.account.Gender
 import com.lvxingpai.model.misc.{ IdProof, PhoneNumber }
-import core.model.trade.order.Person
+import com.lvxingpai.model.marketplace.order.Person
 
 /**
  * Created by pengyt on 2015/11/17.
