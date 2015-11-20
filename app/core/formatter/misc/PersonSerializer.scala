@@ -3,7 +3,7 @@ package core.formatter.misc
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.account.Gender
-import com.lvxingpai.model.misc.PhoneNumber
+import com.lvxingpai.model.misc.{ IdProof, PhoneNumber }
 import core.model.trade.order.Person
 
 /**
@@ -17,11 +17,15 @@ class PersonSerializer extends JsonSerializer[Person] {
     gen.writeStringField("givenName", person.givenName)
     gen.writeStringField("gender", if (person.gender == Gender.Male) "male" else "female")
     gen.writeStringField("birthday", person.birthday.toString)
-    gen.writeStringField("fullName", person.fullName)
+    if (person.fullName != null)
+      gen.writeStringField("fullName", person.fullName)
 
-    // TODO 如何序列化idProof?
-    //    var idProof: IdProof = _
+    gen.writeFieldName("idProof")
     val idProof = person.idProof
+    if (idProof != null) {
+      val retIdProof = serializers.findValueSerializer(classOf[IdProof], null)
+      retIdProof.serialize(idProof, gen, serializers)
+    }
 
     gen.writeFieldName("tel")
     val tel = person.tel

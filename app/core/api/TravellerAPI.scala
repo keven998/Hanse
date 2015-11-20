@@ -1,5 +1,6 @@
 package core.api
 
+import com.lvxingpai.model.geo.Country
 import core.db.MorphiaFactory
 import core.model.account.UserInfo
 import core.model.trade.order.Person
@@ -40,12 +41,11 @@ object TravellerAPI {
    */
   def updateTraveller(userId: Long, key: String, person: Person): Future[(String, Person)] = {
 
-    val query = ds.createQuery(classOf[UserInfo])
-    val opsRm = ds.createUpdateOperations(classOf[UserInfo]).removeAll("travellers", key -> person)
-    val opsAdd = ds.createUpdateOperations(classOf[UserInfo]).add("travellers", key -> person, false)
+    val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
+    //    val travellers = query.get.travellers + key -> person
+    val ops = ds.createUpdateOperations(classOf[UserInfo]).set(s"travellers.$key", person)
     Future {
-      ds.findAndModify(query, opsRm, false, true)
-      ds.findAndModify(query, opsAdd, false, true)
+      ds.updateFirst(query, ops)
       key -> person
     }
   }
@@ -91,6 +91,16 @@ object TravellerAPI {
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {
       query.get.travellers
+    }
+  }
+
+  /**
+   * 根据国家id取得国家信息
+   */
+  def getCountryById(id: ObjectId): Future[Country] = {
+    val query = ds.createQuery(classOf[Country]).field("id").equal(id)
+    Future {
+      query.get
     }
   }
 }

@@ -1,8 +1,8 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.product.Commodity
-import core.db.MorphiaFactory
-import core.model.misc.{ RecommendCategory, Column, TopicCommodity }
+import core.model.misc.{ Column, RecommendCategory, TopicCommodity }
+import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,19 +13,14 @@ import scala.concurrent.Future
  */
 object MiscAPI {
 
-  val ds = MorphiaFactory.datastore
-
   /**
    * 取得运营位列表
    * @return 运营位列表
    */
-  def getColumns(): Future[Map[String, Seq[Column]]] = {
-    val query = ds.createQuery(classOf[Column])
+  def getColumns(columnTypeList: Seq[String])(implicit ds: Datastore): Future[Map[String, Seq[Column]]] = {
+    val query = ds.createQuery(classOf[Column]).field("columnType").in(seqAsJavaList(columnTypeList))
     Future {
-      if (query != null || query.isEmpty) {
-        query.asList().groupBy(_.columnType) map (columnMap => columnMap._1 -> columnMap._2.toSeq)
-      } else
-        Map()
+      query.asList().groupBy(_.columnType) map (columnMap => columnMap._1 -> columnMap._2.toSeq)
     }
   }
 
@@ -33,7 +28,7 @@ object MiscAPI {
    * 根据话题类型查找商品列表
    * @return 商品列表
    */
-  def getCommoditiesByTopic(topicType: String): Future[Seq[Commodity]] = {
+  def getCommoditiesByTopic(topicType: String)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[TopicCommodity]).field("topicType").equal(topicType)
 
     if (query != null || query.isEmpty) {
@@ -46,8 +41,8 @@ object MiscAPI {
    * 根据话题类型查找商品列表
    * @return 商品列表
    */
-  def getRecommendCommodities(categories: Seq[String]): Future[Map[String, Seq[Commodity]]] = {
-    val query = ds.createQuery(classOf[TopicCommodity]).field("topicType").in(categories)
+  def getRecommendCommodities(categories: Seq[String])(implicit ds: Datastore): Future[Map[String, Seq[Commodity]]] = {
+    val query = ds.createQuery(classOf[TopicCommodity]).field("topicType").in(seqAsJavaList(categories))
 
     Future {
       val topicEntries = query.asList().toSeq
@@ -83,7 +78,7 @@ object MiscAPI {
    * 取得推荐商品分类
    * @return 推荐分类
    */
-  def getRecommendCategories(): Future[Seq[String]] = {
+  def getRecommendCategories()(implicit ds: Datastore): Future[Seq[String]] = {
     val query = ds.createQuery(classOf[RecommendCategory])
     Future {
       query.get().categories.toSeq

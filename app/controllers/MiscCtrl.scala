@@ -1,10 +1,14 @@
 package controllers
 
+import javax.inject.{ Named, Inject }
+
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
+import com.lvxingpai.inject.morphia.MorphiaMap
 import core.api.{ CommodityAPINew, MiscAPI }
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnFormatter
 import core.misc.HanseResult
+import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,7 +16,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Created by pengyt on 2015/11/13.
  */
-class MiscCtrl extends Controller {
+class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
+
+  implicit lazy val ds = datastore.map.get("k2").get
 
   /**
    * 首页专题
@@ -24,7 +30,7 @@ class MiscCtrl extends Controller {
       val columnMapper = new ColumnFormatter().objectMapper
       val columnTypes = Seq("slide", "special")
       for {
-        columnsMap <- MiscAPI.getColumns() //"slide")
+        columnsMap <- MiscAPI.getColumns(columnTypes) //"slide")
       } yield {
         columnTypes map (columnType => {
           val node = new ObjectMapper().createObjectNode()

@@ -14,9 +14,9 @@ class ImageItemSerializer extends JsonSerializer[ImageItem] {
   override def serialize(imageItem: ImageItem, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
 
     gen.writeStartObject()
-    gen.writeStringField("caption", if (imageItem.caption != null) imageItem.caption else "")
+    //    gen.writeStringField("caption", if (imageItem.caption != null) imageItem.caption else "")
 
-    //    gen.writeStringField("key", if(imageItem.key != null) imageItem.key else "")
+    gen.writeStringField("key", if (imageItem.key != null) imageItem.key else "")
     //    gen.writeStringField("bucket", if(imageItem.bucket != null) imageItem.bucket else "")
 
     gen.writeNumberField("width", imageItem.width)

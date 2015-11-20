@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
 import com.lvxingpai.model.misc.ImageItem
 import core.model.misc.Column
-
+import scala.collection.JavaConversions._
 /**
  * Created by pengyt on 2015/11/13.
  */
