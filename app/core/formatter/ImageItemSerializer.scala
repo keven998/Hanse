@@ -16,8 +16,7 @@ class ImageItemSerializer extends JsonSerializer[ImageItem] {
     gen.writeStartObject()
     //    gen.writeStringField("caption", if (imageItem.caption != null) imageItem.caption else "")
 
-    if (imageItem.key != null)
-      gen.writeStringField("key", if (imageItem.key != null) imageItem.key else "")
+    gen.writeStringField("key", Option(imageItem.key) getOrElse "")
     //    gen.writeStringField("bucket", if(imageItem.bucket != null) imageItem.bucket else "")
     if (imageItem.width != null)
       gen.writeNumberField("width", imageItem.width)

@@ -3,8 +3,10 @@ package core.formatter.marketplace.seller
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.geo.GeoEntity
-import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
-import com.lvxingpai.model.misc.PhoneNumber
+import com.lvxingpai.model.marketplace.seller.{ Seller, BankAccount }
+import com.lvxingpai.model.misc.{ RichText, PhoneNumber }
+import com.lvxingpai.yunkai.UserInfo
+
 import scala.collection.JavaConversions._
 
 /**
@@ -15,13 +17,36 @@ class SellerSerializer extends JsonSerializer[Seller] {
   override def serialize(seller: Seller, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    if (seller.sellerId != null)
-      gen.writeNumberField("sellerId", seller.sellerId)
+    gen.writeNumberField("sellerId", seller.sellerId)
+    gen.writeStringField("name", seller.name)
+
+    gen.writeFieldName("desc")
+    val desc = seller.desc
+    if (desc != null) {
+      val retDesc = serializers.findValueSerializer(classOf[RichText], null)
+      retDesc.serialize(desc, gen, serializers)
+    }
+
+    gen.writeFieldName("user")
+    val userInfo = seller.userInfo
+    if (userInfo != null) {
+      val retIdProof = serializers.findValueSerializer(classOf[UserInfo], null)
+      retIdProof.serialize(userInfo, gen, serializers)
+    }
 
     gen.writeFieldName("lang")
     gen.writeStartArray()
     if (seller.lang != null) {
       for (l: String <- seller.lang)
+        gen.writeString(l)
+    }
+    gen.writeEndArray()
+
+    // 商户资质
+    gen.writeFieldName("qualifications")
+    gen.writeStartArray()
+    if (seller.qualifications != null) {
+      for (l: String <- seller.qualifications)
         gen.writeString(l)
     }
     gen.writeEndArray()
@@ -49,9 +74,6 @@ class SellerSerializer extends JsonSerializer[Seller] {
     }
     gen.writeEndArray()
 
-    if (seller.name != null)
-      gen.writeStringField("name", seller.name)
-
     gen.writeFieldName("email")
     gen.writeStartArray()
     if (seller.email != null) {
@@ -74,8 +96,8 @@ class SellerSerializer extends JsonSerializer[Seller] {
     if (seller.address != null)
       gen.writeStringField("address", seller.address)
 
-    if (seller.favorCnt != null)
-      gen.writeNumberField("favorCnt", seller.favorCnt)
+    gen.writeNumberField("favorCnt", seller.favorCnt)
+    gen.writeNumberField("rating", seller.rating)
 
     gen.writeEndObject()
   }
