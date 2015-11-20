@@ -10,7 +10,6 @@ import core.api.SellerAPI
 import core.formatter.marketplace.product.CommodityFormatter
 import core.formatter.marketplace.seller.SellerFormatter
 import core.misc.HanseResult
-import core.model.SellerDTO
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
 
@@ -30,16 +29,13 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
 
   def getSeller(id: Long) = Action.async(
     request => {
-      val selfId = request.headers.get("UserId") map (_.toLong)
-      val sId = id
       val sellerFmt = (new SellerFormatter).objectMapper
       val ret = for {
-        seller <- SellerAPI.getSeller(sId)
+        seller <- SellerAPI.getSeller(id)
         //user <- FinagleFactory.client.getUserById(sId, Some(fields), selfId)
       } yield {
-        val dto = SellerDTO(seller)
-        val node = sellerFmt.valueToTree[JsonNode](dto)
-        HanseResult(data = Some(node))
+        val result = if (seller.nonEmpty) Some(sellerFmt.valueToTree[JsonNode](seller.get)) else None
+        HanseResult(data = result)
       }
       ret
     }
