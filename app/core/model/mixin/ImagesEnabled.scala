@@ -2,7 +2,8 @@ package core.model.mixin
 
 import javax.validation.constraints.NotNull
 
-import core.model.misc.ImageItem
+import java.util.{ List => JList }
+import com.lvxingpai.model.misc.ImageItem
 
 import scala.beans.BeanProperty
 
@@ -13,6 +14,6 @@ import scala.beans.BeanProperty
 trait ImagesEnabled {
   @NotNull
   @BeanProperty
-  var images: Seq[ImageItem] = Seq()
+  var images: JList[ImageItem] = _
 
 }

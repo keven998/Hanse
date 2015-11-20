@@ -42,7 +42,7 @@ object TravellerAPI {
   def updateTraveller(userId: Long, key: String, person: Person): Future[(String, Person)] = {
 
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
-//    val travellers = query.get.travellers + key -> person
+    //    val travellers = query.get.travellers + key -> person
     val ops = ds.createUpdateOperations(classOf[UserInfo]).set(s"travellers.$key", person)
     Future {
       ds.updateFirst(query, ops)

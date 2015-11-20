@@ -2,6 +2,7 @@ package core.formatter.marketplace.seller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityPlan, Pricing, StockInfo }
 import com.lvxingpai.model.marketplace.seller.BankAccount
 import com.lvxingpai.model.misc.PhoneNumber
@@ -17,6 +18,7 @@ class SellerFormatter extends BaseFormatter {
   override val objectMapper = {
     val mapper = new ObjectMapper()
     val module = new SimpleModule()
+    mapper.registerModule(DefaultScalaModule)
     module.addSerializer(classOf[CommodityPlan], new CommodityPlanSerializer)
     module.addSerializer(classOf[Commodity], new CommoditySerializer)
     module.addSerializer(classOf[Pricing], new PricingSerializer)

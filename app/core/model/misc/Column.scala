@@ -1,9 +1,9 @@
 package core.model.misc
 
-import core.model.mixin.ImagesEnabled
+import com.lvxingpai.model.mixin.ImagesEnabled
 import org.bson.types.ObjectId
 import org.hibernate.validator.constraints.NotBlank
-import org.mongodb.morphia.annotations.{ Id, Entity }
+import org.mongodb.morphia.annotations.{ Entity, Id }
 
 import scala.beans.BeanProperty
 
