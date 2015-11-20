@@ -83,9 +83,9 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
         body <- request.body.asJson
         userId <- (body \ "userId").asOpt[Long]
       } yield {
-          TravellerAPI.deleteTraveller(userId, key)
+        TravellerAPI.deleteTraveller(userId, key)
       }
-      Future{
+      Future {
         HanseResult(data = Some(node))
       }
     }

@@ -1,6 +1,6 @@
 package controllers
 
-import javax.inject.{Named, Inject}
+import javax.inject.{ Named, Inject }
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.geo.Country

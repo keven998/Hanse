@@ -4,6 +4,7 @@ import com.lvxingpai.model.geo.Country
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
