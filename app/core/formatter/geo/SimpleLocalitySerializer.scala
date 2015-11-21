@@ -12,9 +12,10 @@ class SimpleLocalitySerializer extends JsonSerializer[GeoEntity] {
   override def serialize(geo: GeoEntity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeStringField("id", geo.id.toString)
-    gen.writeStringField("zhName", geo.zhName)
-    gen.writeStringField("enName", geo.enName)
+    if (geo.id != null)
+      gen.writeStringField("id", geo.id.toString)
+    gen.writeStringField("zhName", Option(geo.zhName) getOrElse "")
+    gen.writeStringField("enName", Option(geo.enName) getOrElse "")
 
     gen.writeEndObject()
   }

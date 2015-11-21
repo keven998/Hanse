@@ -11,13 +11,10 @@ class RichTextSerializer extends JsonSerializer[RichText] {
 
   override def serialize(richText: RichText, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-
-    if (richText.title != null)
-      gen.writeStringField("title", richText.title)
-    if (richText.summary != null)
-      gen.writeStringField("summary", richText.summary)
-    if (richText.body != null)
-      gen.writeStringField("body", richText.body)
+    
+    gen.writeStringField("title", Option(richText.title) getOrElse "")
+    gen.writeStringField("summary", Option(richText.summary) getOrElse "")
+    gen.writeStringField("body", Option(richText.body) getOrElse "")
 
     gen.writeEndObject()
   }

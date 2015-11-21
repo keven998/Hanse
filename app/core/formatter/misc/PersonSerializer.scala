@@ -13,16 +13,13 @@ class PersonSerializer extends JsonSerializer[Person] {
 
   override def serialize(person: Person, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-    if (person.surname != null)
-      gen.writeStringField("surname", person.surname)
-    if (person.givenName != null)
-      gen.writeStringField("givenName", person.givenName)
+    gen.writeStringField("surname", Option(person.surname) getOrElse "")
+    gen.writeStringField("givenName", Option(person.givenName) getOrElse "")
     if (person.gender != null)
       gen.writeStringField("gender", if (person.gender == Gender.Male) "male" else "female")
-    if (person.birthday != null)
-      gen.writeStringField("birthday", person.birthday.toString)
-    if (person.fullName != null)
-      gen.writeStringField("fullName", person.fullName)
+    else gen.writeStringField("gender", "male")
+    gen.writeStringField("birthday", Option(person.birthday.toString) getOrElse "")
+    gen.writeStringField("fullName", Option(person.fullName) getOrElse "")
 
     gen.writeFieldName("idProof")
     val idProof = person.idProof
@@ -37,8 +34,7 @@ class PersonSerializer extends JsonSerializer[Person] {
       val retTel = serializers.findValueSerializer(classOf[PhoneNumber], null)
       retTel.serialize(tel, gen, serializers)
     }
-    if (person.email != null)
-      gen.writeStringField("email", person.email)
+    gen.writeStringField("email", Option(person.email) getOrElse "")
     gen.writeEndObject()
   }
 }

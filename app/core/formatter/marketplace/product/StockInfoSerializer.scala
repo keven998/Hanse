@@ -13,10 +13,8 @@ class StockInfoSerializer extends JsonSerializer[StockInfo] {
   override def serialize(stockInfo: StockInfo, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    if (stockInfo.status != null)
-      gen.writeStringField("status", stockInfo.status)
-    if (stockInfo.quantity != null)
-      gen.writeNumberField("quantity", stockInfo.quantity)
+    gen.writeStringField("status", Option(stockInfo.status) getOrElse "")
+    gen.writeNumberField("quantity", Option(stockInfo.quantity) getOrElse 0)
 
     gen.writeFieldName("timeRange")
     gen.writeStartArray()
