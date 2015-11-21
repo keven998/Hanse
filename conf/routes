@@ -24,19 +24,22 @@ GET           /commodities/$commodityId<\d+>                         @controller
 #REST
 
 # 创建订单
-POST          /orders                                                     @controllers.TradeCtrl.createOrder()
+POST          /orders                                                @controllers.TradeCtrl.createOrder()
 
 # 获取订单列表
-GET           /orders                                                     @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
+GET           /orders                                                @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
+
+# 订单详情
+GET           /orders/$orderId<\d+>                                  @controllers.TradeCtrl.getOrderInfo(orderId: Long)
 
 # GET         /privateKey                                                     @controllers.TradeCtrl.privateKey()
 
 #----------支付接口----------
 #微信预支付
-POST          /orders/$id<\d+>/payments                                   @controllers.PaymentCtrl.createPayments(id:Long)
+POST          /orders/$id<\d+>/payments                              @controllers.PaymentCtrl.createPayments(id:Long)
 
 #查询订单
-GET           /orders/$id<\d+>/payments                                   @controllers.PaymentCtrl.getPayments(id:Long)
+GET           /orders/$id<\d+>/payments                              @controllers.PaymentCtrl.getPayments(id:Long)
 
 #微信回调
 POST          /payment-webhook/wechat                                @controllers.PaymentCtrl.wechatCallback()

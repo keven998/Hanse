@@ -214,4 +214,21 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       }
     }
   )
+
+  /**
+   * 订单详情
+   * @param orderId 订单id
+   * @return 订单详情
+   */
+  def getOrderInfo(orderId: Long) = Action.async(
+    request => {
+      val orderMapper = new OrderFormatter().objectMapper
+      for {
+        order <- OrderAPI.getOrder(orderId)
+      } yield {
+        val node = orderMapper.valueToTree[JsonNode](order)
+        HanseResult(data = Some(node))
+      }
+    }
+  )
 }
