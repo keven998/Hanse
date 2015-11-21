@@ -92,8 +92,9 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeStartArray()
     val trafficInfo = commodity.trafficInfo
     if (trafficInfo != null) {
-      val retTrafficInfo = serializers.findValueSerializer(classOf[RichText], null)
-      retTrafficInfo.serialize(trafficInfo, gen, serializers)
+      val ret = serializers.findValueSerializer(classOf[RichText], null)
+      for (t <- trafficInfo)
+        ret.serialize(t, gen, serializers)
     }
     gen.writeEndArray()
 
