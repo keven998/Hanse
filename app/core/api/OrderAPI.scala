@@ -368,7 +368,8 @@ object OrderAPI {
     val query = if (status.nonEmpty) ds.createQuery(classOf[Order]).field("consumerId").equal(userId).field("status").equal(status.get)
     else ds.createQuery(classOf[Order]).field("consumerId").equal(userId)
     Future {
-      query.asList()
+      val result: Seq[Order] = query.asList()
+      Option(result) getOrElse Seq()
     }
   }
 }

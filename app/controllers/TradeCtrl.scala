@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject._
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
 import core.api.{ CommodityAPI, OrderAPI }
 import core.formatter.marketplace.order.OrderFormatter
@@ -209,10 +209,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       for {
         orders <- OrderAPI.getOrderList(userId, status)
       } yield {
-
-      }
-      Future {
-        null
+        val node = orderMapper.valueToTree[JsonNode](orders)
+        HanseResult(data = Some(node))
       }
     }
   )
