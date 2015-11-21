@@ -12,10 +12,8 @@ class SimpleCountrySerializer extends JsonSerializer[Country] {
 
     if (country.id != null)
       gen.writeStringField("id", country.id.toString)
-    if (country.zhName != null)
-      gen.writeStringField("zhName", country.zhName)
-    if (country.enName != null)
-      gen.writeStringField("enName", country.enName)
+    gen.writeStringField("zhName", Option(country.zhName) getOrElse "")
+    gen.writeStringField("enName", Option(country.enName) getOrElse "")
 
     gen.writeEndObject()
   }

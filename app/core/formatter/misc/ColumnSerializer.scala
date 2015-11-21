@@ -12,8 +12,7 @@ class ColumnSerializer extends JsonSerializer[Column] {
 
   override def serialize(column: Column, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-    if (column.title != null)
-      gen.writeStringField("title", column.title)
+    gen.writeStringField("title", Option(column.title) getOrElse "")
     // images
     gen.writeFieldName("images")
     gen.writeStartArray()
@@ -25,8 +24,7 @@ class ColumnSerializer extends JsonSerializer[Column] {
     }
     gen.writeEndArray()
 
-    if (column.link != null)
-      gen.writeStringField("link", column.link)
+    gen.writeStringField("link", Option(column.link) getOrElse "")
 
     gen.writeEndObject()
   }

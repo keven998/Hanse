@@ -18,7 +18,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
     gen.writeStartObject()
 
     gen.writeNumberField("sellerId", seller.sellerId)
-    gen.writeStringField("name", seller.name)
+    gen.writeStringField("name", Option(seller.name) getOrElse "")
 
     gen.writeFieldName("desc")
     val desc = seller.desc
@@ -93,11 +93,10 @@ class SellerSerializer extends JsonSerializer[Seller] {
     }
     gen.writeEndArray()
 
-    if (seller.address != null)
-      gen.writeStringField("address", seller.address)
+    gen.writeStringField("address", Option(seller.address) getOrElse "")
 
-    gen.writeNumberField("favorCnt", seller.favorCnt)
-    gen.writeNumberField("rating", seller.rating)
+    gen.writeNumberField("favorCnt", Option(seller.favorCnt) getOrElse 0)
+    gen.writeNumberField("rating", Option(seller.rating) getOrElse 0.0d)
 
     gen.writeEndObject()
   }
