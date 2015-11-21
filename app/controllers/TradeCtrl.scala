@@ -5,6 +5,7 @@ import javax.inject._
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import core.api.{ CommodityAPI, OrderAPI }
+import core.formatter.marketplace.order.OrderFormatter
 import core.misc.HanseResult
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller, Results }
@@ -204,7 +205,12 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def getOrders(userId: Long, status: Option[String]) = Action.async(
     request => {
+      val orderMapper = new OrderFormatter().objectMapper
+      for {
+        orders <- OrderAPI.getOrderList(userId, status)
+      } yield {
 
+      }
       Future {
         null
       }
