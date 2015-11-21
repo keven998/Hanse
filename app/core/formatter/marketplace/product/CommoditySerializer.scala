@@ -70,7 +70,7 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeFieldName("notice")
     gen.writeStartArray()
     val notice = commodity.notice
-    if (notice.nonEmpty) {
+    if (notice != null) {
       val ret = serializers.findValueSerializer(classOf[RichText], null)
       for (n <- notice)
         ret.serialize(n, gen, serializers)
@@ -81,7 +81,7 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeFieldName("refundPolicy")
     gen.writeStartArray()
     val refundPolicy = commodity.refundPolicy
-    if (refundPolicy.nonEmpty) {
+    if (refundPolicy != null) {
       val ret = serializers.findValueSerializer(classOf[RichText], null)
       for (r <- refundPolicy)
         ret.serialize(r, gen, serializers)
@@ -89,6 +89,7 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeEndArray()
 
     gen.writeFieldName("trafficInfo")
+    gen.writeStartArray()
     val trafficInfo = commodity.trafficInfo
     if (trafficInfo != null) {
       val retTrafficInfo = serializers.findValueSerializer(classOf[RichText], null)

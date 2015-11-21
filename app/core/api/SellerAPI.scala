@@ -13,10 +13,10 @@ import scala.concurrent.Future
  */
 object SellerAPI {
 
-  def getSeller(id: Long)(implicit ds: Datastore): Future[Seller] = {
+  def getSeller(id: Long)(implicit ds: Datastore): Future[Option[Seller]] = {
     Future {
       //ds.createQuery(classOf[Seller]).field("id").equal(id).get
-      ds.find(classOf[Seller], "_id", id).get
+      Option(ds.find(classOf[Seller], "sellerId", id).get)
     }
   }
 
