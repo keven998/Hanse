@@ -41,13 +41,12 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
     }
   )
 
-  def getCommoditiesOfSeller(id: String) = Action.async(
+  def getCommoditiesOfSeller(id: Long) = Action.async(
     request => {
       val selfId = request.headers.get("UserId") map (_.toLong)
-      val sId = id.toLong
       val sellerFmt = (new CommodityFormatter).objectMapper
       val ret = for {
-        cmds <- SellerAPI.getCommoditiesBySeller(sId)
+        cmds <- SellerAPI.getCommoditiesBySeller(id)
       } yield {
         val node = sellerFmt.valueToTree[ArrayNode](cmds)
         HanseResult(data = Some(node))

@@ -1,12 +1,15 @@
 package core.api
 
-import core.db.MorphiaFactory
-import core.misc.Global
-import core.model.trade.order.{ Order, OrderStatus, PaymentVendor, Prepay }
-import core.sign.RSA
-import org.bson.types.ObjectId
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import java.util.Date
 
+import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
+import com.lvxingpai.model.marketplace.trade.PaymentVendor
+import core.misc.Global
+import core.sign.RSA
+import org.mongodb.morphia.Datastore
+
+import scala.collection.JavaConversions._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
@@ -14,7 +17,6 @@ import scala.concurrent.Future
  */
 object OrderAPI {
 
-  val ds = MorphiaFactory.datastore
   // 服务接口名称， 固定值
   val aliService = "mobile.securitypay.pay"
 
@@ -44,19 +46,20 @@ object OrderAPI {
    * @param orderId 订单id
    * @return 订单信息
    */
-  def getOrder(orderId: ObjectId): Future[Order] = {
+  def getOrder(orderId: Long)(implicit ds: Datastore): Future[Order] = {
     Future {
-      ds.find(classOf[Order], Order.FD_ID, orderId).get
+      ds.find(classOf[Order], "order", orderId).get
     }
   }
 
-  def savePrepay(prepay: Option[Prepay], order: Order) = {
+  def savePrepay(p: Option[AnyRef], order: Order)(implicit ds: Datastore) = {
     Future {
-      if (prepay.nonEmpty) {
+      if (p.nonEmpty) {
+        val prepay = p.get.asInstanceOf[Prepay]
         val pm = new java.util.HashMap[String, Prepay]
-        pm.put(prepay.get.getVendor, prepay.get)
-        val query = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(order.id)
-        val updateOps = ds.createUpdateOperations(classOf[Order]).set(Order.FD_PAYMENTS, pm)
+        pm.put(prepay.provider, prepay)
+        val query = ds.createQuery(classOf[Order]).field("order").equal(order.orderId)
+        val updateOps = ds.createUpdateOperations(classOf[Order]).set("paymentInfo", pm)
         ds.updateFirst(query, updateOps)
       }
     }
@@ -64,16 +67,18 @@ object OrderAPI {
 
   /**
    * 创建订单
-   * @param cmyId 商品Id
+   * @param commodityId 商品id
    * @param qty 商品数量
    * @return
    */
-  def addOrder(cmyId: Long, qty: Int): Future[Order] = {
-    val futureCmy = CommodityAPI.getCommodityById(cmyId)
+  def addOrder(commodityId: Long, qty: Int)(implicit ds: Datastore): Future[Order] = {
+    val futureCommodity = CommodityAPINew.getCommodityById(commodityId)
     for {
-      cmy <- futureCmy
+      commodity <- futureCommodity
     } yield {
-      val order = Order(cmy, qty)
+      val order = new Order
+      order.commodity = commodity
+      order.quantity = qty
       ds.save[Order](order)
       order
     }
@@ -99,7 +104,7 @@ object OrderAPI {
     val cmyNameStr = "&subject=" + "\"" + orderInfo.commodity.title + "\""
 
     // 商品详情
-    val cmyDetailStr = "&body=" + "\"" + orderInfo.commodity.detail + "\""
+    val cmyDetailStr = "&body=" + "\"" + orderInfo.commodity.desc.summary + "\""
 
     // 商品金额
     val totalFeeStr = "&total_fee=" + "\"" + orderInfo.totalPrice + "\""
@@ -175,15 +180,15 @@ object OrderAPI {
    * @param amount 金额
    * @param order 订单
    */
-  def updatePayment(paymentVendor: String, amount: Float, order: Order): Unit = {
+  def updatePayment(paymentVendor: String, amount: Float, order: Order)(implicit ds: Datastore): Unit = {
     val prepay = new Prepay()
-    prepay.vendor = paymentVendor
+    prepay.provider = paymentVendor
     prepay.amount = amount
-    prepay.timestamp = System.currentTimeMillis()
+    prepay.timestamp = new Date()
 
-    order.payments.put(paymentVendor, prepay)
-    val query = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(order.id)
-    val updateOps = ds.createUpdateOperations(classOf[Order]).set(Order.FD_PAYMENTS, order.payments)
+    order.paymentInfo.put(paymentVendor, prepay)
+    val query = ds.createQuery(classOf[Order]).field("orderId").equal(order.orderId)
+    val updateOps = ds.createUpdateOperations(classOf[Order]).set("paymentInfo", order.paymentInfo)
     ds.updateFirst(query, updateOps)
   }
 
@@ -193,9 +198,9 @@ object OrderAPI {
    * @param orderId 订单ID
    * @return 预支付信息
    */
-  def prePay(payMerchant: String, orderId: String): Future[String] = {
+  def prePay(payMerchant: String, orderId: Long)(implicit ds: Datastore): Future[String] = {
     // 取得订单信息
-    val futureOrderInfo = getOrder(new ObjectId(orderId))
+    val futureOrderInfo = getOrder(orderId)
 
     // 根据不同的支付商家, 返回不同的串
     payMerchant match {
@@ -220,7 +225,7 @@ object OrderAPI {
    * @param orderId 订单号
    * @return
    */
-  def getAlipayOrderStatus(orderId: String): String = {
+  def getAlipayOrderStatus(orderId: Long): String = {
     // 请求参数
     //    val data = {
     //      "method"="alipay.trade.query",
@@ -302,19 +307,19 @@ object OrderAPI {
    * @param orderId 订单号
    * @param status 订单状态
    */
-  def updateOrderStatus(orderId: String, status: String) = {
+  def updateOrderStatus(orderId: Long, status: String)(implicit ds: Datastore) = {
     Future {
-      val query = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(new ObjectId(orderId))
-      val updateOps = ds.createUpdateOperations(classOf[Order]).set(Order.FD_STATUS, status)
+      val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
+      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", status)
       ds.update(query, updateOps)
     }
   }
 
   def aliOrderStatus2OrderStatus(aliTradeStatus: String): String = {
     aliTradeStatus match {
-      case "TRADE_SUCCESS" | "TRADE_FINISHED" => OrderStatus.Finished
-      case "WAIT_BUYER_PAY" => OrderStatus.Pending
-      case "TRADE_CLOSED" => OrderStatus.Close
+      case "TRADE_SUCCESS" | "TRADE_FINISHED" => "finished"
+      case "WAIT_BUYER_PAY" => "pending"
+      //      case "TRADE_CLOSED" => "finished"
     }
   }
 
@@ -323,11 +328,11 @@ object OrderAPI {
    * @param orderId 订单号
    * @return 订单状态
    */
-  def getOrderStatus(orderId: String): Future[String] = {
+  def getOrderStatus(orderId: Long)(implicit ds: Datastore): Future[String] = {
     // 根据订单号查询订单支付信息
     Future {
-      val order = ds.createQuery(classOf[Order]).field(Order.FD_ID).equal(new ObjectId(orderId)).get
-      if (order.status.equals(OrderStatus.Finished)) order.status
+      val order = ds.createQuery(classOf[Order]).field("orderId").equal(orderId).get
+      if (order.status.equals("finished")) order.status
       else {
         // 订单未完成, 去支付宝查询订单状态, 核对订单状态
         val alipayStatus = aliOrderStatus2OrderStatus(getAlipayOrderStatus(orderId))
@@ -349,5 +354,22 @@ object OrderAPI {
     val ali_public_key = Global.conf.getString("alipayAPI.aliPubKey").get
     val input_charset = "utf-8"
     RSA.verify(content, sign, ali_public_key, input_charset)
+  }
+
+  /**
+   * 根据用户id获取订单列表
+   * 如果订单状态为空, 获取所在用户下的所有的订单列表
+   * 如果订单状态不为空, 获取所在用户下的某个订单状态的订单列表
+   * @param userId 用户id
+   * @param status 订单状态
+   * @return 订单列表
+   */
+  def getOrderList(userId: Long, status: Option[String])(implicit ds: Datastore): Future[Seq[Order]] = {
+    val query = if (status.nonEmpty) ds.createQuery(classOf[Order]).field("consumerId").equal(userId).field("status").equal(status.get)
+    else ds.createQuery(classOf[Order]).field("consumerId").equal(userId)
+    Future {
+      val result: Seq[Order] = query.asList()
+      Option(result) getOrElse Seq()
+    }
   }
 }

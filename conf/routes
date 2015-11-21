@@ -25,14 +25,21 @@ GET           /commodities/$commodityId<\d+>                         @controller
 
 # 创建订单
 POST          /orders                                                @controllers.TradeCtrl.createOrder()
+
+# 获取订单列表
+GET           /orders                                                @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
+
+# 订单详情
+GET           /orders/$orderId<\d+>                                  @controllers.TradeCtrl.getOrderInfo(orderId: Long)
+
 # GET         /privateKey                                                     @controllers.TradeCtrl.privateKey()
 
 #----------支付接口----------
 #微信预支付
-POST          /orders/:id/payments                                   @controllers.PaymentCtrl.createPayments(id:String)
+POST          /orders/$id<\d+>/payments                              @controllers.PaymentCtrl.createPayments(id:Long)
 
 #查询订单
-GET           /orders/:id/payments                                   @controllers.PaymentCtrl.getPayments(id:String)
+GET           /orders/$id<\d+>/payments                              @controllers.PaymentCtrl.getPayments(id:Long)
 
 #微信回调
 POST          /payment-webhook/wechat                                @controllers.PaymentCtrl.wechatCallback()
@@ -44,10 +51,10 @@ POST          /notifyResult                                          @controller
 
 #----------商家接口----------
 #商家详情
-GET           /sellers/:id/                                          @controllers.SellerCtrl.getSeller(id:Long)
+GET           /sellers/$id<\d+>/                                     @controllers.SellerCtrl.getSeller(id:Long)
 
 #商家的商品列表
-GET           /sellers/:id/commodities                               @controllers.SellerCtrl.getCommoditiesOfSeller(id:String)
+GET           /sellers/$id<\d+>/commodities                          @controllers.SellerCtrl.getCommoditiesOfSeller(id:Long)
 
 #测试接口转发
 GET           /testhanse                                             @controllers.TradeCtrl.testhanse()

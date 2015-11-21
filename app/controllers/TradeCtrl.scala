@@ -2,9 +2,12 @@ package controllers
 
 import javax.inject._
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
+import com.lvxingpai.inject.morphia.MorphiaMap
 import core.api.{ CommodityAPI, OrderAPI }
+import core.formatter.marketplace.order.OrderFormatter
 import core.misc.HanseResult
+import play.api.Configuration
 import play.api.mvc.{ Action, Controller, Results }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,7 +17,9 @@ import scala.concurrent.Future
  * Created by topy on 2015/10/22.
  */
 @Singleton
-class TradeCtrl extends Controller {
+class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
+
+  implicit lazy val ds = datastore.map.get("k2").get
 
   /**
    * 创建商品
@@ -74,13 +79,13 @@ class TradeCtrl extends Controller {
           node.put("orderId", order.id.toString)
           node.put("cmyTitle", order.commodity.title)
           node.put("cmyPrice", order.commodity.price)
-          node.put("cmyDetail", order.commodity.detail)
+          node.put("cmyDetail", order.commodity.desc.summary)
           //          node.put("salerName", order.commodity.saler.realNameInfo.givenName)
           node.put("discount", order.discount)
           node.put("quantity", order.quantity)
           node.put("status", order.status)
           node.put("totalPrice", order.totalPrice)
-          node.put("orderTime", order.orderTime)
+          node.put("orderTime", order.createTime.toString)
           HanseResult(data = Some(node))
         }
       }
@@ -95,7 +100,7 @@ class TradeCtrl extends Controller {
     request => {
       val orderPara = for {
         body <- request.body.asJson
-        orderId <- (body \ "orderId").asOpt[String]
+        orderId <- (body \ "orderId").asOpt[Long]
         payType <- (body \ "payType").asOpt[String]
       } yield orderId -> payType
 
@@ -122,7 +127,7 @@ class TradeCtrl extends Controller {
     request => {
       val futureStatus = for {
         body <- request.body.asJson
-        orderId <- (body \ "orderId").asOpt[String]
+        orderId <- (body \ "orderId").asOpt[Long]
       } yield OrderAPI.getOrderStatus(orderId)
 
       val mapper = new ObjectMapper()
@@ -157,7 +162,7 @@ class TradeCtrl extends Controller {
           // 支付宝签名
           val sign = data("sign").head
           // 订单信息
-          val out_trade_no = data("out_trade_no").head
+          val out_trade_no = data("out_trade_no").head.toLong
           // 订单状态
           val trade_status = data("trade_status").head
           // 验证支付宝签名
@@ -186,6 +191,43 @@ class TradeCtrl extends Controller {
 
       Future {
         null
+      }
+    }
+  )
+
+  /**
+   * 根据用户id获取订单列表
+   * 如果订单状态为空, 获取所在用户下的所有的订单列表
+   * 如果订单状态不为空, 获取所在用户下的某个订单状态的订单列表
+   * @param userId 用户id
+   * @param status 订单状态
+   * @return 订单列表
+   */
+  def getOrders(userId: Long, status: Option[String]) = Action.async(
+    request => {
+      val orderMapper = new OrderFormatter().objectMapper
+      for {
+        orders <- OrderAPI.getOrderList(userId, status)
+      } yield {
+        val node = orderMapper.valueToTree[JsonNode](orders)
+        HanseResult(data = Some(node))
+      }
+    }
+  )
+
+  /**
+   * 订单详情
+   * @param orderId 订单id
+   * @return 订单详情
+   */
+  def getOrderInfo(orderId: Long) = Action.async(
+    request => {
+      val orderMapper = new OrderFormatter().objectMapper
+      for {
+        order <- OrderAPI.getOrder(orderId)
+      } yield {
+        val node = orderMapper.valueToTree[JsonNode](order)
+        HanseResult(data = Some(node))
       }
     }
   )

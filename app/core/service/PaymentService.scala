@@ -2,11 +2,13 @@ package core.service
 
 import core.misc.Implicits._
 import core.misc.{ Global, HanseResult, Utils }
-import core.model.trade.order.{ PaymentVendor, Prepay, WechatPrepay }
+import core.model.trade.order.WechatPrepay
+import com.lvxingpai.model.marketplace.order.Prepay
+import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import org.bson.types.ObjectId
 import play.api.Play.current
 import play.api.libs.ws.WS
-
+import java.util.Date
 import scala.xml.XML
 
 /**
@@ -87,11 +89,11 @@ object PaymentService {
       None
     } else {
       val prepay = new Prepay()
-      prepay.setId(new ObjectId())
-      prepay.setPrepayId((elem \ "prepay_id" \*).toString())
+      prepay.id = new ObjectId()
+      prepay.prepayId = (elem \ "prepay_id" \*).toString()
       prepay.setVendor(PaymentVendor.Wechat)
       prepay.setTradeType((elem \ WechatPrepay.FD_SIGN \*).toString())
-      prepay.setTimestamp(System.currentTimeMillis())
+      prepay.setTimestamp(new Date())
       prepay.setSign((elem \ WechatPrepay.FD_SIGN \*).toString())
       prepay.setNonceString((elem \ WechatPrepay.FD_NONCE_STR \*).toString())
       prepay.setResult((elem \ WechatPrepay.FD_RETURN_MSG \*).toString())
