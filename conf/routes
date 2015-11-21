@@ -29,10 +29,10 @@ POST          /orders                                                @controller
 
 #----------支付接口----------
 #微信预支付
-POST          /orders/:id/payments                                   @controllers.PaymentCtrl.createPayments(id:String)
+POST          /orders/:id/payments                                   @controllers.PaymentCtrl.createPayments(id:Long)
 
 #查询订单
-GET           /orders/:id/payments                                   @controllers.PaymentCtrl.getPayments(id:String)
+GET           /orders/:id/payments                                   @controllers.PaymentCtrl.getPayments(id:Long)
 
 #微信回调
 POST          /payment-webhook/wechat                                @controllers.PaymentCtrl.wechatCallback()
@@ -44,10 +44,10 @@ POST          /notifyResult                                          @controller
 
 #----------商家接口----------
 #商家详情
-GET           /sellers/:id/                                          @controllers.SellerCtrl.getSeller(id:Long)
+GET           /sellers/$id<\d+>/                                     @controllers.SellerCtrl.getSeller(id:Long)
 
 #商家的商品列表
-GET           /sellers/:id/commodities                               @controllers.SellerCtrl.getCommoditiesOfSeller(id:String)
+GET           /sellers/$id<\d+>/commodities                          @controllers.SellerCtrl.getCommoditiesOfSeller(id:Long)
 
 #测试接口转发
 GET           /testhanse                                             @controllers.TradeCtrl.testhanse()

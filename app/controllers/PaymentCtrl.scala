@@ -1,14 +1,16 @@
 package controllers
 
-import javax.inject.Singleton
+import javax.inject.{ Named, Inject, Singleton }
 
+import com.lvxingpai.inject.morphia.MorphiaMap
+import com.lvxingpai.model.marketplace.order.Order
+import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.api.OrderAPI
 import core.misc.HanseResult
 import core.misc.Implicits._
-import core.model.trade.order._
+import core.model.trade.order.WechatPrepay
 import core.service.PaymentService
-import org.bson.types.ObjectId
-import org.mongodb.morphia.Datastore
+import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,9 +18,11 @@ import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 @Singleton
-class PaymentCtrl extends Controller {
+class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
 
-  def createPayments(orderId: String) = Action.async(
+  implicit lazy val ds = datastore.map.get("k2").get
+
+  def createPayments(orderId: Long) = Action.async(
     request => {
       val ret = for {
         body <- request.body.asJson
@@ -29,14 +33,14 @@ class PaymentCtrl extends Controller {
         vendor = (body \ "vendor").asOpt[String].getOrElse("")
       } yield {
         for {
-          orderValue <- OrderAPI.getOrder(new ObjectId(orderId))
+          orderValue <- OrderAPI.getOrder(orderId)
           wcResponse <- PaymentService.unifiedOrder(
             Map(
               WechatPrepay.FD_OUT_TRADE_NO -> orderId,
               WechatPrepay.FD_SPBILL_CREATE_IP -> ip,
               WechatPrepay.FD_BODY -> name,
               WechatPrepay.FD_TRADE_TYPE -> tradeType,
-              WechatPrepay.FD_TOTAL_FEE -> (orderValue.getTotalPrice * 100).toInt
+              WechatPrepay.FD_TOTAL_FEE -> (orderValue.totalPrice * 100).toInt
             )
           )
           result <- OrderAPI.savePrepay(
@@ -84,12 +88,13 @@ class PaymentCtrl extends Controller {
         val flag = prePay.getReturnCode.equals(WechatPrepay.VA_SUCCESS) &&
           prePay.getResultCode.equals(WechatPrepay.VA_SUCCESS)
         if (flag) {
-          val orderId = (body \ WechatPrepay.FD_OUT_TRADE_NO \*)
-          OrderAPI.getOrder(new ObjectId(orderId)).map(order => {
+          val orderId = (body \ WechatPrepay.FD_OUT_TRADE_NO \*).toLong
+          OrderAPI.getOrder(orderId).map(order => {
             // 验证请求的签名等信息
             if (validationCallback(prePay, order)) {
+
               OrderAPI.savePrepay(Some(prePay), order)
-              OrderAPI.updateOrderStatus(orderId, OrderStatus.Paid)
+              OrderAPI.updateOrderStatus(orderId, "paid")
               //              for {
               //                resultPre <- OrderAPI.savePrepay(Some(prePay), order)
               //                updateSta <- OrderAPI.updateOrderStatus(orderId, OrderStatus.Paid)
@@ -137,46 +142,47 @@ class PaymentCtrl extends Controller {
     }
   }
 
-  def validationCallback(prepay: Prepay, order: Order) = {
-    if (order.getPayments isEmpty)
+  def validationCallback(wechatPrepay: WechatPrepay, order: Order): Boolean = {
+    if (order.paymentInfo.isEmpty)
       false
     else {
-      val dbPrepay = order.getPayments.get(PaymentVendor.Wechat)
-      val ret = dbPrepay.getSign.equals(prepay.getSign) &&
-        dbPrepay.getNonceString.equals(prepay.getNonceString) &&
-        dbPrepay.getPrepayId.equals(prepay.getPrepayId)
+      val dbPrepay = order.paymentInfo.get(PaymentVendor.Wechat)
+      val ret = dbPrepay.sign.equals(wechatPrepay.sign) &&
+        dbPrepay.nonceString.equals(wechatPrepay.nonceString) &&
+        dbPrepay.prepayId.equals(wechatPrepay.prepayId)
       // dbPrepay.getVendor.equals(prepay.getVendor) &&
       // dbPrepay.getTradeType.equals(prepay.getTradeType)
       ret
     }
+
   }
 
-  def getPaymentsStatus(orderId: String) = Action.async(
+  def getPaymentsStatus(orderId: Long) = Action.async(
     request => {
       val ret = for {
-        orderValue <- OrderAPI.getOrder(new ObjectId(orderId))
+        orderValue <- OrderAPI.getOrder(orderId)
         wcResponse <- PaymentService.queryOrder(
           Map(WechatPrepay.FD_TRANSACTION_ID ->
-            orderValue.getPayments.get(PaymentVendor.Wechat).getPrepayId)
+            orderValue.paymentInfo.get(PaymentVendor.Wechat).prepayId)
         )
       } yield {
-        val str = orderValue.getStatus
+        val str = orderValue.status
         Ok(str)
       }
       ret
     }
   )
 
-  def getPayments(orderId: String) = Action.async(
+  def getPayments(orderId: Long) = Action.async(
     request => {
       val ret = for {
-        orderValue <- OrderAPI.getOrder(new ObjectId(orderId))
+        orderValue <- OrderAPI.getOrder(orderId)
         wcResponse <- PaymentService.queryOrder(
           Map(WechatPrepay.FD_TRANSACTION_ID ->
-            orderValue.getPayments.get(PaymentVendor.Wechat).getPrepayId)
+            orderValue.paymentInfo.get(PaymentVendor.Wechat).prepayId)
         )
       } yield {
-        val str = orderValue.getStatus
+        val str = orderValue.status
         Ok(str)
       }
       ret
