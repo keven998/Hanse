@@ -18,10 +18,9 @@ class UserSerializer extends JsonSerializer[UserInfo] {
 
     gen.writeFieldName("avatar")
     val avatar = user.avatar
-    if (avatar != null) {
-      val retIdProof = serializers.findValueSerializer(classOf[ImageItem], null)
-      retIdProof.serialize(avatar, gen, serializers)
-    }
+    val retAvatar = if (avatar != null) serializers.findValueSerializer(classOf[ImageItem], null)
+    else serializers.findNullValueSerializer(null)
+    retAvatar.serialize(avatar, gen, serializers)
 
     gen.writeEndObject()
   }

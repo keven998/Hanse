@@ -15,8 +15,13 @@ object SellerAPI {
 
   def getSeller(id: Long)(implicit ds: Datastore): Future[Option[Seller]] = {
     Future {
-      //ds.createQuery(classOf[Seller]).field("id").equal(id).get
       Option(ds.find(classOf[Seller], "sellerId", id).get)
+    }
+  }
+
+  def saveSeller(s: Seller)(implicit ds: Datastore) = {
+    Future {
+      ds.save[Seller](s)
     }
   }
 
