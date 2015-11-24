@@ -2,8 +2,8 @@ package core.model.trade.order
 
 import java.util.Date
 
-import com.lvxingpai.model.account.Gender
-import com.lvxingpai.model.misc.{ IdProof, PhoneNumber }
+import com.lvxingpai.model.account.{ IdProof, Gender }
+import com.lvxingpai.model.misc.PhoneNumber
 import org.hibernate.validator.constraints.{ Email, Length, NotBlank }
 import org.mongodb.morphia.annotations.Embedded
 

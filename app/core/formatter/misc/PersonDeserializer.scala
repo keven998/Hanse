@@ -6,16 +6,15 @@ import com.fasterxml.jackson.core.{ JsonFactory, JsonParser }
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.node.{ NullNode, TextNode }
 import com.fasterxml.jackson.databind.{ DeserializationContext, JsonDeserializer, JsonNode }
-import com.lvxingpai.model.account.Gender
-import com.lvxingpai.model.misc.{ IdProof, PhoneNumber }
-import core.model.trade.order.Person
+import com.lvxingpai.model.account.{ RealNameInfo, IdProof, Gender }
+import com.lvxingpai.model.misc.PhoneNumber
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 
 /**
  * Created by pengyt on 2015/11/19.
  */
-class PersonDeserializer extends JsonDeserializer[Person] {
-  override def deserialize(p: JsonParser, ctxt: DeserializationContext): Person = {
+class PersonDeserializer extends JsonDeserializer[RealNameInfo] {
+  override def deserialize(p: JsonParser, ctxt: DeserializationContext): RealNameInfo = {
     val node = p.getCodec.readTree[JsonNode](p)
     val surname = node.get("surname").asText()
     val givenName = node.get("givenName").asText()
@@ -46,13 +45,13 @@ class PersonDeserializer extends JsonDeserializer[Person] {
       case item: TextNode => Some(item.asText())
     }
 
-    val person = new Person()
+    val person = new RealNameInfo()
 
     person.surname = surname
     person.givenName = givenName
-    person.gender = if (gender == "male") Gender.Male else Gender.Female
+    person.gender = if (gender == "male") Gender.Male.toString else Gender.Female.toString
     person.birthday = birthdayDate
-    person.idProof = idProof
+    // person.idProof = idProof
     if (tel.nonEmpty) person.tel = tel.get
     if (email.nonEmpty) person.email = email.get
     person

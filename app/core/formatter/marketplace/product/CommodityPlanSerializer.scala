@@ -45,13 +45,13 @@ class CommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
     }
     gen.writeEndArray()
 
-    gen.writeFieldName("timeRange")
-    gen.writeStartArray()
-    if (commodityPlan.timeRange != null) {
-      for (t <- commodityPlan.timeRange)
-        gen.writeNumber(t.getTime)
-    }
-    gen.writeEndArray()
+    //    gen.writeFieldName("timeRange")
+    //    gen.writeStartArray()
+    //    if (commodityPlan.timeRange != null) {
+    //      for (t <- commodityPlan.timeRange)
+    //        gen.writeNumber(t.getTime)
+    //    }
+    //    gen.writeEndArray()
 
     gen.writeEndObject()
   }

@@ -1,9 +1,9 @@
 package core.formatter.misc
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
+import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
+import com.lvxingpai.model.account.{ ChineseID, IdProof, Passport }
 import com.lvxingpai.model.geo.Country
-import com.lvxingpai.model.misc.{ Passport, ChineseID, IdProof }
 
 /**
  * Created by pengyt on 2015/11/19.

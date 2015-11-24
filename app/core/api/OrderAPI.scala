@@ -1,7 +1,5 @@
 package core.api
 
-import java.util.Date
-
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.misc.Global
@@ -184,7 +182,7 @@ object OrderAPI {
     val prepay = new Prepay()
     prepay.provider = paymentVendor
     prepay.amount = amount
-    prepay.timestamp = new Date()
+    //prepay.timestamp = new Date()
 
     order.paymentInfo.put(paymentVendor, prepay)
     val query = ds.createQuery(classOf[Order]).field("orderId").equal(order.orderId)

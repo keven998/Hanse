@@ -2,7 +2,7 @@ package core.model.account
 
 import javax.validation.constraints.{ Min, NotNull }
 
-import core.model.trade.order.Person
+import com.lvxingpai.model.account.RealNameInfo
 import core.model.BasicEntity
 import core.model.misc.PhoneNumber
 import org.hibernate.validator.constraints.{ Length, NotBlank }
@@ -59,5 +59,5 @@ class UserInfo extends BasicEntity {
   /**
    * 旅客信息
    */
-  var travellers: Map[String, Person] = _
+  var travellers: Map[String, RealNameInfo] = _
 }

@@ -1,9 +1,11 @@
 package core.formatter.marketplace.order
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
-import com.lvxingpai.model.marketplace.order.{ Prepay, Order, Person }
+import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
+import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import com.lvxingpai.model.marketplace.product.Commodity
+
 import scala.collection.JavaConversions._
 /**
  * Created by pengyt on 2015/11/21.
@@ -31,7 +33,7 @@ class OrderSerializer extends JsonSerializer[Order] {
     gen.writeStartArray()
     val travellers = order.travellers
     if (travellers != null) {
-      val ret = serializers.findValueSerializer(classOf[Person], null)
+      val ret = serializers.findValueSerializer(classOf[RealNameInfo], null)
       for (traveller <- travellers)
         ret.serialize(traveller, gen, serializers)
     }
@@ -41,7 +43,7 @@ class OrderSerializer extends JsonSerializer[Order] {
     gen.writeFieldName("commodity")
     val contact = order.contact
     if (contact != null) {
-      val retSeller = serializers.findValueSerializer(classOf[Person], null)
+      val retSeller = serializers.findValueSerializer(classOf[RealNameInfo], null)
       retSeller.serialize(contact, gen, serializers)
     }
 

@@ -2,9 +2,7 @@ package core.formatter.misc
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.{ DeserializationContext, JsonDeserializer, JsonNode, ObjectMapper }
-import com.lvxingpai.model.geo.Country
-import com.lvxingpai.model.misc.{ ChineseID, IdProof, Passport }
-import org.bson.types.ObjectId
+import com.lvxingpai.model.account.{ ChineseID, IdProof, Passport }
 
 /**
  * Created by pengyt on 2015/11/19.
@@ -22,11 +20,10 @@ class IdProofDeserializer extends JsonDeserializer[IdProof] {
         chineseID
       case "passport" =>
         val number = node.get("number").asText()
-        val nationId = node.get("nation").asText()
+        val nation = node.get("nation").asText()
         val passport = new Passport()
         passport.number = number
-        passport.nation = new Country()
-        passport.nation.id = new ObjectId(nationId)
+        passport.nation = nation
         passport
     }
   }
