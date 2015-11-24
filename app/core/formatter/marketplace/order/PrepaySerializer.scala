@@ -1,7 +1,7 @@
 package core.formatter.marketplace.order
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
+import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.order.Prepay
 
 /**
@@ -16,7 +16,7 @@ class PrepaySerializer extends JsonSerializer[Prepay] {
     gen.writeStringField("provider", Option(prepay.provider) getOrElse "")
     gen.writeStringField("prepayId", Option(prepay.prepayId) getOrElse "")
     gen.writeNumberField("amount", Option(prepay.amount) getOrElse 0.0f)
-    gen.writeStringField("timestamp", Option(prepay.timestamp.toString) getOrElse "")
+    //gen.writeStringField("timestamp", Option(prepay.timestamp.toString) getOrElse "")
     gen.writeStringField("nonceString", Option(prepay.nonceString) getOrElse "")
     gen.writeStringField("sign", Option(prepay.sign) getOrElse "")
     gen.writeStringField("tradeType", Option(prepay.tradeType) getOrElse "")

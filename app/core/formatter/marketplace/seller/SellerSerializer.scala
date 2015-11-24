@@ -5,8 +5,7 @@ import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.account.UserInfo
 import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
-import com.lvxingpai.model.misc.{ PhoneNumber, RichText }
-import core.model.misc.ImageItem
+import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import collection.JavaConversions._
 
 /**
@@ -73,14 +72,6 @@ class SellerSerializer extends JsonSerializer[Seller] {
     }
     gen.writeEndArray()
 
-    gen.writeFieldName("email")
-    gen.writeStartArray()
-    if (seller.email != null) {
-      for (e <- seller.email)
-        gen.writeString(e)
-    }
-    gen.writeEndArray()
-
     gen.writeFieldName("phone")
     gen.writeStartArray()
     val phone = seller.phone
@@ -101,13 +92,23 @@ class SellerSerializer extends JsonSerializer[Seller] {
     val cover = seller.cover
     val retCover = if (cover != null) serializers.findValueSerializer(classOf[ImageItem], null)
     else serializers.findNullValueSerializer(null)
-    retCover.serialize(desc, gen, serializers)
+    retCover.serialize(cover, gen, serializers)
 
-    //    gen.writeFieldName("images")
+    gen.writeFieldName("images")
+    gen.writeStartArray()
+
+    if (seller.images != null) {
+      val retImg = serializers.findValueSerializer(classOf[ImageItem], null)
+      for (i <- seller.images)
+        retImg.serialize(i, gen, serializers)
+    }
+    gen.writeEndArray()
+
+    //    gen.writeFieldName("email")
     //    gen.writeStartArray()
-    //    if (seller.images != null) {
-    //      for (l: String <- seller.images)
-    //        gen.writeString(l)
+    //    if (seller.email != null) {
+    //      for (e <- seller.email)
+    //        gen.writeString(e)
     //    }
     //    gen.writeEndArray()
 

@@ -185,16 +185,6 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   )
 
-  def testhanse() = Action.async(
-    request => {
-      println("牛逼, 测试成功!")
-
-      Future {
-        null
-      }
-    }
-  )
-
   /**
    * 根据用户id获取订单列表
    * 如果订单状态为空, 获取所在用户下的所有的订单列表

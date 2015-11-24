@@ -1,6 +1,7 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.seller.Seller
+import com.lvxingpai.model.misc.ImageItem
 import core.model.trade.product.Commodity
 import org.mongodb.morphia.Datastore
 
@@ -22,6 +23,17 @@ object SellerAPI {
   def saveSeller(s: Seller)(implicit ds: Datastore) = {
     Future {
       ds.save[Seller](s)
+    }
+  }
+
+  def setSeller()(implicit ds: Datastore) = {
+    Future {
+      val img = new ImageItem()
+      img.key = "13e187722cbf20631ec6eb049d05a20c"
+      img.height = 447
+      img.width = 800
+      val update = ds.createUpdateOperations(classOf[Seller]).set("cover", img)
+      ds.update(ds.find(classOf[Seller], "sellerId", 100), update)
     }
   }
 

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.misc.ImageItem
 import core.formatter.BaseFormatter
-import core.formatter.formatter.taozi.ImageItemSerializer
 import core.model.misc.Column
 
 /**

@@ -1,7 +1,7 @@
 package core.api
 
+import com.lvxingpai.model.account.RealNameInfo
 import core.model.account.UserInfo
-import core.model.trade.order.Person
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
@@ -19,7 +19,7 @@ object TravellerAPI {
    * @param person 旅客信息
    * @return 旅客键值和旅客信息
    */
-  def addTraveller(userId: Long, person: Person)(implicit ds: Datastore): Future[(String, Person)] = {
+  def addTraveller(userId: Long, person: RealNameInfo)(implicit ds: Datastore): Future[(String, RealNameInfo)] = {
     val query = ds.createQuery(classOf[UserInfo])
     val key = new ObjectId().toString
 
@@ -36,7 +36,7 @@ object TravellerAPI {
    * @param person 旅客信息
    * @return 旅客键值和旅客信息
    */
-  def updateTraveller(userId: Long, key: String, person: Person)(implicit ds: Datastore): Future[(String, Person)] = {
+  def updateTraveller(userId: Long, key: String, person: RealNameInfo)(implicit ds: Datastore): Future[(String, RealNameInfo)] = {
 
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     val ops = ds.createUpdateOperations(classOf[UserInfo]).set(s"travellers.$key", person)
@@ -67,7 +67,7 @@ object TravellerAPI {
    * @param key 旅客信息键值
    * @return 旅客信息
    */
-  def getTraveller(userId: Long, key: String)(implicit ds: Datastore): Future[Person] = {
+  def getTraveller(userId: Long, key: String)(implicit ds: Datastore): Future[RealNameInfo] = {
 
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
 
@@ -81,7 +81,7 @@ object TravellerAPI {
    * @param userId 用户id
    * @return 旅客信息列表
    */
-  def getTravellerList(userId: Long)(implicit ds: Datastore): Future[Map[String, Person]] = {
+  def getTravellerList(userId: Long)(implicit ds: Datastore): Future[Map[String, RealNameInfo]] = {
 
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {

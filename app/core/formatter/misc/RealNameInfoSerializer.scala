@@ -8,7 +8,7 @@ import com.lvxingpai.model.misc.PhoneNumber
 /**
  * Created by pengyt on 2015/11/17.
  */
-class PersonSerializer extends JsonSerializer[RealNameInfo] {
+class RealNameInfoSerializer extends JsonSerializer[RealNameInfo] {
 
   override def serialize(person: RealNameInfo, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
@@ -18,7 +18,7 @@ class PersonSerializer extends JsonSerializer[RealNameInfo] {
       gen.writeStringField("gender", if (person.gender == Gender.Male) "male" else "female")
     else gen.writeStringField("gender", "male")
     gen.writeStringField("birthday", Option(person.birthday.toString) getOrElse "")
-    //gen.writeStringField("fullName", Option(person.fullName) getOrElse "")
+    // gen.writeStringField("fullName", Option(person.fullName) getOrElse "")
 
     gen.writeFieldName("idProof")
     //    val idProof = person.idProof

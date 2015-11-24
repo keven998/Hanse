@@ -32,6 +32,7 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
       val sellerFmt = (new SellerFormatter).objectMapper
       val ret = for {
         seller <- SellerAPI.getSeller(id)
+        s <- SellerAPI.setSeller()
         //user <- FinagleFactory.client.getUserById(sId, Some(fields), selfId)
       } yield {
         val result = if (seller.nonEmpty) Some(sellerFmt.valueToTree[JsonNode](seller.get)) else None
