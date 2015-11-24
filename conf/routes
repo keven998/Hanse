@@ -39,7 +39,7 @@ GET           /commodities/$localityId<[0-9a-f]{24}>                 @controller
 
 #----------商户接口----------
 #商户详情
-GET           /marketplace/sellers/$id<\d+>/                         @controllers.SellerCtrl.getSeller(id:Long)
+GET           /marketplace/sellers/$id<\d+>                          @controllers.SellerCtrl.getSeller(id:Long)
 
 
 #----------订单接口----------
