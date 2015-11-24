@@ -4,7 +4,7 @@ import javax.inject._
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.api.{ CommodityAPI, OrderAPI }
+import core.api.OrderAPI
 import core.formatter.marketplace.order.OrderFormatter
 import core.misc.HanseResult
 import play.api.Configuration
@@ -20,33 +20,6 @@ import scala.concurrent.Future
 class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
 
   implicit lazy val ds = datastore.map.get("k2").get
-
-  /**
-   * 创建商品
-   * @return
-   */
-  def createCommodity() = Action.async(
-    request => {
-      val futureCmy = for {
-        body <- request.body.asJson
-        salerId <- (body \ "salerId").asOpt[Long]
-        title <- (body \ "title").asOpt[String]
-        detail <- (body \ "detail").asOpt[String]
-        price <- (body \ "price").asOpt[Float]
-      } yield {
-        CommodityAPI.addCommodity(salerId, title, detail, price)
-      }
-      val mapper = new ObjectMapper()
-      val node = mapper.createObjectNode()
-      for {
-        cmy <- futureCmy.get
-      } yield {
-        node.put("commodityId", cmy.id.toString)
-        node.put("title", cmy.title)
-        HanseResult(data = Some(node))
-      }
-    }
-  )
 
   /**
    * 创建订单

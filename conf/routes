@@ -19,8 +19,6 @@ GET           /columns/commodities                                   @controller
 GET           /recommend                                             @controllers.MiscCtrl.getRecommendCommodities()
 
 #----------商品接口----------
-# 创建商品
-POST          /commodities                                           @controllers.TradeCtrl.createCommodity()
 
 # 商品详情
 GET           /commodities/$commodityId<\d+>                         @controllers.CommodityCtrl.getCommodityDetail(commodityId: Long)
@@ -29,7 +27,7 @@ GET           /commodities/$commodityId<\d+>                         @controller
 #GET           /sellers/$id<\d+>/commodities                          @controllers.SellerCtrl.getCommoditiesOfSeller(id:Long)
 
 #根据店铺id查找商品列表
-GET           /marketplace/commodities                               @controllers.CommodityCtrl.getCommodities(sellerId: Long,locId: String,coType:String, sortBy: String, sort: String, start: Int, count: Int)
+GET           /marketplace/commodities                               @controllers.CommodityCtrl.getCommodities(sellerId: Option[Long] ?= None,locId: Option[String] ?= None,category:Option[String] ?= None, sortBy: String?="salesVolume", sort: String?="desc", start: Int?=0, count: Int?=10)
 
 #商品分类列表
 GET           /commodities/$localityId<[0-9a-f]{24}>/category        @controllers.MiscCtrl.getCommodityCategoryList(localityId: String)

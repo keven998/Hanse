@@ -1,10 +1,10 @@
 package controllers
 
-import javax.inject.{ Named, Inject }
+import javax.inject.{ Inject, Named }
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.api.{ CommodityAPINew, MiscAPI }
+import core.api.{ CommodityAPI, MiscAPI }
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnFormatter
 import core.misc.HanseResult
@@ -95,7 +95,7 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
     request => {
       val node = new ObjectMapper().createObjectNode()
       for {
-        category <- CommodityAPINew.getCommodityCategoryList(localityId)
+        category <- CommodityAPI.getCommodityCategoryList(localityId)
       } yield {
         node.put("locality", localityId)
         node.set("category", new ObjectMapper().valueToTree(category))

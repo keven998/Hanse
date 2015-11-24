@@ -70,7 +70,7 @@ object OrderAPI {
    * @return
    */
   def addOrder(commodityId: Long, qty: Int)(implicit ds: Datastore): Future[Order] = {
-    val futureCommodity = CommodityAPINew.getCommodityById(commodityId)
+    val futureCommodity = CommodityAPI.getCommodityById(commodityId)
     for {
       commodity <- futureCommodity
     } yield {
