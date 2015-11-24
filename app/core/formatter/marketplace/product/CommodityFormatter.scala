@@ -8,9 +8,8 @@ import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import core.formatter.BaseFormatter
-import core.formatter.formatter.taozi.ImageItemSerializer
 import core.formatter.marketplace.seller.{ BankAccountSerializer, SellerSerializer }
-import core.formatter.misc.{ PhoneNumberSerializer, RichTextSerializer }
+import core.formatter.misc.{ ImageItemSerializer, PhoneNumberSerializer, RichTextSerializer }
 import core.formatter.user.UserSerializer
 
 /**

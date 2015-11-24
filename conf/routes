@@ -8,57 +8,7 @@
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file                                          controllers.Assets.versioned(path="/public", file: Asset)
 
-GET           /ping                                                  @controllers.Application.ping
-
-# 创建商品
-POST          /commodities                                           @controllers.TradeCtrl.createCommodity()
-
-# 商品详情
-GET           /commodities/$commodityId<\d+>                         @controllers.CommodityCtrl.getCommodityDetail(commodityId: Long)
-
-# 获取商品列表
-#GET         /commodities
-#
-#/app/api/index.jsp?action=getCommodities&sort=2..
-#
-#REST
-
-# 创建订单
-POST          /orders                                                @controllers.TradeCtrl.createOrder()
-
-# 获取订单列表
-GET           /orders                                                @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
-
-# 订单详情
-GET           /orders/$orderId<\d+>                                  @controllers.TradeCtrl.getOrderInfo(orderId: Long)
-
-# GET         /privateKey                                                     @controllers.TradeCtrl.privateKey()
-
-#----------支付接口----------
-#微信预支付
-POST          /orders/$id<\d+>/payments                              @controllers.PaymentCtrl.createPayments(id:Long)
-
-#查询订单
-GET           /orders/$id<\d+>/payments                              @controllers.PaymentCtrl.getPayments(id:Long)
-
-#微信回调
-POST          /payment-webhook/wechat                                @controllers.PaymentCtrl.wechatCallback()
-
-# 预支付
-POST          /prePay                                                @controllers.TradeCtrl.prePay()
-# 支付结果回调
-POST          /notifyResult                                          @controllers.TradeCtrl.notifyResult()
-
-#----------商家接口----------
-#商家详情
-GET           /sellers/$id<\d+>/                                     @controllers.SellerCtrl.getSeller(id:Long)
-
-#商家的商品列表
-GET           /sellers/$id<\d+>/commodities                          @controllers.SellerCtrl.getCommoditiesOfSeller(id:Long)
-
-#测试接口转发
-GET           /testhanse                                             @controllers.TradeCtrl.testhanse()
-
+#----------首页接口----------
 #首页专题
 GET           /columns                                               @controllers.MiscCtrl.getColumns()
 
@@ -68,14 +18,39 @@ GET           /columns/commodities                                   @controller
 #首页推荐商品列表
 GET           /recommend                                             @controllers.MiscCtrl.getRecommendCommodities()
 
+#----------商品接口----------
+# 创建商品
+POST          /commodities                                           @controllers.TradeCtrl.createCommodity()
+
+# 商品详情
+GET           /commodities/$commodityId<\d+>                         @controllers.CommodityCtrl.getCommodityDetail(commodityId: Long)
+
+#商户的商品列表
+GET           /sellers/$id<\d+>/commodities                          @controllers.SellerCtrl.getCommoditiesOfSeller(id:Long)
+
 #根据店铺id查找商品列表
-GET           /commodities                                           @controllers.CommodityCtrl.getCommoditiesBySellerId(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int)
+GET           /marketplace/commodities                               @controllers.CommodityCtrl.getCommodities(sellerId: Long,localityId: String,coType:String, sortBy: String, sort: String, start: Int, count: Int)
 
 #商品分类列表
 GET           /commodities/$localityId<[0-9a-f]{24}>/category        @controllers.MiscCtrl.getCommodityCategoryList(localityId: String)
 
 #目的地商品列表
 GET           /commodities/$localityId<[0-9a-f]{24}>                 @controllers.CommodityCtrl.getCommoditiesByLocalityId(localityId: String, sortBy: String, sort: String, start: Int, count: Int)
+
+#----------商户接口----------
+#商户详情
+GET           /marketplace/sellers/$id<\d+>/                         @controllers.SellerCtrl.getSeller(id:Long)
+
+
+#----------订单接口----------
+# 创建订单
+POST          /orders                                                @controllers.TradeCtrl.createOrder()
+
+#获取订单列表
+GET           /orders                                                @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
+
+#订单详情
+GET           /orders/$orderId<\d+>                                  @controllers.TradeCtrl.getOrderInfo(orderId: Long)
 
 #添加旅客信息
 POST          /travellers                                            @controllers.TravellerCtrl.addTraveller()
@@ -91,3 +66,19 @@ GET           /travellers/$key<[0-9a-f]{24}>                         @controller
 
 #获取旅客信息列表
 GET           /travellers                                            @controllers.TravellerCtrl.getTravellerList()
+
+#----------支付接口----------
+#微信预支付
+POST          /orders/$id<\d+>/payments                              @controllers.PaymentCtrl.createPayments(id:Long)
+
+#查询订单
+GET           /orders/$id<\d+>/payments                              @controllers.PaymentCtrl.getPayments(id:Long)
+
+#微信回调
+POST          /payment-webhook/wechat                                @controllers.PaymentCtrl.wechatCallback()
+
+# 预支付
+POST          /prePay                                                @controllers.TradeCtrl.prePay()
+
+# 支付结果回调
+POST          /notifyResult                                          @controllers.TradeCtrl.notifyResult()

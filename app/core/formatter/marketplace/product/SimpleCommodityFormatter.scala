@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.misc.ImageItem
 import core.formatter.BaseFormatter
-import core.formatter.formatter.taozi.ImageItemSerializer
+import core.formatter.misc.ImageItemSerializer
 
 /**
  * Created by pengyt on 2015/11/13.

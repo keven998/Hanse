@@ -44,7 +44,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @param count 返回商品的个数
    * @return 返回商品列表
    */
-  def getCommoditiesBySellerId(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int) = Action.async(
+  def getCommodities(sellerId: Long, localityId: String, coType: String, sortBy: String, sort: String, start: Int, count: Int) = Action.async(
     request => {
 
       val commodityObjectMapper = new SimpleCommodityFormatter().objectMapper

@@ -3,17 +3,16 @@ package core.formatter.marketplace.order
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.lvxingpai.model.account.{ RealNameInfo, IdProof, UserInfo }
+import com.lvxingpai.model.account.{ IdProof, RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Country
-import com.lvxingpai.model.marketplace.order.{ Prepay, Order }
+import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import com.lvxingpai.model.marketplace.product.Commodity
-import com.lvxingpai.model.marketplace.seller.{ Seller, BankAccount }
+import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import core.formatter.BaseFormatter
-import core.formatter.formatter.taozi.ImageItemSerializer
 import core.formatter.geo.SimpleCountrySerializer
 import core.formatter.marketplace.product.CommoditySerializer
-import core.formatter.marketplace.seller.{ SellerSerializer, BankAccountSerializer }
+import core.formatter.marketplace.seller.{ BankAccountSerializer, SellerSerializer }
 import core.formatter.misc._
 import core.formatter.user.UserSerializer
 

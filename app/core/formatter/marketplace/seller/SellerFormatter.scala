@@ -5,10 +5,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.UserInfo
 import com.lvxingpai.model.marketplace.seller.Seller
-import com.lvxingpai.model.misc.{ RichText, ImageItem, PhoneNumber }
+import com.lvxingpai.model.misc.{ ImageItem, RichText, PhoneNumber }
 import core.formatter.BaseFormatter
-import core.formatter.formatter.taozi.ImageItemSerializer
-import core.formatter.misc.{ RichTextSerializer, PhoneNumberSerializer }
+import core.formatter.misc.{ ImageItemSerializer, RichTextSerializer, PhoneNumberSerializer }
 import core.formatter.user.UserSerializer
 
 /**
