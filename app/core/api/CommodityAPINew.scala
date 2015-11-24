@@ -13,7 +13,7 @@ import scala.concurrent.Future
 /**
  * Created by pengyt on 2015/11/4.
  */
-object CommodityAPINew {
+object CommodityAPI {
 
   /**
    * 根据商品Id取得商品信息

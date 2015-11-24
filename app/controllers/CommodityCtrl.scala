@@ -1,15 +1,16 @@
 package controllers
 
-import javax.inject.{ Named, Inject }
+import javax.inject.{ Inject, Named }
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.api.CommodityAPINew
+import core.api.CommodityAPI
+import core.formatter.marketplace.product.{ CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import core.formatter.marketplace.product.{ SimpleCommodityFormatter, CommodityFormatter }
 
 /**
  * Created by pengyt on 2015/11/3.
@@ -27,7 +28,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
     request => {
       val commodityMapper = (new CommodityFormatter).objectMapper
       for {
-        commodity <- CommodityAPINew.getCommodityById(commodityId)
+        commodity <- CommodityAPI.getCommodityById(commodityId)
       } yield {
         val node = commodityMapper.valueToTree[JsonNode](commodity)
         HanseResult(data = Some(node))
@@ -49,7 +50,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
 
       val commodityObjectMapper = new SimpleCommodityFormatter().objectMapper
       for {
-        commodities <- CommodityAPINew.getCommoditiesBySellerId(sellerId, sortBy, sort, start, count)
+        commodities <- CommodityAPI.getCommoditiesBySellerId(sellerId, sortBy, sort, start, count)
       } yield {
         val node = commodityObjectMapper.valueToTree[JsonNode](commodities)
         HanseResult(data = Some(node))
@@ -66,12 +67,12 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @param count 返回商品的个数
    * @return 返回商品列表
    */
-  def getCommoditiesByLocalityId(localityId: String, sortBy: String, sort: String, start: Int, count: Int) = Action.async(
+  def getCommoditiesByLocalityNewId(localityId: String, sortBy: String, sort: String, start: Int, count: Int) = Action.async(
     request => {
 
       val commodityObjectMapper = new SimpleCommodityFormatter().objectMapper
       for {
-        commodities <- CommodityAPINew.getCommoditiesByLocalityId(localityId, sortBy, sort, start, count)
+        commodities <- CommodityAPI.getCommoditiesByLocalityId(localityId, sortBy, sort, start, count)
       } yield {
         val node = commodityObjectMapper.valueToTree[JsonNode](commodities)
         HanseResult(data = Some(node))

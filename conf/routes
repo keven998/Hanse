@@ -19,8 +19,6 @@ GET           /columns/commodities                                   @controller
 GET           /recommend                                             @controllers.MiscCtrl.getRecommendCommodities()
 
 #----------商品接口----------
-# 创建商品
-POST          /commodities                                           @controllers.TradeCtrl.createCommodity()
 
 # 商品详情
 GET           /commodities/$commodityId<\d+>                         @controllers.CommodityCtrl.getCommodityDetail(commodityId: Long)

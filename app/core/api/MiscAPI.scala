@@ -1,7 +1,7 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.product.Commodity
-import core.model.misc.{ Column, RecommendCategory, TopicCommodity }
+import core.model.misc.{ RecommendCategory, TopicCommodity, Column }
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
@@ -32,7 +32,7 @@ object MiscAPI {
     val query = ds.createQuery(classOf[TopicCommodity]).field("topicType").equal(topicType)
 
     if (query != null || query.isEmpty) {
-      CommodityAPINew.getCommoditiesByIdList(query.get.commodities)
+      CommodityAPI.getCommoditiesByIdList(query.get.commodities)
     } else
       Future { Seq() }
   }
@@ -56,7 +56,7 @@ object MiscAPI {
         l ++ tc.commodities
       })
 
-      val futureAllCommodities = CommodityAPINew.getCommoditiesByIdList(allIds)
+      val futureAllCommodities = CommodityAPI.getCommoditiesByIdList(allIds)
 
       futureAllCommodities map (allCommodities => {
         val idCommodityMap = Map(allCommodities map (commodity => {
