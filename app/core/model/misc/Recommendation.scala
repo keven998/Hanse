@@ -1,11 +1,10 @@
 package core.model.misc
 
 import javax.validation.constraints.Min
-
-import core.model.BasicEntity
-import core.model.mixin.ImagesEnabled
+import com.lvxingpai.model.mixin.ImagesEnabled
 import java.util.{ List => JList }
-import core.model.poi.Description
+
+import com.lvxingpai.model.poi.Description
 
 import scala.beans.BeanProperty
 
@@ -13,7 +12,7 @@ import scala.beans.BeanProperty
  * web用的推荐内容
  * Created by pengyt on 2015/10/21.
  */
-class Recommendation extends BasicEntity with ImagesEnabled {
+class Recommendation extends ImagesEnabled {
 
   /**
    * 名称

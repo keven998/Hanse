@@ -26,16 +26,16 @@ POST          /commodities                                           @controller
 GET           /commodities/$commodityId<\d+>                         @controllers.CommodityCtrl.getCommodityDetail(commodityId: Long)
 
 #商户的商品列表
-GET           /sellers/$id<\d+>/commodities                          @controllers.SellerCtrl.getCommoditiesOfSeller(id:Long)
+#GET           /sellers/$id<\d+>/commodities                          @controllers.SellerCtrl.getCommoditiesOfSeller(id:Long)
 
 #根据店铺id查找商品列表
-GET           /marketplace/commodities                               @controllers.CommodityCtrl.getCommodities(sellerId: Long,localityId: String,coType:String, sortBy: String, sort: String, start: Int, count: Int)
+GET           /marketplace/commodities                               @controllers.CommodityCtrl.getCommodities(sellerId: Long,locId: String,coType:String, sortBy: String, sort: String, start: Int, count: Int)
 
 #商品分类列表
 GET           /commodities/$localityId<[0-9a-f]{24}>/category        @controllers.MiscCtrl.getCommodityCategoryList(localityId: String)
 
 #目的地商品列表
-GET           /commodities/$localityId<[0-9a-f]{24}>                 @controllers.CommodityCtrl.getCommoditiesByLocalityId(localityId: String, sortBy: String, sort: String, start: Int, count: Int)
+#GET           /commodities/$localityId<[0-9a-f]{24}>                 @controllers.CommodityCtrl.getCommoditiesByLocalityId(localityId: String, sortBy: String, sort: String, start: Int, count: Int)
 
 #----------商户接口----------
 #商户详情

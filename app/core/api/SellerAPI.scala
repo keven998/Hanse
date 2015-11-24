@@ -1,8 +1,8 @@
 package core.api
 
+import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.ImageItem
-import core.model.trade.product.Commodity
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._

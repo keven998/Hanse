@@ -2,9 +2,8 @@ package core.model.trade.order
 
 import java.util
 import javax.validation.constraints.{ Min, NotNull }
-
+import com.lvxingpai.model.marketplace.product.Commodity
 import core.model.BasicEntity
-import core.model.trade.product.Commodity
 
 import scala.beans.BeanProperty
 

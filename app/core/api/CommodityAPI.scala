@@ -1,8 +1,8 @@
 package core.api
 
+import com.lvxingpai.model.marketplace.product.Commodity
+import com.lvxingpai.model.marketplace.seller.Seller
 import core.db.MorphiaFactory
-import core.model.trade.product.Commodity
-import core.model.trade.saler.Saler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -25,15 +25,6 @@ object CommodityAPI {
     }
   }
 
-  // 先写在这，需要调用yunkai
-  def getSaler(salerId: Long): Saler = {
-    val saler = new Saler
-    saler.userId = 100053
-    saler.nickname = "逍遥"
-    saler.avatar = "shuaishuaishuai"
-    saler
-  }
-
   /**
    * 添加商品
    * @param salerId
@@ -44,8 +35,9 @@ object CommodityAPI {
    */
   def addCommodity(salerId: Long, title: String, detail: String, price: Float, fields: Map[String, AnyRef] = Map()): Future[Commodity] = {
 
-    val saler = getSaler(salerId)
-    val cmyInfo = Commodity(saler, title, detail, price)
+    // TODO
+    val saler = new Seller
+    val cmyInfo = new Commodity
     ds.save[Commodity](cmyInfo)
     Future {
       cmyInfo

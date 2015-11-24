@@ -1,12 +1,13 @@
 package core.api
 
-import com.lvxingpai.model.account.RealNameInfo
-import core.model.account.UserInfo
+import com.lvxingpai.model.account.{ UserInfo, RealNameInfo }
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import scala.collection.JavaConversions._
 
 /**
  * Created by pengyt on 2015/11/16.
@@ -86,6 +87,8 @@ object TravellerAPI {
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {
       query.get.travellers
+      // TODO
+      null
     }
   }
 }
