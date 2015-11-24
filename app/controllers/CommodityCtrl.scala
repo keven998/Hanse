@@ -45,12 +45,12 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @param count 返回商品的个数
    * @return 返回商品列表
    */
-  def getCommodities(sellerId: Long, localityId: String, coType: String, sortBy: String, sort: String, start: Int, count: Int) = Action.async(
+  def getCommodities(sellerId: Option[Long], locId: Option[String], category: Option[String], sortBy: String, sort: String, start: Int, count: Int) = Action.async(
     request => {
 
       val commodityObjectMapper = new SimpleCommodityFormatter().objectMapper
       for {
-        commodities <- CommodityAPI.getCommoditiesBySellerId(sellerId, sortBy, sort, start, count)
+        commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
       } yield {
         val node = commodityObjectMapper.valueToTree[JsonNode](commodities)
         HanseResult(data = Some(node))
@@ -58,25 +58,4 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
     }
   )
 
-  /**
-   * 根据店铺id查找商品列表
-   * @param localityId 店铺id
-   * @param sortBy 比如：按照销量排序
-   * @param sort 正序或者逆序
-   * @param start 返回商品列表的起始位置
-   * @param count 返回商品的个数
-   * @return 返回商品列表
-   */
-  def getCommoditiesByLocalityNewId(localityId: String, sortBy: String, sort: String, start: Int, count: Int) = Action.async(
-    request => {
-
-      val commodityObjectMapper = new SimpleCommodityFormatter().objectMapper
-      for {
-        commodities <- CommodityAPI.getCommoditiesByLocalityId(localityId, sortBy, sort, start, count)
-      } yield {
-        val node = commodityObjectMapper.valueToTree[JsonNode](commodities)
-        HanseResult(data = Some(node))
-      }
-    }
-  )
 }

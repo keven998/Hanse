@@ -84,8 +84,18 @@ object CommodityAPI {
    * @param count 返回商品的个数
    * @return 返回商品列表
    */
-  def getCommoditiesByLocalityId(localityId: String, sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
-    val query = ds.createQuery(classOf[Commodity]).field("locality.id").equal(new ObjectId(localityId)).offset(start).limit(count)
+  def getCommodities(sellerId: Option[Long], localityId: Option[String], coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    val query = ds.createQuery(classOf[Commodity])
+      .retrievedFields(true, Seq("commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "seller"): _*)
+    if (sellerId.nonEmpty)
+      query.field("seller.sellerId").equal(sellerId.get)
+    if (localityId.nonEmpty)
+      query.field("locality.id").equal(new ObjectId(localityId.get))
+    if (coType.nonEmpty)
+      query.field("category").hasThisOne(coType.get)
+    val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
+    query.order(orderStr).offset(start).limit(count)
+
     Future {
       query.asList()
     }

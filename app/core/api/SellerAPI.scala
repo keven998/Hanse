@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
+ *
  * Created by topy on 2015/11/3.
  */
 object SellerAPI {
