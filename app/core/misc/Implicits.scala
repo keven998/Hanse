@@ -12,33 +12,27 @@ import scala.xml.{ Elem, Node, NodeSeq }
  */
 object Implicits {
 
-  implicit def long2String(v: Long) = {
-    v.toString
-  }
+  implicit def long2String(v: Long): String = v.toString
 
-  implicit def int2String(v: Int) = {
-    v.toString
-  }
+  implicit def int2String(v: Int): String = v.toString
 
-  implicit def float2String(v: Float) = {
-    v.toString
-  }
+  implicit def float2String(v: Float): String = v.toString
 
-  implicit def Node2String(body: Node) = {
+  implicit def Node2String(body: Node): String = {
     body match {
       case NodeSeq.Empty => ""
       case _ => body.toString()
     }
   }
 
-  implicit def NodeSeq2String(body: NodeSeq) = {
+  implicit def NodeSeq2String(body: NodeSeq): String = {
     body match {
       case NodeSeq.Empty => ""
       case _ => body.toString()
     }
   }
 
-  implicit def NodeSeq2Int(body: NodeSeq) = {
+  implicit def NodeSeq2Int(body: NodeSeq): Int = {
     body match {
       case NodeSeq.Empty => 0
       case _ => body.toString().toInt

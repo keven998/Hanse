@@ -3,11 +3,9 @@ package controllers
 import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.yunkai.UserInfoProp
 import core.api.SellerAPI
-import core.formatter.marketplace.product.CommodityFormatter
 import core.formatter.marketplace.seller.SellerFormatter
 import core.misc.HanseResult
 import play.api.Configuration
@@ -32,25 +30,10 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
       val sellerFmt = (new SellerFormatter).objectMapper
       val ret = for {
         seller <- SellerAPI.getSeller(id)
-        s <- SellerAPI.setSeller()
         //user <- FinagleFactory.client.getUserById(sId, Some(fields), selfId)
       } yield {
         val result = if (seller.nonEmpty) Some(sellerFmt.valueToTree[JsonNode](seller.get)) else None
         HanseResult(data = result)
-      }
-      ret
-    }
-  )
-
-  def getCommoditiesOfSeller(id: Long) = Action.async(
-    request => {
-      val selfId = request.headers.get("UserId") map (_.toLong)
-      val sellerFmt = (new CommodityFormatter).objectMapper
-      val ret = for {
-        cmds <- SellerAPI.getCommoditiesBySeller(id)
-      } yield {
-        val node = sellerFmt.valueToTree[ArrayNode](cmds)
-        HanseResult(data = Some(node))
       }
       ret
     }

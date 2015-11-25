@@ -18,8 +18,8 @@ import scala.concurrent.Future
  */
 class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
 
-  // 连接yunkai数据库
   implicit lazy val ds = datastore.map.get("yunkai-dev").get
+
   /**
    * 添加旅客信息
    * @return
@@ -41,7 +41,10 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
           HanseResult(data = Some(node))
         }
       }
-      if (result.nonEmpty) result.get else Future { HanseResult.unprocessable() }
+      if (result.nonEmpty) result.get
+      else Future {
+        HanseResult.unprocessable()
+      }
     }
   )
 
@@ -67,7 +70,10 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
           HanseResult(data = Some(node))
         }
       }
-      if (result.nonEmpty) result.get else Future { HanseResult.unprocessable() }
+      if (result.nonEmpty) result.get
+      else Future {
+        HanseResult.unprocessable()
+      }
     }
   )
 

@@ -2,6 +2,7 @@ package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
+import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.ImageItem
@@ -28,6 +29,12 @@ class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
     val retUserInfo = if (userInfo != null) serializers.findValueSerializer(classOf[Seller], null)
     else serializers.findNullValueSerializer(null)
     retUserInfo.serialize(userInfo, gen, serializers)
+
+    gen.writeFieldName("locality")
+    val loc = commodity.locality
+    val retLoc = if (loc != null) serializers.findValueSerializer(classOf[Locality], null)
+    else serializers.findNullValueSerializer(null)
+    retLoc.serialize(loc, gen, serializers)
 
     gen.writeFieldName("images")
     gen.writeStartArray()

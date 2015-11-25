@@ -1,8 +1,6 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.product.Commodity
-import com.mongodb.BasicDBObjectBuilder
-import core.db.MorphiaFactory
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
@@ -44,33 +42,10 @@ object CommodityAPI {
    * @param localityId 目的地id
    * @return 商品分类
    */
-  def getCommodityCategoryList(localityId: String)(implicit ds: Datastore): Future[Seq[String]] = {
-
+  def getCommodityCategories(localityId: String)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     Future {
-      val col = MorphiaFactory.getCollection(classOf[Commodity])
-      val fieldName = "category"
-
-      val query = BasicDBObjectBuilder.start().add("locality.id", new ObjectId(localityId)).get()
-      val fields = BasicDBObjectBuilder.start(Map("category" -> 1)).get()
-
-      //      val doc = col.aggregate()
-
-      null
-    }
-  }
-
-  /**
-   * 根据店铺id查找商品列表
-   * @param sellerId 店铺id
-   * @param sortBy 比如：按照销量排序
-   * @param sort 正序或者逆序
-   * @param start 返回商品列表的起始位置
-   * @param count 返回商品的个数
-   * @return 返回商品列表
-   */
-  def getCommoditiesBySellerId(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
-    val query = ds.createQuery(classOf[Commodity]).field("seller.sellerId").equal(sellerId).offset(start).limit(count)
-    Future {
+      val query = ds.createQuery(classOf[Commodity]).retrievedFields(true, Seq("commodityId", "category"): _*)
+        .field("locality.id").equal(new ObjectId(localityId))
       query.asList()
     }
   }
