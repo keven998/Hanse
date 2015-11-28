@@ -1,9 +1,9 @@
 package core.db
 
+import com.lvxingpai.model.marketplace.order.{ Prepay, Order }
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.mongodb._
 import core.misc.Global
-import core.model.trade.order.{ Prepay, Order }
 import org.mongodb.morphia.Morphia
 import org.mongodb.morphia.annotations.Property
 

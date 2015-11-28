@@ -1,12 +1,20 @@
 package controllers
 
+import java.util.Date
 import javax.inject._
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.api.OrderAPI
+import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.marketplace.order.Order
+import com.lvxingpai.model.marketplace.product.Commodity
+import com.lvxingpai.model.misc.PhoneNumber
+import core.api.{ CommodityAPI, OrderAPI }
 import core.formatter.marketplace.order.OrderFormatter
 import core.misc.HanseResult
+import core.model.trade.order.OrderStatus
+import org.bson.types.ObjectId
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller, Results }
 
@@ -21,47 +29,73 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
 
   implicit lazy val ds = datastore.map.get("k2").get
 
+  case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
+      quantity: Int, comment: String, time: Date) {
+    def toOrder = {
+      val order = new Order
+      val now = new Date
+      order.id = new ObjectId
+      order.orderId = now.getTime
+      order.commodity = commodity
+      order.contact = contact.toContact
+      order.planId = planId
+      order.quantity = quantity
+      order.comment = comment
+      order.rendezvousTime = time
+      order.status = OrderStatus.Pending
+      order
+    }
+  }
+
+  case class ContactTemp(surname: String, givenName: String, phone: String, email: String) {
+    def toContact = {
+      val contact = new RealNameInfo
+      val tel = new PhoneNumber
+      contact.surname = surname
+      contact.givenName = givenName
+      // TODO 当前默认都是中国顾客
+      tel.dialCode = 86
+      tel.number = phone.toLong
+      contact.tel = tel
+      contact.email = email
+      contact
+    }
+  }
+
   /**
    * 创建订单
    * @return 返回订单信息
    */
   def createOrder() = Action.async(
     request => {
-      val cmyPara = for {
+      val orderFmt = (new OrderFormatter).objectMapper
+      val ret = for {
         body <- request.body.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
         planId <- (body \ "planId").asOpt[String]
         rendezvousTime <- (body \ "rendezvousTime").asOpt[String]
         quantity <- (body \ "quantity").asOpt[Int]
         //        travellers <- (body \ "travellers").asOpt[Array[Person]]
-        name <- (body \ "name").asOpt[Seq[String]]
-        phone <- (body \ "contact.phone").asOpt[String]
-        email <- (body \ "contact.email").asOpt[String]
-        address <- (body \ "contact.address").asOpt[String]
-        comment <- (body \ "contact.comment").asOpt[String]
-      } yield commodityId -> quantity
-
-      val mapper = new ObjectMapper()
-      val node = mapper.createObjectNode()
-
-      if (cmyPara isEmpty) Future { HanseResult.unprocessable() }
-      else {
+        name <- (body \ "name").asOpt[String]
+        phone <- (body \ "contactPhone").asOpt[String]
+        email <- (body \ "contactEmail").asOpt[String]
+        surname <- (body \ "contactSurname").asOpt[String]
+        givenName <- (body \ "contactGivenName").asOpt[String]
+        comment <- (body \ "contactComment").asOpt[String]
+      } yield {
+        val date = DateTime.parse(rendezvousTime).toDate
+        val contact = ContactTemp(surname, givenName, phone, email)
         for {
-          order <- OrderAPI.addOrder(cmyPara.get._1, cmyPara.get._2)
+          commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId)
+          order <- OrderAPI.createOrder(OrderTemp(name, commodity, contact, planId, quantity, comment, date).toOrder)
         } yield {
-          node.put("orderId", order.id.toString)
-          node.put("cmyTitle", order.commodity.title)
-          node.put("cmyPrice", order.commodity.price)
-          node.put("cmyDetail", order.commodity.desc.summary)
-          //          node.put("salerName", order.commodity.saler.realNameInfo.givenName)
-          node.put("discount", order.discount)
-          node.put("quantity", order.quantity)
-          node.put("status", order.status)
-          node.put("totalPrice", order.totalPrice)
-          node.put("orderTime", order.createTime.toString)
+          val node = orderFmt.valueToTree[JsonNode](order)
           HanseResult(data = Some(node))
         }
       }
+      ret.getOrElse(Future {
+        HanseResult.unprocessable()
+      })
     }
   )
 
@@ -80,7 +114,9 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       val mapper = new ObjectMapper()
       val node = mapper.createObjectNode()
 
-      if (orderPara isEmpty) Future { HanseResult.unprocessable() }
+      if (orderPara isEmpty) Future {
+        HanseResult.unprocessable()
+      }
       else {
         for {
           str <- OrderAPI.prePay(orderPara.get._2, orderPara.get._1)
