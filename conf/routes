@@ -35,13 +35,13 @@ GET           /marketplace/sellers/$id<\d+>              @controllers.SellerCtrl
 
 #----------订单接口----------
 #创建订单
-POST          /orders                                    @controllers.TradeCtrl.createOrder()
+POST          /marketplace/orders                        @controllers.TradeCtrl.createOrder()
 
 #订单列表
-GET           /orders                                    @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
+GET           /marketplace/orders                        @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
 
 #订单详情
-GET           /orders/$orderId<\d+>                      @controllers.TradeCtrl.getOrderInfo(orderId: Long)
+GET           /marketplace/orders/$orderId<\d+>          @controllers.TradeCtrl.getOrderInfo(orderId: Long)
 
 #添加旅客信息
 POST          /travellers                                @controllers.TravellerCtrl.addTraveller()

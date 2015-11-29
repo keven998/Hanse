@@ -43,13 +43,24 @@ object OrderAPI {
   val sign = "sign"
 
   /**
+   * 创建订单
+   * @return
+   */
+  def createOrder(order: Order)(implicit ds: Datastore): Future[Order] = {
+    Future {
+      ds.save[Order](order)
+      order
+    }
+  }
+
+  /**
    * 根据订单id查询订单信息
    * @param orderId 订单id
    * @return 订单信息
    */
   def getOrder(orderId: Long)(implicit ds: Datastore): Future[Order] = {
     Future {
-      ds.find(classOf[Order], "order", orderId).get
+      ds.find(classOf[Order], "orderId", orderId).get
     }
   }
 
@@ -63,17 +74,6 @@ object OrderAPI {
         val updateOps = ds.createUpdateOperations(classOf[Order]).set("paymentInfo", pm)
         ds.updateFirst(query, updateOps)
       }
-    }
-  }
-
-  /**
-   * 创建订单
-   * @return
-   */
-  def createOrder(order: Order)(implicit ds: Datastore): Future[Order] = {
-    Future {
-      ds.save[Order](order)
-      order
     }
   }
 

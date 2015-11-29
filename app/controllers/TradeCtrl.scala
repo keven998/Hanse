@@ -15,6 +15,7 @@ import core.misc.HanseResult
 import core.model.trade.order.OrderStatus
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller, Results }
 
@@ -29,11 +30,13 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
 
   implicit lazy val ds = datastore.map.get("k2").get
 
+  val dateFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
+
   case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
       quantity: Int, comment: String, time: Date) {
     def toOrder = {
       val order = new Order
-      val now = new Date
+      val now = DateTime.now().toDate()
       order.id = new ObjectId
       order.orderId = now.getTime
       order.commodity = commodity
@@ -43,6 +46,11 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       order.comment = comment
       order.rendezvousTime = time
       order.status = OrderStatus.Pending
+      order.createTime = now
+      order.updateTime = now
+      // 设置订单的失效时间为三天
+      val expireDate = DateTime.now().plusDays(3)
+      order.expireDate = expireDate.toDate
       order
     }
   }
@@ -76,18 +84,17 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         rendezvousTime <- (body \ "rendezvousTime").asOpt[String]
         quantity <- (body \ "quantity").asOpt[Int]
         //        travellers <- (body \ "travellers").asOpt[Array[Person]]
-        name <- (body \ "name").asOpt[String]
         phone <- (body \ "contactPhone").asOpt[String]
         email <- (body \ "contactEmail").asOpt[String]
         surname <- (body \ "contactSurname").asOpt[String]
         givenName <- (body \ "contactGivenName").asOpt[String]
-        comment <- (body \ "contactComment").asOpt[String]
+        comment <- (body \ "contactComment").asOpt[String].orElse(Option(""))
       } yield {
         val date = DateTime.parse(rendezvousTime).toDate
         val contact = ContactTemp(surname, givenName, phone, email)
         for {
           commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId)
-          order <- OrderAPI.createOrder(OrderTemp(name, commodity, contact, planId, quantity, comment, date).toOrder)
+          order <- OrderAPI.createOrder(OrderTemp(commodity.title, commodity, contact, planId, quantity, comment, date).toOrder)
         } yield {
           val node = orderFmt.valueToTree[JsonNode](order)
           HanseResult(data = Some(node))
@@ -96,6 +103,23 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       ret.getOrElse(Future {
         HanseResult.unprocessable()
       })
+    }
+  )
+
+  /**
+   * 订单详情
+   * @param orderId 订单id
+   * @return 订单详情
+   */
+  def getOrderInfo(orderId: Long) = Action.async(
+    request => {
+      val orderMapper = new OrderFormatter().objectMapper
+      for {
+        order <- OrderAPI.getOrder(orderId)
+      } yield {
+        val node = orderMapper.valueToTree[JsonNode](order)
+        HanseResult(data = Some(node))
+      }
     }
   )
 
@@ -214,20 +238,4 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   )
 
-  /**
-   * 订单详情
-   * @param orderId 订单id
-   * @return 订单详情
-   */
-  def getOrderInfo(orderId: Long) = Action.async(
-    request => {
-      val orderMapper = new OrderFormatter().objectMapper
-      for {
-        order <- OrderAPI.getOrder(orderId)
-      } yield {
-        val node = orderMapper.valueToTree[JsonNode](order)
-        HanseResult(data = Some(node))
-      }
-    }
-  )
 }

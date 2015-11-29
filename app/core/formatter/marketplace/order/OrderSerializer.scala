@@ -1,5 +1,7 @@
 package core.formatter.marketplace.order
 
+import java.text.SimpleDateFormat
+
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.account.RealNameInfo
@@ -47,8 +49,6 @@ class OrderSerializer extends JsonSerializer[Order] {
       retSeller.serialize(contact, gen, serializers)
     }
 
-    gen.writeStringField("rendezvousTime", Option(order.rendezvousTime.toString) getOrElse "")
-
     // commodityTimeRange
     gen.writeFieldName("commodityTimeRange")
     gen.writeStartArray()
@@ -78,13 +78,15 @@ class OrderSerializer extends JsonSerializer[Order] {
     //        ret.serialize(payment._2, gen, serializers)
     //      }
     //    }
-
     gen.writeStringField("comment", Option(order.comment) getOrElse "")
     gen.writeStringField("status", Option(order.status) getOrElse "")
 
-    //    gen.writeStringField("createTime", Option(order.createTime.toString) getOrElse "")
-    //    gen.writeStringField("updateTime", Option(order.updateTime.toString) getOrElse "")
-    //    gen.writeStringField("expireDate", Option(order.expireDate.toString) getOrElse "")
+    val fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    gen.writeStringField("rendezvousTime", if (order.rendezvousTime != null) fmt.format(order.rendezvousTime) else "")
+    gen.writeStringField("createTime", if (order.rendezvousTime != null) fmt.format(order.createTime) else "")
+    gen.writeStringField("updateTime", if (order.rendezvousTime != null) fmt.format(order.updateTime) else "")
+    gen.writeStringField("expireDate", if (order.rendezvousTime != null) fmt.format(order.expireDate) else "")
+
     gen.writeEndObject()
   }
 }

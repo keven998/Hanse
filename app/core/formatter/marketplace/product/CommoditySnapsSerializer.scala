@@ -12,8 +12,6 @@ class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
 
   override def serialize(commodity: Commodity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-    //    if (commodity.id != null)
-    //      gen.writeStringField("id", commodity.id.toString)
     gen.writeNumberField("commodityId", Option(commodity.commodityId) getOrElse 0L)
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
 
