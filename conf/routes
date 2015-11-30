@@ -22,7 +22,7 @@ GET           /recommend                                 @controllers.MiscCtrl.g
 # 商品详情
 GET           /marketplace/commodities/$id<\d+>          @controllers.CommodityCtrl.getCommodityDetail(id: Long)
 
-#根据店铺id查找商品列表
+#商品列表
 GET           /marketplace/commodities                   @controllers.CommodityCtrl.getCommodities(seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None, sortBy: String?="salesVolume", sort: String?="desc", start: Int?=0, count: Int?=10)
 
 #商品分类列表
@@ -34,14 +34,14 @@ GET           /marketplace/sellers/$id<\d+>              @controllers.SellerCtrl
 
 
 #----------订单接口----------
-# 创建订单
-POST          /orders                                    @controllers.TradeCtrl.createOrder()
+#创建订单
+POST          /marketplace/orders                        @controllers.TradeCtrl.createOrder()
 
-#获取订单列表
-GET           /orders                                    @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
+#订单列表
+GET           /marketplace/orders                        @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
 
 #订单详情
-GET           /orders/$orderId<\d+>                      @controllers.TradeCtrl.getOrderInfo(orderId: Long)
+GET           /marketplace/orders/$orderId<\d+>          @controllers.TradeCtrl.getOrderInfo(orderId: Long)
 
 #添加旅客信息
 POST          /travellers                                @controllers.TravellerCtrl.addTraveller()

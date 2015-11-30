@@ -19,13 +19,16 @@ object OrderAPI {
   val aliService = "mobile.securitypay.pay"
 
   // 签约合作者身份ID
-  val aliPartner = Global.conf.getString("alipayAPI.partner").get
+  // val aliPartner = Global.conf.getString("alipayAPI.partner").get
+  val aliPartner = ""
 
   // 签约卖家支付宝账号
-  val aliSeller = Global.conf.getString("alipayAPI.seller").get
+  // val aliSeller = Global.conf.getString("alipayAPI.seller").get
+  val aliSeller = ""
 
   // 异步回调路径
-  val aliNotifyUrl = Global.conf.getString("alipayAPI.notifyUrl").get
+  //val aliNotifyUrl = Global.conf.getString("alipayAPI.notifyUrl").get
+  val aliNotifyUrl = ""
 
   // 支付类型， 固定值
   val aliPaymentType = "1"
@@ -40,13 +43,24 @@ object OrderAPI {
   val sign = "sign"
 
   /**
+   * 创建订单
+   * @return
+   */
+  def createOrder(order: Order)(implicit ds: Datastore): Future[Order] = {
+    Future {
+      ds.save[Order](order)
+      order
+    }
+  }
+
+  /**
    * 根据订单id查询订单信息
    * @param orderId 订单id
    * @return 订单信息
    */
   def getOrder(orderId: Long)(implicit ds: Datastore): Future[Order] = {
     Future {
-      ds.find(classOf[Order], "order", orderId).get
+      ds.find(classOf[Order], "orderId", orderId).get
     }
   }
 
@@ -60,25 +74,6 @@ object OrderAPI {
         val updateOps = ds.createUpdateOperations(classOf[Order]).set("paymentInfo", pm)
         ds.updateFirst(query, updateOps)
       }
-    }
-  }
-
-  /**
-   * 创建订单
-   * @param commodityId 商品id
-   * @param qty 商品数量
-   * @return
-   */
-  def addOrder(commodityId: Long, qty: Int)(implicit ds: Datastore): Future[Order] = {
-    val futureCommodity = CommodityAPI.getCommodityById(commodityId)
-    for {
-      commodity <- futureCommodity
-    } yield {
-      val order = new Order
-      order.commodity = commodity
-      order.quantity = qty
-      ds.save[Order](order)
-      order
     }
   }
 

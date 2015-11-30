@@ -18,10 +18,23 @@ object CommodityAPI {
    * @param cmyId
    * @return
    */
-  def getCommodityById(cmyId: Long)(implicit ds: Datastore): Future[Commodity] = {
+  def getCommodityById(cmyId: Long, fields: Seq[String] = Seq())(implicit ds: Datastore): Future[Commodity] = {
     val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId)
+    if (fields.nonEmpty)
+      query.retrievedFields(true, fields: _*)
     Future {
       query.get
+    }
+  }
+
+  def getCommoditySnapsById(cmyId: Long, planId: String)(implicit ds: Datastore): Future[Commodity] = {
+    val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId)
+      .retrievedFields(true, Seq("commodityId", "title", "desc", "price", "plans", "seller", "category"): _*)
+    Future {
+      val ret = query.get
+      val plan = ret.plans.filter(_.planId.equals(planId)).toList
+      ret.plans = plan
+      ret
     }
   }
 

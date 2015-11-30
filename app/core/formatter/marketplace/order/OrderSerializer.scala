@@ -1,12 +1,15 @@
 package core.formatter.marketplace.order
 
+import java.text.SimpleDateFormat
+
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.account.RealNameInfo
-import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
+import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.product.Commodity
 
 import scala.collection.JavaConversions._
+
 /**
  * Created by pengyt on 2015/11/21.
  */
@@ -14,9 +17,10 @@ class OrderSerializer extends JsonSerializer[Order] {
 
   override def serialize(order: Order, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-    gen.writeStringField("id", Option(order.id.toString) getOrElse "")
+    //gen.writeStringField("id", Option(order.id.toString) getOrElse "")
     gen.writeNumberField("orderId", Option(order.orderId) getOrElse 0L)
     gen.writeNumberField("consumerId", Option(order.consumerId) getOrElse 0L)
+    gen.writeStringField("planId", Option(order.planId) getOrElse "")
 
     // Commodity
     gen.writeFieldName("commodity")
@@ -26,8 +30,6 @@ class OrderSerializer extends JsonSerializer[Order] {
       retSeller.serialize(commodity, gen, serializers)
     }
 
-    gen.writeStringField("planId", Option(order.planId) getOrElse "")
-
     // travellers
     gen.writeFieldName("travellers")
     gen.writeStartArray()
@@ -36,21 +38,16 @@ class OrderSerializer extends JsonSerializer[Order] {
       val ret = serializers.findValueSerializer(classOf[RealNameInfo], null)
       for (traveller <- travellers)
         ret.serialize(traveller, gen, serializers)
-    }
+    } else serializers.findNullValueSerializer(null)
     gen.writeEndArray()
 
     // contact
-    gen.writeFieldName("commodity")
+    gen.writeFieldName("contact")
     val contact = order.contact
     if (contact != null) {
       val retSeller = serializers.findValueSerializer(classOf[RealNameInfo], null)
       retSeller.serialize(contact, gen, serializers)
     }
-
-    gen.writeStringField("rendezvousTime", Option(order.rendezvousTime.toString) getOrElse "")
-    gen.writeStringField("createTime", Option(order.createTime.toString) getOrElse "")
-    gen.writeStringField("updateTime", Option(order.updateTime.toString) getOrElse "")
-    gen.writeStringField("expireDate", Option(order.expireDate.toString) getOrElse "")
 
     // commodityTimeRange
     gen.writeFieldName("commodityTimeRange")
@@ -62,23 +59,34 @@ class OrderSerializer extends JsonSerializer[Order] {
     }
     gen.writeEndArray()
 
-    gen.writeNumberField("totalPrice", Option(order.totalPrice) getOrElse 0.0f)
+    // 计算商品总价
+    if (order.commodity != null && order.commodity.plans != null && order.commodity.plans.nonEmpty)
+      order.totalPrice = order.commodity.plans.get(0).price * order.quantity
+    else
+      order.totalPrice = 0
+    gen.writeNumberField("totalPrice", order.totalPrice)
     gen.writeNumberField("discount", Option(order.discount) getOrElse 0.0f)
     gen.writeNumberField("quantity", Option(order.quantity) getOrElse 0)
 
     // paymentInfo
-    gen.writeFieldName("paymentInfo")
-    val paymentInfo = order.paymentInfo
-    if (paymentInfo.nonEmpty) {
-      val ret = serializers.findValueSerializer(classOf[Prepay], null)
-      for (payment <- paymentInfo) {
-        gen.writeFieldName(payment._1)
-        ret.serialize(payment._2, gen, serializers)
-      }
-    }
-
-    gen.writeStringField("status", Option(order.status) getOrElse "")
+    //    gen.writeFieldName("paymentInfo")
+    //    val paymentInfo = order.paymentInfo
+    //    if (paymentInfo.nonEmpty) {
+    //      val ret = serializers.findValueSerializer(classOf[Prepay], null)
+    //      for (payment <- paymentInfo) {
+    //        gen.writeFieldName(payment._1)
+    //        ret.serialize(payment._2, gen, serializers)
+    //      }
+    //    }
     gen.writeStringField("comment", Option(order.comment) getOrElse "")
+    gen.writeStringField("status", Option(order.status) getOrElse "")
+
+    val fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    gen.writeStringField("rendezvousTime", if (order.rendezvousTime != null) fmt.format(order.rendezvousTime) else "")
+    gen.writeStringField("createTime", if (order.rendezvousTime != null) fmt.format(order.createTime) else "")
+    gen.writeStringField("updateTime", if (order.rendezvousTime != null) fmt.format(order.updateTime) else "")
+    gen.writeStringField("expireDate", if (order.rendezvousTime != null) fmt.format(order.expireDate) else "")
+
     gen.writeEndObject()
   }
 }

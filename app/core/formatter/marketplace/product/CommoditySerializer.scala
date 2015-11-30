@@ -25,13 +25,13 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeNumberField("marketPrice", Option(commodity.marketPrice) getOrElse 0.0f)
     gen.writeNumberField("price", Option(commodity.price) getOrElse 0.0f)
 
-    // cagegories
+    // categories
     gen.writeFieldName("category")
     gen.writeStartArray()
-    val cagegories = commodity.category
-    if (cagegories.nonEmpty) {
-      for (cagegory <- cagegories)
-        gen.writeString(cagegory)
+    val categories = commodity.category
+    if (categories.nonEmpty) {
+      for (category <- categories)
+        gen.writeString(category)
     }
     gen.writeEndArray()
 
