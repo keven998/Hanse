@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.UserInfo
 import com.lvxingpai.model.geo.Locality
-import com.lvxingpai.model.marketplace.product.Commodity
+import com.lvxingpai.model.marketplace.product.{ StockInfo, CommodityPlan, Commodity }
 import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import core.formatter.BaseFormatter
@@ -25,6 +25,8 @@ class CommodityFormatter extends BaseFormatter {
     mapper.registerModule(DefaultScalaModule)
     module.addSerializer(classOf[RichText], new RichTextSerializer)
     module.addSerializer(classOf[Commodity], new CommoditySerializer)
+    module.addSerializer(classOf[CommodityPlan], new CommodityPlanSerializer)
+    module.addSerializer(classOf[StockInfo], new StockInfoSerializer)
     module.addSerializer(classOf[BankAccount], new BankAccountSerializer)
     module.addSerializer(classOf[Seller], new SimpleSellerSerializer)
     module.addSerializer(classOf[PhoneNumber], new PhoneNumberSerializer)

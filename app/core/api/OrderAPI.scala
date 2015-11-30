@@ -64,6 +64,18 @@ object OrderAPI {
     }
   }
 
+  /**
+   *
+   * @param orderId
+   * @param ds
+   * @return
+   */
+  def getOrderOnlyStatus(orderId: Long)(implicit ds: Datastore): Future[Order] = {
+    Future {
+      ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, Seq("status"): _*).get
+    }
+  }
+
   def savePrepay(p: Option[AnyRef], order: Order)(implicit ds: Datastore) = {
     Future {
       if (p.nonEmpty) {
@@ -358,11 +370,10 @@ object OrderAPI {
    * @return 订单列表
    */
   def getOrderList(userId: Long, status: Option[String])(implicit ds: Datastore): Future[Seq[Order]] = {
-    val query = if (status.nonEmpty) ds.createQuery(classOf[Order]).field("consumerId").equal(userId).field("status").equal(status.get)
-    else ds.createQuery(classOf[Order]).field("consumerId").equal(userId)
     Future {
-      val result: Seq[Order] = query.asList()
-      Option(result) getOrElse Seq()
+      val query = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).order("-createTime") //生成时间逆序
+      if (status.nonEmpty) query.field("status").equal(status.get)
+      query.asList()
     }
   }
 }

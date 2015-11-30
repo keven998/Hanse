@@ -10,7 +10,7 @@ import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.misc.PhoneNumber
 import core.api.{ CommodityAPI, OrderAPI }
-import core.formatter.marketplace.order.OrderFormatter
+import core.formatter.marketplace.order.{ SimpleOrderFormatter, OrderFormatter, OrderStatusFormatter }
 import core.misc.HanseResult
 import core.model.trade.order.OrderStatus
 import org.bson.types.ObjectId
@@ -33,12 +33,13 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
   val dateFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
   case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
-      quantity: Int, comment: String, time: Date) {
+      quantity: Int, comment: String, time: Date, consumerId: Long) {
     def toOrder = {
       val order = new Order
       val now = DateTime.now().toDate()
       order.id = new ObjectId
       order.orderId = now.getTime
+      order.consumerId = consumerId
       order.commodity = commodity
       order.contact = contact.toContact
       order.planId = planId
@@ -77,6 +78,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
   def createOrder() = Action.async(
     request => {
       val orderFmt = (new OrderFormatter).objectMapper
+      val userId = request.headers.get("UserId").getOrElse("").toLong
       val ret = for {
         body <- request.body.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
@@ -94,7 +96,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         val contact = ContactTemp(surname, givenName, phone, email)
         for {
           commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId)
-          order <- OrderAPI.createOrder(OrderTemp(commodity.title, commodity, contact, planId, quantity, comment, date).toOrder)
+          order <- OrderAPI.createOrder(OrderTemp(commodity.title, commodity, contact, planId, quantity, comment, date, userId).toOrder)
         } yield {
           val node = orderFmt.valueToTree[JsonNode](order)
           HanseResult(data = Some(node))
@@ -116,6 +118,18 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       val orderMapper = new OrderFormatter().objectMapper
       for {
         order <- OrderAPI.getOrder(orderId)
+      } yield {
+        val node = orderMapper.valueToTree[JsonNode](order)
+        HanseResult(data = Some(node))
+      }
+    }
+  )
+
+  def getOrderStatus(orderId: Long) = Action.async(
+    request => {
+      val orderMapper = new OrderStatusFormatter().objectMapper
+      for {
+        order <- OrderAPI.getOrderOnlyStatus(orderId)
       } yield {
         val node = orderMapper.valueToTree[JsonNode](order)
         HanseResult(data = Some(node))
@@ -228,7 +242,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def getOrders(userId: Long, status: Option[String]) = Action.async(
     request => {
-      val orderMapper = new OrderFormatter().objectMapper
+      val orderMapper = new SimpleOrderFormatter().objectMapper
       for {
         orders <- OrderAPI.getOrderList(userId, status)
       } yield {

@@ -2,8 +2,8 @@ package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.geo.Locality
-import com.lvxingpai.model.marketplace.product.Commodity
+import com.lvxingpai.model.geo.{ Country, Locality }
+import com.lvxingpai.model.marketplace.product.{ CommodityPlan, Commodity }
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.{ ImageItem, RichText }
 
@@ -35,6 +35,16 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     }
     gen.writeEndArray()
 
+    gen.writeFieldName("plans")
+    gen.writeStartArray()
+    val plans = commodity.plans
+    if (plans != null) {
+      val ret = serializers.findValueSerializer(classOf[CommodityPlan], null)
+      for (pl <- plans)
+        ret.serialize(pl, gen, serializers)
+    }
+    gen.writeEndArray()
+
     // images
     gen.writeFieldName("images")
     gen.writeStartArray()
@@ -54,12 +64,22 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
       retSeller.serialize(seller, gen, serializers)
     }
 
+    gen.writeFieldName("country")
+    val country = commodity.country
+    if (country != null) {
+      val retSeller = serializers.findValueSerializer(classOf[Country], null)
+      retSeller.serialize(country, gen, serializers)
+    }
+
     gen.writeFieldName("locality")
     val loc = commodity.locality
     if (loc != null) {
       val retSeller = serializers.findValueSerializer(classOf[Locality], null)
       retSeller.serialize(loc, gen, serializers)
     }
+
+    gen.writeStringField("address", Option(commodity.address) getOrElse "")
+    gen.writeStringField("timeCost", Option(commodity.timeCost) getOrElse "")
 
     gen.writeFieldName("desc")
     val desc = commodity.desc
