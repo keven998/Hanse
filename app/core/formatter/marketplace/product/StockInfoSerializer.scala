@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
 import com.lvxingpai.model.marketplace.product.StockInfo
 
 /**
- * Created by pengyt on 2015/11/4.
+ * Created by topy on 2015/11/4.
  */
 class StockInfoSerializer extends JsonSerializer[StockInfo] {
 

@@ -1,7 +1,5 @@
 package core.formatter.marketplace.order
 
-import java.text.SimpleDateFormat
-
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.order.Order
@@ -50,11 +48,14 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
     //gen.writeStringField("comment", Option(order.comment) getOrElse "")
     gen.writeStringField("status", Option(order.status) getOrElse "")
 
-    val fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    gen.writeStringField("rendezvousTime", if (order.rendezvousTime != null) fmt.format(order.rendezvousTime) else "")
-    gen.writeStringField("createTime", if (order.rendezvousTime != null) fmt.format(order.createTime) else "")
-    gen.writeStringField("updateTime", if (order.rendezvousTime != null) fmt.format(order.updateTime) else "")
-    gen.writeStringField("expireDate", if (order.rendezvousTime != null) fmt.format(order.expireDate) else "")
+    //    val fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    //    gen.writeStringField("rendezvousTime", if (order.rendezvousTime != null) fmt.format(order.rendezvousTime) else "")
+    gen.writeNumberField("rendezvousTime", if (order.rendezvousTime != null) order.rendezvousTime.getTime else 0)
+    gen.writeNumberField("createTime", if (order.createTime != null) order.createTime.getTime else 0)
+    gen.writeNumberField("updateTime", if (order.updateTime != null) order.updateTime.getTime else 0)
+    gen.writeNumberField("expireDate", if (order.expireDate != null) order.expireDate.getTime else 0)
+    // 为前端计算倒计时提供当前服务器时间
+    gen.writeNumberField("currentTime", System.currentTimeMillis())
 
     gen.writeEndObject()
   }

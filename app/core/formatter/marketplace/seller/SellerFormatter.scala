@@ -11,7 +11,7 @@ import core.formatter.misc.{ ImageItemSerializer, RichTextSerializer, PhoneNumbe
 import core.formatter.user.UserSerializer
 
 /**
- * Created by pengyt on 2015/11/3.
+ * Created by topy on 2015/11/3.
  */
 class SellerFormatter extends BaseFormatter {
   override val objectMapper = {

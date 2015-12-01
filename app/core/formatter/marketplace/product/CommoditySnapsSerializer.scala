@@ -2,8 +2,10 @@ package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.marketplace.product.Commodity
+import com.lvxingpai.model.marketplace.product.{ CommodityPlan, Commodity }
 import com.lvxingpai.model.marketplace.seller.Seller
+
+import scala.collection.JavaConversions._
 
 /**
  * Created by topy on 2015/11/3.
@@ -23,15 +25,15 @@ class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
       retSeller.serialize(seller, gen, serializers)
     }
 
-    //    gen.writeFieldName("plans")
-    //    gen.writeStartArray()
-    //    val plans = commodity.plans
-    //    if (plans != null) {
-    //      val retPlan = serializers.findValueSerializer(classOf[CommodityPlan], null)
-    //      for (p <- plans)
-    //        retPlan.serialize(p, gen, serializers)
-    //    } else serializers.findNullValueSerializer(null)
-    //    gen.writeEndArray()
+    gen.writeFieldName("plans")
+    gen.writeStartArray()
+    val plans = commodity.plans
+    if (plans != null) {
+      val retPlan = serializers.findValueSerializer(classOf[CommodityPlan], null)
+      for (p <- plans)
+        retPlan.serialize(p, gen, serializers)
+    } else serializers.findNullValueSerializer(null)
+    gen.writeEndArray()
 
     //    gen.writeFieldName("category")
     //    gen.writeStartArray()

@@ -11,7 +11,7 @@ import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import core.formatter.BaseFormatter
 import core.formatter.geo.SimpleCountrySerializer
-import core.formatter.marketplace.product.{ CommodityPlanSerializer, CommoditySnapsSerializer }
+import core.formatter.marketplace.product.{ CommoditySnapsSerializer, SimpleCommodityPlanSerializer }
 import core.formatter.marketplace.seller.{ BankAccountSerializer, MiniSellerSerializer }
 import core.formatter.misc._
 import core.formatter.user.UserSerializer
@@ -28,7 +28,7 @@ class OrderFormatter extends BaseFormatter {
     module.addSerializer(classOf[Order], new OrderSerializer)
     module.addSerializer(classOf[Commodity], new CommoditySnapsSerializer)
     module.addSerializer(classOf[Seller], new MiniSellerSerializer)
-    module.addSerializer(classOf[CommodityPlan], new CommodityPlanSerializer)
+    module.addSerializer(classOf[CommodityPlan], new SimpleCommodityPlanSerializer)
     module.addSerializer(classOf[RichText], new RichTextSerializer)
     module.addSerializer(classOf[BankAccount], new BankAccountSerializer)
     module.addSerializer(classOf[PhoneNumber], new PhoneNumberSerializer)

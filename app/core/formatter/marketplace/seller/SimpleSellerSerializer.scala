@@ -9,7 +9,7 @@ import com.lvxingpai.model.misc.ImageItem
 import scala.collection.JavaConversions._
 
 /**
- * Created by pengyt on 2015/11/3.
+ * Created by topy on 2015/11/3.
  */
 class SimpleSellerSerializer extends JsonSerializer[Seller] {
 

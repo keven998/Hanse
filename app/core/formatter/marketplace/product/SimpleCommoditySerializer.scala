@@ -10,7 +10,7 @@ import com.lvxingpai.model.misc.ImageItem
 import scala.collection.JavaConversions._
 
 /**
- * Created by pengyt on 2015/11/13.
+ * Created by topy on 2015/11/13.
  */
 class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
 

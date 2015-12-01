@@ -9,7 +9,7 @@ import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import collection.JavaConversions._
 
 /**
- * Created by pengyt on 2015/11/3.
+ * Created by topy on 2015/11/3.
  */
 class SellerSerializer extends JsonSerializer[Seller] {
 
