@@ -71,6 +71,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   }
 
+  case class Traveller(key: String)
+
   /**
    * 创建订单
    * @return 返回订单信息
@@ -85,7 +87,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         planId <- (body \ "planId").asOpt[String]
         rendezvousTime <- (body \ "rendezvousTime").asOpt[String]
         quantity <- (body \ "quantity").asOpt[Int]
-        //        travellers <- (body \ "travellers").asOpt[Array[Person]]
+        //travellers <- (body \ "travellers").asOpt[Array[Person]]
         phone <- (body \ "contactPhone").asOpt[String]
         email <- (body \ "contactEmail").asOpt[String]
         surname <- (body \ "contactSurname").asOpt[String]
