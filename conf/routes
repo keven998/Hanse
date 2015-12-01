@@ -6,70 +6,73 @@
 #GET        /                    controllers.Application.index
 
 # Map static resources from the /public folder to the /assets URL path
-GET           /assets/*file                              controllers.Assets.versioned(path="/public", file: Asset)
+GET           /assets/*file                                     controllers.Assets.versioned(path="/public", file: Asset)
 
 #----------首页接口----------
 #首页专题
-GET           /columns                                   @controllers.MiscCtrl.getColumns()
+GET           /columns                                          @controllers.MiscCtrl.getColumns()
 
 #首页专题商品列表
-GET           /columns/commodities                       @controllers.MiscCtrl.getCommoditiesByTopic(topicType: String)
+GET           /columns/commodities                              @controllers.MiscCtrl.getCommoditiesByTopic(topicType: String)
 
 #首页推荐商品列表
-GET           /recommend                                 @controllers.MiscCtrl.getRecommendCommodities()
+GET           /recommend                                        @controllers.MiscCtrl.getRecommendCommodities()
 
 #----------商品接口----------
 # 商品详情
-GET           /marketplace/commodities/$id<\d+>          @controllers.CommodityCtrl.getCommodityDetail(id: Long)
+GET           /marketplace/commodities/$id<\d+>                 @controllers.CommodityCtrl.getCommodityDetail(id: Long)
 
 #商品列表
-GET           /marketplace/commodities                   @controllers.CommodityCtrl.getCommodities(seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None, sortBy: String?="salesVolume", sort: String?="desc", start: Int?=0, count: Int?=10)
+GET           /marketplace/commodities                          @controllers.CommodityCtrl.getCommodities(seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None, sortBy: String?="salesVolume", sort: String?="desc", start: Int?=0, count: Int?=10)
 
 #商品分类列表
-GET           /marketplace/commodities/categories        @controllers.CommodityCtrl.getCommodityCategory(locality:String)
+GET           /marketplace/commodities/categories               @controllers.CommodityCtrl.getCommodityCategory(locality:String)
 
 #----------商户接口----------
 #商户详情
-GET           /marketplace/sellers/$id<\d+>              @controllers.SellerCtrl.getSeller(id:Long)
+GET           /marketplace/sellers/$id<\d+>                     @controllers.SellerCtrl.getSeller(id:Long)
 
 
 #----------订单接口----------
 #创建订单
-POST          /marketplace/orders                        @controllers.TradeCtrl.createOrder()
+POST          /marketplace/orders                               @controllers.TradeCtrl.createOrder()
 
 #订单列表
-GET           /marketplace/orders                        @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
+GET           /marketplace/orders                               @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None)
 
 #订单详情
-GET           /marketplace/orders/$orderId<\d+>          @controllers.TradeCtrl.getOrderInfo(orderId: Long)
+GET           /marketplace/orders/$orderId<\d+>                 @controllers.TradeCtrl.getOrderInfo(orderId: Long)
+
+#订单状态
+GET           /marketplace/orders/$orderId<\d+>/status          @controllers.TradeCtrl.getOrderStatus(orderId: Long)
 
 #添加旅客信息
-POST          /travellers                                @controllers.TravellerCtrl.addTraveller()
+POST          /marketplace/travellers                           @controllers.TravellerCtrl.addTraveller()
 
 #修改旅客信息
-PUT           /travellers/$key<[0-9a-f]{24}>             @controllers.TravellerCtrl.updateTraveller(key: String)
+PUT           /marketplace/travellers/$key<[0-9a-f]{24}>        @controllers.TravellerCtrl.updateTraveller(key: String)
 
 #删除旅客信息
-DELETE        /travellers/$key<[0-9a-f]{24}>             @controllers.TravellerCtrl.deleteTraveller(key: String)
+DELETE        /marketplace/travellers/$key<[0-9a-f]{24}>        @controllers.TravellerCtrl.deleteTraveller(key: String)
 
 #获取旅客信息
-GET           /travellers/$key<[0-9a-f]{24}>             @controllers.TravellerCtrl.getTraveller(key: String)
+GET           /marketplace/travellers/$key<[0-9a-f]{24}>        @controllers.TravellerCtrl.getTraveller(key: String)
 
 #获取旅客信息列表
-GET           /travellers                                @controllers.TravellerCtrl.getTravellerList()
+GET           /marketplace/travellers                           @controllers.TravellerCtrl.getTravellerList()
 
 #----------支付接口----------
 #微信预支付
-POST          /orders/$id<\d+>/payments                  @controllers.PaymentCtrl.createPayments(id:Long)
+POST          /orders/$id<\d+>/payments                         @controllers.PaymentCtrl.createPayments(id:Long)
 
 #查询订单
-GET           /orders/$id<\d+>/payments                  @controllers.PaymentCtrl.getPayments(id:Long)
+GET           /orders/$id<\d+>/payments                         @controllers.PaymentCtrl.getPayments(id:Long)
 
 #微信回调
-POST          /payment-webhook/wechat                    @controllers.PaymentCtrl.wechatCallback()
+POST          /payment-webhook/wechat                           @controllers.PaymentCtrl.wechatCallback()
 
 # 预支付
-POST          /prePay                                    @controllers.TradeCtrl.prePay()
+POST          /prePay                                           @controllers.TradeCtrl.prePay()
 
 # 支付结果回调
-POST          /notifyResult                              @controllers.TradeCtrl.notifyResult()
+POST          /notifyResult                                     @controllers.TradeCtrl.notifyResult()

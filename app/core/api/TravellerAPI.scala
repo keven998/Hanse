@@ -1,13 +1,13 @@
 package core.api
 
-import com.lvxingpai.model.account.{ UserInfo, RealNameInfo }
+import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
+import scala.collection.JavaConversions._
+import scala.collection.immutable.HashMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
-import scala.collection.JavaConversions._
 
 /**
  * Created by pengyt on 2015/11/16.
@@ -21,11 +21,12 @@ object TravellerAPI {
    * @return 旅客键值和旅客信息
    */
   def addTraveller(userId: Long, person: RealNameInfo)(implicit ds: Datastore): Future[(String, RealNameInfo)] = {
-    val query = ds.createQuery(classOf[UserInfo])
-    val key = new ObjectId().toString
-
-    val ops = ds.createUpdateOperations(classOf[UserInfo]).add("travellers", key -> person, false)
     Future {
+      val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
+      val key = new ObjectId().toString
+      val map: java.util.HashMap[java.lang.String, RealNameInfo] = mapAsJavaMap(HashMap(key -> person)).asInstanceOf[java.util.HashMap[java.lang.String, RealNameInfo]]
+      val ops = ds.createUpdateOperations(classOf[UserInfo]).add("travellers", map, false)
+      //val ops = ds.createUpdateOperations(classOf[UserInfo]).set("travellers." + key, person)
       ds.findAndModify(query, ops, false, true)
       key -> person
     }

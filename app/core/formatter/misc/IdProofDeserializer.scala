@@ -17,6 +17,7 @@ class IdProofDeserializer extends JsonDeserializer[IdProof] {
         val number = node.get("number").asText()
         val chineseID = new ChineseID()
         chineseID.number = number
+        chineseID.idType = idType
         chineseID
       case "passport" =>
         val number = node.get("number").asText()
@@ -24,6 +25,7 @@ class IdProofDeserializer extends JsonDeserializer[IdProof] {
         val passport = new Passport()
         passport.number = number
         passport.nation = nation
+        passport.idType = idType
         passport
     }
   }

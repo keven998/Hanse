@@ -1,6 +1,6 @@
 package controllers
 
-import javax.inject.{ Named, Inject }
+import javax.inject.{ Inject, Named }
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
@@ -18,7 +18,7 @@ import scala.concurrent.Future
  */
 class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
 
-  implicit lazy val ds = datastore.map.get("yunkai-dev").get
+  implicit lazy val ds = datastore.map.get("k2").get
 
   /**
    * 添加旅客信息
