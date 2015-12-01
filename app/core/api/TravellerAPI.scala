@@ -5,7 +5,7 @@ import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
-import scala.collection.immutable.HashMap
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -24,9 +24,7 @@ object TravellerAPI {
     Future {
       val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
       val key = new ObjectId().toString
-      val map: java.util.HashMap[java.lang.String, RealNameInfo] = mapAsJavaMap(HashMap(key -> person)).asInstanceOf[java.util.HashMap[java.lang.String, RealNameInfo]]
-      val ops = ds.createUpdateOperations(classOf[UserInfo]).add("travellers", map, false)
-      //val ops = ds.createUpdateOperations(classOf[UserInfo]).set("travellers." + key, person)
+      val ops = ds.createUpdateOperations(classOf[UserInfo]).set(s"travellers.$key", person)
       ds.findAndModify(query, ops, false, true)
       key -> person
     }
@@ -38,13 +36,11 @@ object TravellerAPI {
    * @param person 旅客信息
    * @return 旅客键值和旅客信息
    */
-  def updateTraveller(userId: Long, key: String, person: RealNameInfo)(implicit ds: Datastore): Future[(String, RealNameInfo)] = {
-
+  def updateTraveller(userId: Long, key: String, person: RealNameInfo)(implicit ds: Datastore) = {
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     val ops = ds.createUpdateOperations(classOf[UserInfo]).set(s"travellers.$key", person)
     Future {
       ds.updateFirst(query, ops)
-      key -> person
     }
   }
 
@@ -55,8 +51,7 @@ object TravellerAPI {
    * @return 空
    */
   def deleteTraveller(userId: Long, key: String)(implicit ds: Datastore): Future[Unit] = {
-
-    val query = ds.createQuery(classOf[UserInfo])
+    val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     val opsRm = ds.createUpdateOperations(classOf[UserInfo]).unset(s"travellers.$key")
     Future {
       ds.updateFirst(query, opsRm)
@@ -69,12 +64,16 @@ object TravellerAPI {
    * @param key 旅客信息键值
    * @return 旅客信息
    */
-  def getTraveller(userId: Long, key: String)(implicit ds: Datastore): Future[RealNameInfo] = {
-
+  def getTraveller(userId: Long, key: String)(implicit ds: Datastore): Future[Option[RealNameInfo]] = {
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
-
     Future {
-      query.get().travellers(key)
+      val userInfo = query.get()
+      if (userInfo == null || userInfo.travellers == null)
+        None
+      else if (!userInfo.travellers.containsKey(key))
+        None
+      else
+        Some(userInfo.travellers(key))
     }
   }
 
@@ -84,12 +83,10 @@ object TravellerAPI {
    * @return 旅客信息列表
    */
   def getTravellerList(userId: Long)(implicit ds: Datastore): Future[Map[String, RealNameInfo]] = {
-
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {
-      query.get.travellers
-      // TODO
-      null
+      val ret = query.get
+      if (ret != null) mapAsScalaMapConverter(ret.travellers).asScala.toMap else Map[String, RealNameInfo]()
     }
   }
 }

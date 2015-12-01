@@ -24,7 +24,7 @@ class IdProofSerializer extends JsonSerializer[IdProof] {
           retNation.serialize(nation, gen, serializers)
         }
     }
-
+    gen.writeStringField("idType", Option(idProof.idType) getOrElse "")
     gen.writeEndObject()
   }
 }

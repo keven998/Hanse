@@ -5,7 +5,8 @@ import javax.inject.{ Inject, Named }
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
 import core.api.TravellerAPI
-import core.formatter.misc.{ PersonFormatter, PersonParser }
+import core.formatter.marketplace.order.TravellersFormatter
+import core.formatter.misc.PersonParser
 import core.misc.HanseResult
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
@@ -24,20 +25,19 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 添加旅客信息
    * @return
    */
-  def addTraveller() = Action.async(
+  def addTraveller(userId: Long) = Action.async(
     request => {
       val node = new ObjectMapper().createObjectNode()
-      val travellerMapper = new PersonFormatter().objectMapper
+      val travellerMapper = new TravellersFormatter().objectMapper
       val result = for {
         body <- request.body.asJson
-        userId <- (body \ "userId").asOpt[Long]
       } yield {
         val person = PersonParser.apply(body.toString())
         for {
           traveller <- TravellerAPI.addTraveller(userId, person)
         } yield {
           node.put("key", traveller._1)
-          node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller._2))
+          node.set("travellers", travellerMapper.valueToTree[JsonNode](traveller._2))
           HanseResult(data = Some(node))
         }
       }
@@ -52,21 +52,20 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 更新旅客信息
    * @return 旅客信息和key
    */
-  def updateTraveller(key: String) = Action.async(
+  def updateTraveller(key: String, userId: Long) = Action.async(
     request => {
       val node = new ObjectMapper().createObjectNode()
-      val travellerMapper = new PersonFormatter().objectMapper
+      val travellerMapper = new TravellersFormatter().objectMapper
       val result = for {
         body <- request.body.asJson
-        userId <- (body \ "userId").asOpt[Long]
-        key <- (body \ "key").asOpt[String]
       } yield {
         val person = PersonParser.apply(body.toString())
         for {
           traveller <- TravellerAPI.updateTraveller(userId, key, person)
+          ret <- TravellerAPI.getTraveller(userId, key)
         } yield {
-          node.put("key", traveller._1)
-          node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller._2))
+          node.put("key", key)
+          node.set("traveller", travellerMapper.valueToTree[JsonNode](ret.get))
           HanseResult(data = Some(node))
         }
       }
@@ -81,18 +80,11 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 删除旅客信息
    * @return key
    */
-  def deleteTraveller(key: String) = Action.async(
+  def deleteTraveller(key: String, userId: Long) = Action.async(
     request => {
-
-      val node = new ObjectMapper().createObjectNode()
-      for {
-        body <- request.body.asJson
-        userId <- (body \ "userId").asOpt[Long]
-      } yield {
-        TravellerAPI.deleteTraveller(userId, key)
-      }
       Future {
-        HanseResult(data = Some(node))
+        TravellerAPI.deleteTraveller(userId, key)
+        HanseResult.ok()
       }
     }
   )
@@ -101,28 +93,16 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 获取旅客信息
    * @return key
    */
-  def getTraveller(key: String) = Action.async(
+  def getTraveller(key: String, userId: Long) = Action.async(
     request => {
-
       val node = new ObjectMapper().createObjectNode()
-      val ret = for {
-        body <- request.body.asJson
-        userId <- (body \ "userId").asOpt[Long]
+      val travellerMapper = new TravellersFormatter().objectMapper
+      for {
+        traveller <- TravellerAPI.getTraveller(userId, key)
       } yield {
-        userId
-      }
-      if (ret.nonEmpty) {
-        for {
-          traveller <- TravellerAPI.getTraveller(ret.get, key)
-        } yield {
-          node.put("key", key)
-          // node.set("traveller", travellerNode)
-          HanseResult(data = Some(node))
-        }
-      } else {
-        Future {
-          HanseResult(data = Some(node))
-        }
+        node.put("key", key)
+        node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller))
+        HanseResult(data = Some(node))
       }
     }
   )
@@ -131,31 +111,20 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 获取旅客信息列表
    * @return 旅客信息列表
    */
-  def getTravellerList() = Action.async(
+  def getTravellerList(userId: Long) = Action.async(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
-      val node = new ObjectMapper().createObjectNode()
-      val ret = for {
-        body <- request.body.asJson
-        userId <- (body \ "userId").asOpt[Long]
+      val travellerMapper = new TravellersFormatter().objectMapper
+      for {
+        travellers <- TravellerAPI.getTravellerList(userId)
       } yield {
-        userId
-      }
-      if (ret.nonEmpty) {
-        for {
-          travellers <- TravellerAPI.getTravellerList(ret.get)
-        } yield {
-          travellers map (traveller => {
-            node.put("key", traveller._1)
-            // ....
-            arrayNode.add(node)
-          })
-          HanseResult(data = Some(arrayNode))
-        }
-      } else {
-        Future {
-          HanseResult(data = Some(arrayNode))
-        }
+        travellers map (traveller => {
+          val node = new ObjectMapper().createObjectNode()
+          node.put("key", traveller._1)
+          node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller._2))
+          arrayNode.add(node)
+        })
+        HanseResult(data = Some(arrayNode))
       }
     }
   )
