@@ -9,8 +9,8 @@ import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.misc.PhoneNumber
-import core.api.{ CommodityAPI, OrderAPI }
-import core.formatter.marketplace.order.{ SimpleOrderFormatter, OrderFormatter, OrderStatusFormatter }
+import core.api.{ TravellerAPI, CommodityAPI, OrderAPI }
+import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter }
 import core.misc.HanseResult
 import core.model.trade.order.OrderStatus
 import org.bson.types.ObjectId
@@ -21,6 +21,8 @@ import play.api.mvc.{ Action, Controller, Results }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import scala.collection.JavaConverters._
 
 /**
  * Created by topy on 2015/10/22.
@@ -33,10 +35,11 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
   val dateFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
   case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
-      quantity: Int, comment: String, time: Date, consumerId: Long) {
+      quantity: Int, comment: String, time: Date,
+      consumerId: Long, travellers: Map[String, RealNameInfo]) {
     def toOrder = {
       val order = new Order
-      val now = DateTime.now().toDate()
+      val now = DateTime.now().toDate
       order.id = new ObjectId
       order.orderId = now.getTime
       order.consumerId = consumerId
@@ -52,6 +55,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       // 设置订单的失效时间为三天
       val expireDate = DateTime.now().plusDays(3)
       order.expireDate = expireDate.toDate
+      order.travellers = travellers.map(_._2).toList.asJava
       order
     }
   }
@@ -71,8 +75,6 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   }
 
-  case class Traveller(key: String)
-
   /**
    * 创建订单
    * @return 返回订单信息
@@ -87,7 +89,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         planId <- (body \ "planId").asOpt[String]
         rendezvousTime <- (body \ "rendezvousTime").asOpt[String]
         quantity <- (body \ "quantity").asOpt[Int]
-        //travellers <- (body \ "travellers").asOpt[Array[Person]]
+        travellers <- (body \ "travellers").asOpt[Array[String]]
         phone <- (body \ "contactPhone").asOpt[String]
         email <- (body \ "contactEmail").asOpt[String]
         surname <- (body \ "contactSurname").asOpt[String]
@@ -98,7 +100,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         val contact = ContactTemp(surname, givenName, phone, email)
         for {
           commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId)
-          order <- OrderAPI.createOrder(OrderTemp(commodity.title, commodity, contact, planId, quantity, comment, date, userId).toOrder)
+          tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
+          order <- OrderAPI.createOrder(OrderTemp(commodity.title, commodity, contact, planId, quantity, comment, date, userId, tls.orNull).toOrder)
         } yield {
           val node = orderFmt.valueToTree[JsonNode](order)
           HanseResult(data = Some(node))

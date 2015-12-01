@@ -77,6 +77,21 @@ object TravellerAPI {
     }
   }
 
+  def getTravellerByKeys(userId: Long, key: Seq[String])(implicit ds: Datastore): Future[Option[Map[String, RealNameInfo]]] = {
+    val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
+    Future {
+      val userInfo = query.get()
+      if (userInfo == null || userInfo.travellers == null)
+        None
+      else {
+        val ret = key.filter(userInfo.travellers.containsKey(_)).map(k => {
+          k -> userInfo.travellers(k)
+        }).toMap
+        Option(ret)
+      }
+    }
+  }
+
   /**
    * 根据用户id取得所有旅客信息
    * @param userId 用户id
