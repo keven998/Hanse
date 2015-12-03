@@ -10,8 +10,8 @@ import com.lvxingpai.model.misc.PhoneNumber
 class PhoneNumberDerializer extends JsonDeserializer[PhoneNumber] {
   override def deserialize(p: JsonParser, ctxt: DeserializationContext): PhoneNumber = {
     val node = (new ObjectMapper).readTree[JsonNode](p)
-    val dialCode = node.get("dialCode").asInt()
-    val number = node.get("number").asLong()
+    val dialCode = if (node.has("dialCode")) node.get("dialCode").asInt() else 0
+    val number = if (node.has("number")) node.get("number").asLong() else 0
 
     val phoneNumber = new PhoneNumber
     phoneNumber.dialCode = dialCode

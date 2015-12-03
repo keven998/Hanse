@@ -81,8 +81,7 @@ object TravellerAPI {
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {
       val userInfo = query.get()
-      if (userInfo == null || userInfo.travellers == null)
-        None
+      if (userInfo == null || userInfo.travellers == null) None
       else {
         val ret = key.filter(userInfo.travellers.containsKey(_)).map(k => {
           k -> userInfo.travellers(k)

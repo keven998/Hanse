@@ -37,7 +37,7 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
           traveller <- TravellerAPI.addTraveller(userId, person)
         } yield {
           node.put("key", traveller._1)
-          node.set("travellers", travellerMapper.valueToTree[JsonNode](traveller._2))
+          node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller._2))
           HanseResult(data = Some(node))
         }
       }

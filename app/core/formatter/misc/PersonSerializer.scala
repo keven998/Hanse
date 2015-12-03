@@ -2,7 +2,7 @@ package core.formatter.misc
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.account.{ Gender, RealNameInfo }
+import com.lvxingpai.model.account.{ IdProof, Gender, RealNameInfo }
 import com.lvxingpai.model.misc.PhoneNumber
 
 /**
@@ -16,23 +16,23 @@ class PersonSerializer extends JsonSerializer[RealNameInfo] {
     gen.writeStringField("givenName", Option(person.givenName) getOrElse "")
     if (person.gender != null)
       gen.writeStringField("gender", if (person.gender == Gender.Male) "male" else "female")
-    else gen.writeStringField("gender", "male")
+    else serializers.findNullValueSerializer(null)
+
     gen.writeStringField("birthday", Option(person.birthday.toString) getOrElse "")
-    //gen.writeStringField("fullName", Option(person.fullName) getOrElse "")
 
     gen.writeFieldName("idProof")
-    //    val idProof = person.idProof
-    //    if (idProof != null) {
-    //      val retIdProof = serializers.findValueSerializer(classOf[IdProof], null)
-    //      retIdProof.serialize(idProof, gen, serializers)
-    //    }
+    val idProof = person.identities
+    if (idProof != null) {
+      val retIdProof = serializers.findValueSerializer(classOf[IdProof], null)
+      retIdProof.serialize(idProof, gen, serializers)
+    } else serializers.findNullValueSerializer(null)
 
     gen.writeFieldName("tel")
     val tel = person.tel
     if (tel != null) {
       val retTel = serializers.findValueSerializer(classOf[PhoneNumber], null)
       retTel.serialize(tel, gen, serializers)
-    }
+    } else serializers.findNullValueSerializer(null)
     gen.writeStringField("email", Option(person.email) getOrElse "")
     gen.writeEndObject()
   }

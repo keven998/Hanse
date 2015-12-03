@@ -20,13 +20,14 @@ class ContactAndTravellersSerializer extends JsonSerializer[RealNameInfo] {
     gen.writeStringField("givenName", Option(person.givenName) getOrElse "")
     gen.writeStringField("gender", Option(person.gender) getOrElse "")
     gen.writeStringField("email", Option(person.email) getOrElse "")
+    gen.writeNumberField("birthday", if (person.birthday != null) person.birthday.getTime else 0)
 
     gen.writeFieldName("tel")
     val tel = person.tel
     if (tel != null) {
       val retTel = serializers.findValueSerializer(classOf[PhoneNumber], null)
       retTel.serialize(tel, gen, serializers)
-    } else serializers.findNullValueSerializer(null)
+    } else serializers.findNullValueSerializer(null).serialize(tel, gen, serializers)
 
     //
     gen.writeFieldName("identities")

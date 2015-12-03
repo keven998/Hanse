@@ -17,12 +17,6 @@ class IdProofSerializer extends JsonSerializer[IdProof] {
       case passport: Passport =>
         gen.writeStringField("number", Option(passport.number) getOrElse "")
         gen.writeStringField("nation", Option(passport.nation) getOrElse "")
-      //        gen.writeFieldName("nation")
-      //        val nation = passport.nation
-      //        if (nation != null) {
-      //          val retNation = serializers.findValueSerializer(classOf[Country], null)
-      //          retNation.serialize(nation, gen, serializers)
-      //        }
     }
     gen.writeStringField("idType", Option(idProof.idType) getOrElse "")
     gen.writeEndObject()
