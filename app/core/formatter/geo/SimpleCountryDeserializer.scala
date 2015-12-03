@@ -12,11 +12,11 @@ class SimpleCountryDeserializer extends JsonDeserializer[Country] {
   override def deserialize(p: JsonParser, ctxt: DeserializationContext): Country = {
     val node = (new ObjectMapper).readTree[JsonNode](p)
 
-    val id = node.get("id").asText()
-    val zhName = node.get("zhName").asText()
+    val id = if (node.has("id")) new ObjectId(node.get("id").asText()) else null
+    val zhName = if (node.has("zhName")) node.get("zhName").asText() else null
 
     val country = new Country
-    country.id = new ObjectId(id)
+    country.id = id
     country.zhName = zhName
     country
   }

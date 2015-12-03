@@ -13,6 +13,8 @@ import scala.concurrent.Future
  */
 object CommodityAPI {
 
+  val COMMODITY_CATEGORY_ALL = "全部"
+
   /**
    * 根据商品Id取得商品信息
    * @param cmyId
@@ -74,12 +76,12 @@ object CommodityAPI {
    */
   def getCommodities(sellerId: Option[Long], localityId: Option[String], coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity])
-      .retrievedFields(true, Seq("commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "seller"): _*)
+      .retrievedFields(true, Seq("commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "seller", "locality"): _*)
     if (sellerId.nonEmpty)
       query.field("seller.sellerId").equal(sellerId.get)
     if (localityId.nonEmpty)
       query.field("locality.id").equal(new ObjectId(localityId.get))
-    if (coType.nonEmpty)
+    if (coType.nonEmpty && !coType.get.equals("") && !coType.get.equals(COMMODITY_CATEGORY_ALL))
       query.field("category").hasThisOne(coType.get)
     val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
     query.order(orderStr).offset(start).limit(count)

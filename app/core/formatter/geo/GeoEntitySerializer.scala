@@ -11,10 +11,7 @@ class GeoEntitySerializer extends JsonSerializer[GeoEntity] {
 
   override def serialize(geoEntity: GeoEntity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-
-    if (geoEntity.id != null)
-      gen.writeStringField("id", geoEntity.id.toString)
-
+    gen.writeStringField("id", if (geoEntity.id != null) geoEntity.id.toString else "")
     gen.writeEndObject()
   }
 }

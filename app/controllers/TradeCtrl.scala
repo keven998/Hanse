@@ -55,7 +55,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       // 设置订单的失效时间为三天
       val expireDate = DateTime.now().plusDays(3)
       order.expireDate = expireDate.toDate
-      order.travellers = travellers.map(_._2).toList.asJava
+      order.travellers = if (travellers != null) travellers.map(_._2).toList.asJava else null
       order
     }
   }
