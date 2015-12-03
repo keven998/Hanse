@@ -34,7 +34,9 @@ object MiscAPI {
     if (query != null || query.isEmpty) {
       CommodityAPI.getCommoditiesByIdList(query.get.commodities)
     } else
-      Future { Seq() }
+      Future {
+        Seq()
+      }
   }
 
   /**
@@ -65,10 +67,11 @@ object MiscAPI {
 
         Map(categories map (topic => {
           topic -> (topicIdsMap(topic).commodities map (id => {
-            idCommodityMap(id)
+            if (idCommodityMap.containsKey(id))
+              idCommodityMap(id)
+            else null
           }))
         }): _*)
-
       })
     } flatMap (topicCommoditiesMap => topicCommoditiesMap)
     //val ret = query.asList().groupBy(_.topicType)
