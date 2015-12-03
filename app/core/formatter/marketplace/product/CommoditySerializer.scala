@@ -45,6 +45,12 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     }
     gen.writeEndArray()
 
+    gen.writeFieldName("cover")
+    val cover = commodity.cover
+    val retCover = if (cover != null) serializers.findValueSerializer(classOf[ImageItem], null)
+    else serializers.findNullValueSerializer(null)
+    retCover.serialize(cover, gen, serializers)
+
     // images
     gen.writeFieldName("images")
     gen.writeStartArray()

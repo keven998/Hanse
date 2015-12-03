@@ -1,6 +1,9 @@
 package core.misc
 
+import com.lvxingpai.model.misc.PhoneNumber
 import com.twitter.{ util => twitter }
+import org.mongodb.morphia.annotations.Entity
+import play.api.libs.json.Json
 
 import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.language.implicitConversions
@@ -23,6 +26,25 @@ object Implicits {
       case NodeSeq.Empty => ""
       case _ => body.toString()
     }
+  }
+
+  @Entity(noClassnameStored = true)
+  case class PhoneNumberTemp(dialCode: Int, number: Long) {
+    def toPhoneNumber = {
+      val ret = new PhoneNumber
+      ret.dialCode = dialCode
+      ret.number = number
+      ret
+    }
+  }
+
+  implicit val phoneNumberReads = Json.reads[PhoneNumberTemp]
+
+  implicit def phoneNumberTemp2Model(pt: PhoneNumberTemp): PhoneNumber = {
+    val ret: PhoneNumber = new PhoneNumber()
+    ret.dialCode = pt.dialCode
+    ret.number = pt.number
+    ret
   }
 
   implicit def NodeSeq2String(body: NodeSeq): String = {

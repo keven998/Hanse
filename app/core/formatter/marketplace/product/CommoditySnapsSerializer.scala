@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.product.{ CommodityPlan, Commodity }
 import com.lvxingpai.model.marketplace.seller.Seller
+import com.lvxingpai.model.misc.ImageItem
 
 import scala.collection.JavaConversions._
 
@@ -33,6 +34,23 @@ class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
       for (p <- plans)
         retPlan.serialize(p, gen, serializers)
     } else serializers.findNullValueSerializer(null)
+    gen.writeEndArray()
+
+    gen.writeFieldName("cover")
+    val cover = commodity.cover
+    val retCover = if (cover != null) serializers.findValueSerializer(classOf[ImageItem], null)
+    else serializers.findNullValueSerializer(null)
+    retCover.serialize(cover, gen, serializers)
+
+    // images
+    gen.writeFieldName("images")
+    gen.writeStartArray()
+    val images = commodity.images
+    if (images != null && !images.isEmpty) {
+      val ret = serializers.findValueSerializer(classOf[ImageItem], null)
+      // 只取第一张图片
+      ret.serialize(images.get(0), gen, serializers)
+    }
     gen.writeEndArray()
 
     //    gen.writeFieldName("category")

@@ -9,9 +9,10 @@ import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.misc.PhoneNumber
-import core.api.{ TravellerAPI, CommodityAPI, OrderAPI }
+import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter }
 import core.misc.HanseResult
+import core.misc.Implicits._
 import core.model.trade.order.OrderStatus
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
@@ -19,10 +20,9 @@ import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller, Results }
 
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
-import scala.collection.JavaConverters._
 
 /**
  * Created by topy on 2015/10/22.
@@ -52,7 +52,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       order.status = OrderStatus.Pending
       order.createTime = now
       order.updateTime = now
-      // 设置订单的失效时间为三天
+      // TODO 设置订单的失效时间为三天
       val expireDate = DateTime.now().plusDays(3)
       order.expireDate = expireDate.toDate
       order.travellers = if (travellers != null) travellers.map(_._2).toList.asJava else null
@@ -60,15 +60,14 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   }
 
-  case class ContactTemp(surname: String, givenName: String, phone: String, email: String) {
+  case class ContactTemp(surname: String, givenName: String, phone: PhoneNumber, email: String) {
     def toContact = {
       val contact = new RealNameInfo
       val tel = new PhoneNumber
       contact.surname = surname
       contact.givenName = givenName
-      // TODO 当前默认都是中国顾客
-      tel.dialCode = 86
-      tel.number = phone.toLong
+      tel.dialCode = phone.dialCode
+      tel.number = phone.number
       contact.tel = tel
       contact.email = email
       contact
@@ -87,16 +86,16 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         body <- request.body.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
         planId <- (body \ "planId").asOpt[String]
-        rendezvousTime <- (body \ "rendezvousTime").asOpt[String]
+        rendezvousTime <- (body \ "rendezvousTime").asOpt[Long]
         quantity <- (body \ "quantity").asOpt[Int]
         travellers <- (body \ "travellers").asOpt[Array[String]]
-        phone <- (body \ "contactPhone").asOpt[String]
+        phone <- (body \ "contactPhone").asOpt[PhoneNumberTemp]
         email <- (body \ "contactEmail").asOpt[String]
         surname <- (body \ "contactSurname").asOpt[String]
         givenName <- (body \ "contactGivenName").asOpt[String]
-        comment <- (body \ "contactComment").asOpt[String].orElse(Option(""))
+        comment <- (body \ "comment").asOpt[String].orElse(Option(""))
       } yield {
-        val date = DateTime.parse(rendezvousTime).toDate
+        val date = new Date(rendezvousTime)
         val contact = ContactTemp(surname, givenName, phone, email)
         for {
           commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId)
@@ -245,11 +244,11 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    * @param status 订单状态
    * @return 订单列表
    */
-  def getOrders(userId: Long, status: Option[String]) = Action.async(
+  def getOrders(userId: Long, status: Option[String], start: Int, count: Int) = Action.async(
     request => {
       val orderMapper = new SimpleOrderFormatter().objectMapper
       for {
-        orders <- OrderAPI.getOrderList(userId, status)
+        orders <- OrderAPI.getOrderList(userId, status, start, count)
       } yield {
         val node = orderMapper.valueToTree[JsonNode](orders)
         HanseResult(data = Some(node))

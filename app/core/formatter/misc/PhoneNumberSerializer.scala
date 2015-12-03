@@ -13,7 +13,6 @@ class PhoneNumberSerializer extends JsonSerializer[PhoneNumber] {
     gen.writeStartObject()
 
     gen.writeNumberField("dialCode", Option(phoneNumber.dialCode) getOrElse 86)
-
     gen.writeNumberField("number", Option(phoneNumber.number) getOrElse 0L)
 
     gen.writeEndObject()

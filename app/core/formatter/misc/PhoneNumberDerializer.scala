@@ -12,7 +12,6 @@ class PhoneNumberDerializer extends JsonDeserializer[PhoneNumber] {
     val node = (new ObjectMapper).readTree[JsonNode](p)
     val dialCode = if (node.has("dialCode")) node.get("dialCode").asInt() else 0
     val number = if (node.has("number")) node.get("number").asLong() else 0
-
     val phoneNumber = new PhoneNumber
     phoneNumber.dialCode = dialCode
     phoneNumber.number = number

@@ -1,7 +1,6 @@
 package core.formatter.misc
 
 import java.util
-import java.util.Date
 
 import com.fasterxml.jackson.core.{ JsonFactory, JsonParser }
 import com.fasterxml.jackson.databind.`type`.TypeFactory
@@ -9,7 +8,7 @@ import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.{ DeserializationContext, JsonDeserializer, JsonNode }
 import com.lvxingpai.model.account.{ Gender, IdProof, RealNameInfo }
 import com.lvxingpai.model.misc.PhoneNumber
-import org.joda.time.format.DateTimeFormat
+import org.joda.time.DateTime
 
 /**
  * Created by pengyt on 2015/11/19.
@@ -28,13 +27,14 @@ class PersonDeserializer extends JsonDeserializer[RealNameInfo] {
 
     val birthdayDate = if (node.has("birthday")) {
       val birthday = node.get("birthday").asText()
-      val dateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
-      try {
-        val millis = dateTimeFormatter.parseMillis(birthday)
-        new Date(millis)
-      } catch {
-        case e: IllegalArgumentException => null
-      }
+      DateTime.parse(birthday).toDate
+      //      val dateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+      //      try {
+      //        val millis = dateTimeFormatter.parseMillis(birthday)
+      //        new Date(millis)
+      //      } catch {
+      //        case e: IllegalArgumentException => null
+      //      }
     } else null
 
     val jsonFactory = new JsonFactory

@@ -27,14 +27,14 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
     }
 
     // commodityTimeRange
-    gen.writeFieldName("commodityTimeRange")
-    gen.writeStartArray()
-    val commodityTimeRange = order.commodityTimeRange
-    if (commodityTimeRange != null) {
-      for (c <- commodityTimeRange)
-        gen.writeString(c.toString)
-    }
-    gen.writeEndArray()
+    //    gen.writeFieldName("commodityTimeRange")
+    //    gen.writeStartArray()
+    //    val commodityTimeRange = order.commodityTimeRange
+    //    if (commodityTimeRange != null) {
+    //      for (c <- commodityTimeRange)
+    //        gen.writeString(c.toString)
+    //    }
+    //    gen.writeEndArray()
 
     // 计算商品总价
     if (order.commodity != null && order.commodity.plans != null && order.commodity.plans.nonEmpty)
@@ -53,9 +53,7 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
     gen.writeNumberField("rendezvousTime", if (order.rendezvousTime != null) order.rendezvousTime.getTime else 0)
     gen.writeNumberField("createTime", if (order.createTime != null) order.createTime.getTime else 0)
     gen.writeNumberField("updateTime", if (order.updateTime != null) order.updateTime.getTime else 0)
-    gen.writeNumberField("expireDate", if (order.expireDate != null) order.expireDate.getTime else 0)
-    // 为前端计算倒计时提供当前服务器时间
-    gen.writeNumberField("currentTime", System.currentTimeMillis())
+    gen.writeNumberField("expireTime", if (order.expireDate != null) order.expireDate.getTime else 0)
 
     gen.writeEndObject()
   }
