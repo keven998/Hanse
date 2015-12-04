@@ -21,7 +21,7 @@ object CommodityAPI {
    * @return
    */
   def getCommodityById(cmyId: Long, fields: Seq[String] = Seq())(implicit ds: Datastore): Future[Commodity] = {
-    val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId)
+    val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId).field("status").equal("pub")
     if (fields.nonEmpty)
       query.retrievedFields(true, fields: _*)
     Future {
@@ -30,7 +30,7 @@ object CommodityAPI {
   }
 
   def getCommoditySnapsById(cmyId: Long, planId: String)(implicit ds: Datastore): Future[Commodity] = {
-    val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId)
+    val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId).field("status").equal("pub")
       .retrievedFields(true, Seq("commodityId", "title", "desc", "price", "plans", "seller", "category"): _*)
     Future {
       val ret = query.get
@@ -46,7 +46,7 @@ object CommodityAPI {
    * @return
    */
   def getCommoditiesByIdList(ids: Seq[Long])(implicit ds: Datastore): Future[Seq[Commodity]] = {
-    val query = ds.createQuery(classOf[Commodity]).field("commodityId").in(seqAsJavaList(ids))
+    val query = ds.createQuery(classOf[Commodity]).field("commodityId").in(seqAsJavaList(ids)).field("status").equal("pub")
     Future {
       query.asList()
     }
@@ -60,7 +60,7 @@ object CommodityAPI {
   def getCommodityCategories(localityId: String)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     Future {
       val query = ds.createQuery(classOf[Commodity]).retrievedFields(true, Seq("commodityId", "category"): _*)
-        .field("locality.id").equal(new ObjectId(localityId))
+        .field("locality.id").equal(new ObjectId(localityId)).field("status").equal("pub")
       query.asList()
     }
   }
@@ -84,7 +84,7 @@ object CommodityAPI {
     if (coType.nonEmpty && !coType.get.equals("") && !coType.get.equals(COMMODITY_CATEGORY_ALL))
       query.field("category").hasThisOne(coType.get)
     val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
-    query.order(orderStr).offset(start).limit(count)
+    query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
 
     Future {
       query.asList()
