@@ -1,6 +1,6 @@
 package core.api
 
-import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
+import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity, Prepay }
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.misc.Global
 import core.sign.RSA
@@ -73,6 +73,19 @@ object OrderAPI {
   def getOrderOnlyStatus(orderId: Long)(implicit ds: Datastore): Future[Order] = {
     Future {
       ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, Seq("status"): _*).get
+    }
+  }
+
+  /**
+   * 更新订单状态
+   * @param orderId 订单号
+   * @param status 订单状态
+   */
+  def updateOrderStatus(orderId: Long, status: String, act: OrderActivity)(implicit ds: Datastore) = {
+    Future {
+      val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
+      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", status).add("activities", act)
+      ds.update(query, updateOps)
     }
   }
 
@@ -190,7 +203,6 @@ object OrderAPI {
     prepay.provider = paymentVendor
     prepay.amount = amount
     //prepay.timestamp = new Date()
-
     order.paymentInfo.put(paymentVendor, prepay)
     val query = ds.createQuery(classOf[Order]).field("orderId").equal(order.orderId)
     val updateOps = ds.createUpdateOperations(classOf[Order]).set("paymentInfo", order.paymentInfo)

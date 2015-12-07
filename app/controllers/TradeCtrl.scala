@@ -1,24 +1,24 @@
 package controllers
 
+import java.util
 import java.util.Date
 import javax.inject._
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
-import com.lvxingpai.model.marketplace.order.Order
+import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.misc.PhoneNumber
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
-import core.model.trade.order.OrderStatus
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
-import play.api.mvc.{ Action, Controller, Results }
+import play.api.mvc.{ Action, Controller, Result, Results }
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -49,13 +49,19 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       order.quantity = quantity
       order.comment = comment
       order.rendezvousTime = time
-      order.status = OrderStatus.Pending
+      order.status = "pending"
       order.createTime = now
       order.updateTime = now
       // TODO 设置订单的失效时间为三天
       val expireDate = DateTime.now().plusDays(3)
       order.expireDate = expireDate.toDate
       order.travellers = if (travellers != null) travellers.map(_._2).toList.asJava else null
+      val act = new OrderActivity
+      act.action = "create"
+      act.timestamp = now
+      act.data = Map("userId" -> consumerId.toString.asInstanceOf[AnyRef]).asJava
+      // TODO act.data
+      order.activities = util.Arrays.asList(act)
       order
     }
   }
@@ -129,6 +135,11 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   )
 
+  /**
+   * 订单状态
+   * @param orderId
+   * @return
+   */
   def getOrderStatus(orderId: Long) = Action.async(
     request => {
       val orderMapper = new OrderStatusFormatter().objectMapper
@@ -142,7 +153,64 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
   )
 
   /**
-   * 预支付
+   * 根据用户id获取订单列表
+   * 如果订单状态为空, 获取所在用户下的所有的订单列表
+   * 如果订单状态不为空, 获取所在用户下的某个订单状态的订单列表
+   * @param userId 用户id
+   * @param status 订单状态
+   * @return 订单列表
+   */
+  def getOrders(userId: Long, status: Option[String], start: Int, count: Int) = Action.async(
+    request => {
+      val orderMapper = new SimpleOrderFormatter().objectMapper
+      for {
+        orders <- OrderAPI.getOrderList(userId, status, start, count)
+      } yield {
+        val node = orderMapper.valueToTree[JsonNode](orders)
+        HanseResult(data = Some(node))
+      }
+    }
+  )
+
+  /**
+   * 操作订单
+   *
+   * @return
+   */
+  def operateOrder(orderId: Long) = Action.async(
+    request => {
+      val userId = request.headers.get("UserId").getOrElse("").toLong
+      val ret = for {
+        body <- request.body.asJson
+        action <- (body \ "action").asOpt[String]
+      } yield {
+        action match {
+          case "cancel" => operateOrderAct(userId, orderId, action, "canceled")
+          case "refund" => operateOrderAct(userId, orderId, action, "refundApplied")
+        }
+      }
+      ret.getOrElse(Future {
+        HanseResult.unprocessable()
+      })
+    }
+  )
+
+  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String): Future[Result] = {
+    val orderMapper = new OrderStatusFormatter().objectMapper
+    val act = new OrderActivity
+    act.action = action
+    act.timestamp = DateTime.now().toDate
+    act.data = Map("userId" -> userId.toString.asInstanceOf[AnyRef]).asJava
+    for {
+      update <- OrderAPI.updateOrderStatus(orderId, status, act)
+      order <- OrderAPI.getOrderOnlyStatus(orderId)
+    } yield {
+      val node = orderMapper.valueToTree[JsonNode](order)
+      HanseResult(data = Some(node))
+    }
+  }
+
+  /*   * 预支付
    * @return 带签名的字符串
    */
   def prePay() = Action.async(
@@ -232,26 +300,6 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         } else {
           HanseResult.forbidden(HanseResult.RetCode.FORBIDDEN, errorMsg = Some("invaild request"))
         }
-      }
-    }
-  )
-
-  /**
-   * 根据用户id获取订单列表
-   * 如果订单状态为空, 获取所在用户下的所有的订单列表
-   * 如果订单状态不为空, 获取所在用户下的某个订单状态的订单列表
-   * @param userId 用户id
-   * @param status 订单状态
-   * @return 订单列表
-   */
-  def getOrders(userId: Long, status: Option[String], start: Int, count: Int) = Action.async(
-    request => {
-      val orderMapper = new SimpleOrderFormatter().objectMapper
-      for {
-        orders <- OrderAPI.getOrderList(userId, status, start, count)
-      } yield {
-        val node = orderMapper.valueToTree[JsonNode](orders)
-        HanseResult(data = Some(node))
       }
     }
   )
