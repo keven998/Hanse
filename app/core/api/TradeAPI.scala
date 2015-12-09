@@ -1,7 +1,7 @@
 package core.api
 
+import com.lvxingpai.model.marketplace.order.Order
 import core.db.MorphiaFactory
-import core.model.trade.order.Order
 import org.bson.types.ObjectId
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,7 +15,7 @@ object TradeAPI {
   val ds = MorphiaFactory.datastore
   def getOrder(orderId: ObjectId): Future[Unit] = {
     Future {
-      ds.find(classOf[Order], Order.FD_COMMODITY, orderId).asList()
+      ds.find(classOf[Order], "orderId", orderId).asList()
     }
   }
 

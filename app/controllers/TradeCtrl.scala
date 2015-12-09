@@ -210,7 +210,9 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   }
 
-  /*   * 预支付
+  /**
+   * 预支付
+   *
    * @return 带签名的字符串
    */
   def prePay() = Action.async(
