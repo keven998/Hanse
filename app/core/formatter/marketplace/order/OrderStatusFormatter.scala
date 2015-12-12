@@ -12,7 +12,7 @@ import core.formatter.BaseFormatter
  */
 class OrderStatusFormatter extends BaseFormatter {
 
-  override val objectMapper = {
+  override protected val objectMapper = {
     val mapper = new ObjectMapper()
     val module = new SimpleModule()
     mapper.registerModule(DefaultScalaModule)
@@ -30,4 +30,8 @@ class OrderStatusFormatter extends BaseFormatter {
     }
   }
 
+}
+
+object OrderStatusFormatter {
+  lazy val instance = new OrderStatusFormatter
 }

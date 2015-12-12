@@ -52,9 +52,8 @@ object HanseResult {
     errorMsg: Option[String] = None): Result =
     HanseResult(UNPROCESSABLE_ENTITY, retCode, data, errorMsg)
 
-  def forbidden(retCode: RetCode.Value = RetCode.FORBIDDEN, data: Option[JsonNode] = None,
-    errorMsg: Option[String] = None): Result =
-    HanseResult(FORBIDDEN, retCode, data, errorMsg)
+  def forbidden(data: Option[JsonNode] = None, errorMsg: Option[String] = None): Result =
+    HanseResult(FORBIDDEN, RetCode.FORBIDDEN, data, errorMsg)
 
   def unprocessableWithMsg(errorMsg: Option[String]): Result =
     HanseResult(UNPROCESSABLE_ENTITY, RetCode.INVALID_ARGUMENTS, None, errorMsg)
