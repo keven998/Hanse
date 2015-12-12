@@ -34,8 +34,9 @@ GET           /marketplace/sellers/$id<\d+>                            @controll
 
 
 #----------订单接口----------
-#添加旅客信息
+# 订单操作
 POST          /marketplace/orders/$orderId<\d+>/actions                 @controllers.TradeCtrl.operateOrder(orderId:Long)
+
 #创建订单
 POST          /marketplace/orders                                      @controllers.TradeCtrl.createOrder()
 

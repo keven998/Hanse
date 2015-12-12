@@ -72,7 +72,7 @@ object OrderAPI {
    */
   def getOrderOnlyStatus(orderId: Long)(implicit ds: Datastore): Future[Order] = {
     Future {
-      ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, Seq("status"): _*).get
+      ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, Seq("consumerId", "status"): _*).get
     }
   }
 

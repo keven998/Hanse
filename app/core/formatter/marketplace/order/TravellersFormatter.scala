@@ -13,7 +13,7 @@ import core.formatter.misc.{ IdProofSerializer, PhoneNumberSerializer }
  */
 class TravellersFormatter extends BaseFormatter {
 
-  override val objectMapper = {
+  override protected val objectMapper = {
     val mapper = new ObjectMapper()
     val module = new SimpleModule()
     mapper.registerModule(DefaultScalaModule)
@@ -24,4 +24,8 @@ class TravellersFormatter extends BaseFormatter {
     mapper
   }
 
+}
+
+object TravellersFormatter {
+  lazy val instance = new TravellersFormatter
 }

@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.{ Inject, Named }
 
-import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import core.api.TravellerAPI
 import core.formatter.marketplace.order.TravellersFormatter
@@ -28,7 +28,6 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
   def addTraveller(userId: Long) = Action.async(
     request => {
       val node = new ObjectMapper().createObjectNode()
-      val travellerMapper = new TravellersFormatter().objectMapper
       val result = for {
         body <- request.body.asJson
       } yield {
@@ -37,7 +36,7 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
           traveller <- TravellerAPI.addTraveller(userId, person)
         } yield {
           node.put("key", traveller._1)
-          node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller._2))
+          node.set("traveller", TravellersFormatter.instance.formatJsonNode(traveller._2))
           HanseResult(data = Some(node))
         }
       }
@@ -55,7 +54,6 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
   def updateTraveller(key: String, userId: Long) = Action.async(
     request => {
       val node = new ObjectMapper().createObjectNode()
-      val travellerMapper = new TravellersFormatter().objectMapper
       val result = for {
         body <- request.body.asJson
       } yield {
@@ -65,7 +63,7 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
           ret <- TravellerAPI.getTraveller(userId, key)
         } yield {
           node.put("key", key)
-          node.set("traveller", travellerMapper.valueToTree[JsonNode](ret.get))
+          node.set("traveller", TravellersFormatter.instance.formatJsonNode(ret.get))
           HanseResult(data = Some(node))
         }
       }
@@ -96,12 +94,11 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
   def getTraveller(key: String, userId: Long) = Action.async(
     request => {
       val node = new ObjectMapper().createObjectNode()
-      val travellerMapper = new TravellersFormatter().objectMapper
       for {
         traveller <- TravellerAPI.getTraveller(userId, key)
       } yield {
         node.put("key", key)
-        node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller))
+        node.set("traveller", TravellersFormatter.instance.formatJsonNode(traveller))
         HanseResult(data = Some(node))
       }
     }
@@ -114,14 +111,13 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
   def getTravellerList(userId: Long) = Action.async(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
-      val travellerMapper = new TravellersFormatter().objectMapper
       for {
         travellers <- TravellerAPI.getTravellerList(userId)
       } yield {
         travellers map (traveller => {
           val node = new ObjectMapper().createObjectNode()
           node.put("key", traveller._1)
-          node.set("traveller", travellerMapper.valueToTree[JsonNode](traveller._2))
+          node.set("traveller", TravellersFormatter.instance.formatJsonNode(traveller._2))
           arrayNode.add(node)
         })
         HanseResult(data = Some(arrayNode))
