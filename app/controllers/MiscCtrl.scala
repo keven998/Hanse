@@ -50,13 +50,12 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
    */
   def getCommoditiesByTopic(topicType: String) = Action.async(
     request => {
-      val simpleCommodityMapper = new SimpleCommodityFormatter().objectMapper
       val node = new ObjectMapper().createObjectNode()
       for {
         commodities <- MiscAPI.getCommoditiesByTopic(topicType)
       } yield {
         node.put("topicType", topicType)
-        node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](commodities))
+        node.set("commodities", SimpleCommodityFormatter.instance.formatJsonNode(commodities))
         HanseResult(data = Some(node))
       }
     }
@@ -69,7 +68,6 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
   def getRecommendCommodities = Action.async(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
-      val simpleCommodityMapper = new SimpleCommodityFormatter().objectMapper
       for {
         categories <- MiscAPI.getRecommendCategories()
         topicCommoditiesMap <- MiscAPI.getRecommendCommodities(categories)
@@ -78,7 +76,7 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
           val commodities = topicCommoditiesMap(topic)
           val node = new ObjectMapper().createObjectNode()
           node.put("topicType", topic)
-          node.set("commodities", simpleCommodityMapper.valueToTree[JsonNode](commodities))
+          node.set("commodities", SimpleCommodityFormatter.instance.formatJsonNode(commodities))
           arrayNode.add(node)
         })
         HanseResult(data = Some(arrayNode))

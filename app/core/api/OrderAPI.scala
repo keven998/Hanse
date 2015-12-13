@@ -383,7 +383,7 @@ object OrderAPI {
    */
   def getOrderList(userId: Long, status: Option[String], start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Order]] = {
     Future {
-      val query = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).order("-createTime").offset(start).limit(count) //生成时间逆序
+      val query = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).order("-id").offset(start).limit(count) //生成时间逆序
       if (status.nonEmpty) query.field("status").equal(status.get)
       query.asList()
     }

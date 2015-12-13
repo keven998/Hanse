@@ -20,12 +20,12 @@ object CommodityAPI {
    * @param cmyId
    * @return
    */
-  def getCommodityById(cmyId: Long, fields: Seq[String] = Seq())(implicit ds: Datastore): Future[Commodity] = {
+  def getCommodityById(cmyId: Long, fields: Seq[String] = Seq())(implicit ds: Datastore): Future[Option[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity]).field("commodityId").equal(cmyId).field("status").equal("pub")
     if (fields.nonEmpty)
       query.retrievedFields(true, fields: _*)
     Future {
-      query.get
+      Option(query.get)
     }
   }
 
@@ -34,7 +34,7 @@ object CommodityAPI {
       .retrievedFields(true, Seq("commodityId", "title", "desc", "price", "plans", "seller", "category"): _*)
     Future {
       val ret = query.get
-      val plan = ret.plans.filter(_.planId.equals(planId)).toList
+      val plan = ret.plans.filter(_.planId.equals(planId)).toList // TODO 此处关于planId的比较有误
       ret.plans = plan
       ret
     }

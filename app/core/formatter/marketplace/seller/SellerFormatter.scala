@@ -14,7 +14,7 @@ import core.formatter.user.UserSerializer
  * Created by topy on 2015/11/3.
  */
 class SellerFormatter extends BaseFormatter {
-  override val objectMapper = {
+  override protected val objectMapper = {
     val mapper = new ObjectMapper()
     val module = new SimpleModule()
     mapper.registerModule(DefaultScalaModule)
@@ -28,3 +28,6 @@ class SellerFormatter extends BaseFormatter {
   }
 }
 
+object SellerFormatter {
+  lazy val instance = new SellerFormatter
+}

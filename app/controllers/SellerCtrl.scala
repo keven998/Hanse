@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject.{ Inject, Named, Singleton }
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.yunkai.UserInfoProp
 import core.api.SellerAPI
@@ -27,13 +26,11 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
 
   def getSeller(id: Long) = Action.async(
     request => {
-      val sellerFmt = (new SellerFormatter).objectMapper
       val ret = for {
         seller <- SellerAPI.getSeller(id)
         //user <- FinagleFactory.client.getUserById(sId, Some(fields), selfId)
       } yield {
-        val result = if (seller.nonEmpty) Some(sellerFmt.valueToTree[JsonNode](seller.get)) else None
-        HanseResult(data = result)
+        HanseResult(data = seller map (SellerFormatter.instance.formatJsonNode(_)))
       }
       ret
     }

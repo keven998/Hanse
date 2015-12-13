@@ -15,7 +15,8 @@ object HanseResult {
     val OK = Value(0)
     val INVALID_ARGUMENTS = Value(100, "Invalid arguments")
     val FORBIDDEN = Value(403, "Forbidden")
-
+    val NOT_FOUND = Value(404, "Resource not found")
+    val UNKNOWN = Value(999, "Unknown error")
   }
 
   /**
@@ -30,8 +31,6 @@ object HanseResult {
       else
         None
     }
-    val error = errorWithDefault map (v => s""",\"error\":$v""") getOrElse ""
-
     val mapper = new ObjectMapper()
     val node = mapper.createObjectNode()
     node put ("timestamp", System.currentTimeMillis()) put ("code", retCode.id)
@@ -45,13 +44,18 @@ object HanseResult {
     Results.Status(status)(contents).withHeaders("Content-Type" -> "application/json;charset=utf-8")
   }
 
+  // 正常
   def ok(retCode: RetCode.Value = RetCode.OK, data: Option[JsonNode] = None, errorMsg: Option[String] = None): Result =
     HanseResult(OK, retCode, data, errorMsg)
 
+  def notFound(message: Option[String] = None): Result = HanseResult(NOT_FOUND, RetCode.NOT_FOUND, errorMsg = message)
+
+  // 请求中的参数有问题
   def unprocessable(retCode: RetCode.Value = RetCode.INVALID_ARGUMENTS, data: Option[JsonNode] = None,
     errorMsg: Option[String] = None): Result =
     HanseResult(UNPROCESSABLE_ENTITY, retCode, data, errorMsg)
 
+  // 权限错误
   def forbidden(data: Option[JsonNode] = None, errorMsg: Option[String] = None): Result =
     HanseResult(FORBIDDEN, RetCode.FORBIDDEN, data, errorMsg)
 

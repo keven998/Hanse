@@ -34,6 +34,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
 
   val dateFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
+  // TODO 为何需要OrderTemp, ContactTemp, PhoneNumberTemp等临时类?
   case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
       quantity: Int, comment: String, time: Date,
       consumerId: Long, travellers: Map[String, RealNameInfo]) {
@@ -86,6 +87,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def createOrder() = Action.async(
     request => {
+      // TODO 为何使用Header中的UserId? 如果没有正确提供UserId, 这里会抛出异常
       val userId = request.headers.get("UserId").getOrElse("").toLong
       val ret = for {
         body <- request.body.asJson
@@ -94,8 +96,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         rendezvousTime <- (body \ "rendezvousTime").asOpt[Long]
         quantity <- (body \ "quantity").asOpt[Int]
         travellers <- (body \ "travellers").asOpt[Array[String]]
-        phone <- (body \ "contactPhone").asOpt[PhoneNumberTemp]
-        email <- (body \ "contactEmail").asOpt[String]
+        phone <- (body \ "contactPhone").asOpt[PhoneNumberTemp] // TODO 为何需要PhoneNumberTemp?
+        email <- (body \ "contactEmail").asOpt[String] // TODO Email是必填项目吗?
         surname <- (body \ "contactSurname").asOpt[String]
         givenName <- (body \ "contactGivenName").asOpt[String]
         comment <- (body \ "comment").asOpt[String].orElse(Option(""))
