@@ -34,8 +34,9 @@ GET           /marketplace/sellers/$id<\d+>                            @controll
 
 
 #----------订单接口----------
-#添加旅客信息
-POST          /marketplace/orders/$orderId<\d+>/actions                 @controllers.TradeCtrl.operateOrder(orderId:Long)
+#修改订单状态
+POST          /marketplace/orders/$orderId<\d+>/actions                @controllers.TradeCtrl.operateOrder(orderId:Long)
+
 #创建订单
 POST          /marketplace/orders                                      @controllers.TradeCtrl.createOrder()
 
@@ -63,12 +64,9 @@ GET           /users/$userId<\d+>/travellers/$key<[0-9a-f]{24}>        @controll
 #获取旅客信息列表
 GET           /users/$userId<\d+>/travellers                           @controllers.TravellerCtrl.getTravellerList(userId:Long)
 
-#改变订单状态：取消订单
-#POST          /marketplace/orders/$id<\d+>/actions                     @controllers.TradeCtrl.getOrderInfo(orderId: Long)
 #----------支付接口----------
 #微信预支付
-POST          /marketplace/orders/$id<\d+>/actions                     @controllers.PaymentCtrl.createPayments(id:Long)
-
+POST          /marketplace/orders/$id<\d+>/payments                    @controllers.PaymentCtrl.createPayments(id:Long)
 
 #查询订单
 GET           /orders/$id<\d+>/payments                                @controllers.PaymentCtrl.getPayments(id:Long)

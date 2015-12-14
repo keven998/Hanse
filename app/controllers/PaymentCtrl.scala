@@ -24,21 +24,21 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
 
   def createPayments(orderId: Long) = Action.async(
     request => {
+      val ipAddress = request.remoteAddress
       val ret = for {
         body <- request.body.asJson
         userId = request.headers.get("UserId") map (_.toLong)
-        name = (body \ "name").asOpt[String].getOrElse("WechatPayment")
         ip = (body \ "ip").asOpt[String].getOrElse("")
         tradeType = (body \ "tradeType").asOpt[String].getOrElse("None")
         vendor = (body \ "vendor").asOpt[String].getOrElse("")
       } yield {
         for {
-          orderValue <- OrderAPI.getOrder(orderId)
+          orderValue <- OrderAPI.getOrder(orderId, Seq("orderId", "commodity", "totalPrice"))
           wcResponse <- PaymentService.unifiedOrder(
             Map(
               WechatPrepay.FD_OUT_TRADE_NO -> orderId,
               WechatPrepay.FD_SPBILL_CREATE_IP -> ip,
-              WechatPrepay.FD_BODY -> name,
+              WechatPrepay.FD_BODY -> orderValue.commodity.title,
               WechatPrepay.FD_TRADE_TYPE -> tradeType,
               WechatPrepay.FD_TOTAL_FEE -> (orderValue.totalPrice * 100).toInt
             )
@@ -49,7 +49,11 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           )
         } yield {
           val str = new String(wcResponse.bodyAsBytes, "UTF8")
-          Ok(str)
+          val ret = PaymentService.xml2OResult(str)
+          // TODO
+          ret.put("ipAddress", ipAddress)
+          ret.put("ip", ip)
+          HanseResult(data = Some(ret))
         }
       }
       ret getOrElse Future {
@@ -88,7 +92,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         val flag = prePay.getReturnCode.equals(WechatPrepay.VA_SUCCESS) &&
           prePay.getResultCode.equals(WechatPrepay.VA_SUCCESS)
         if (flag) {
-          val orderId = (body \ WechatPrepay.FD_OUT_TRADE_NO \*).toLong
+          val orderId = (body \ WechatPrepay.FD_OUT_TRADE_NO \*).toString().toLong
           OrderAPI.getOrder(orderId).map(order => {
             // 验证请求的签名等信息
             if (validationCallback(prePay, order)) {
@@ -109,7 +113,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           }
       }
       ret getOrElse Future {
-        HanseResult.unprocessable()
+        Ok(wechatCallBackError)
       }
     }
 
@@ -117,26 +121,26 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
 
   def getCallbackBody(body: NodeSeq) = {
     val payment = new WechatPrepay()
-    val returnCode = (body \ WechatPrepay.FD_RETURN_CODE \*)
+    val returnCode = (body \ WechatPrepay.FD_RETURN_CODE \*).toString()
     payment.setResult(returnCode)
     payment.setReturnCode(returnCode)
-    payment.setReturnMsg((body \ WechatPrepay.FD_RETURN_MSG \*))
+    payment.setReturnMsg((body \ WechatPrepay.FD_RETURN_MSG \*).toString())
     if (returnCode.equals(WechatPrepay.VA_FAIL)) {
       payment
     } else {
-      payment.setResultCode((body \ WechatPrepay.FD_RESULT_CODE \*))
-      payment.setErrCode((body \ WechatPrepay.FD_ERR_CODE \*))
-      payment.setErrCode((body \ WechatPrepay.FD_ERR_CODE_DES \*))
-      payment.setNonceString((body \ WechatPrepay.FD_NONCE_STR \*))
-      payment.setSign((body \ WechatPrepay.FD_SIGN \*))
-      payment.setOpenId((body \ WechatPrepay.FD_OPENID \*))
-      payment.setTradeType((body \ WechatPrepay.FD_TRADE_TYPE \*))
-      payment.setBankType((body \ WechatPrepay.FD_BANK_TYPE \*))
-      payment.setTotalFee((body \ WechatPrepay.FD_TOTAL_FEE \*))
-      payment.setFeeType((body \ WechatPrepay.FD_FEE_TYPE \*))
-      payment.setCashFee((body \ WechatPrepay.FD_CASH_FEE \*))
-      payment.setCashFeeType((body \ WechatPrepay.FD_CASH_FEE_TYPE \*))
-      payment.setPrepayId((body \ WechatPrepay.FD_TRANSACTION_ID \*))
+      payment.setResultCode((body \ WechatPrepay.FD_RESULT_CODE \*).toString())
+      payment.setErrCode((body \ WechatPrepay.FD_ERR_CODE \*).toString())
+      payment.setErrCode((body \ WechatPrepay.FD_ERR_CODE_DES \*).toString())
+      payment.setNonceString((body \ WechatPrepay.FD_NONCE_STR \*).toString())
+      payment.setSign((body \ WechatPrepay.FD_SIGN \*).toString())
+      payment.setOpenId((body \ WechatPrepay.FD_OPENID \*).toString())
+      payment.setTradeType((body \ WechatPrepay.FD_TRADE_TYPE \*).toString())
+      payment.setBankType((body \ WechatPrepay.FD_BANK_TYPE \*).toString())
+      payment.setTotalFee(body \ WechatPrepay.FD_TOTAL_FEE \*)
+      payment.setFeeType((body \ WechatPrepay.FD_FEE_TYPE \*).toString())
+      payment.setCashFee(body \ WechatPrepay.FD_CASH_FEE \*)
+      payment.setCashFeeType((body \ WechatPrepay.FD_CASH_FEE_TYPE \*).toString())
+      payment.setPrepayId((body \ WechatPrepay.FD_TRANSACTION_ID \*).toString())
       payment.setTimestamp((body \ "time_end" \*).toString().toLong)
       payment
     }

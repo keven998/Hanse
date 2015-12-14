@@ -47,6 +47,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       order.contact = contact.toContact
       order.planId = planId
       order.quantity = quantity
+      // TODO OOXX
+      order.totalPrice = quantity * commodity.price
       order.comment = comment
       order.rendezvousTime = time
       order.status = "pending"
@@ -183,10 +185,17 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       val ret = for {
         body <- request.body.asJson
         action <- (body \ "action").asOpt[String]
+        memo <- (body \ "memo").asOpt[String] //备注
+        amount <- (body \ "amount").asOpt[Double] // 退款金额
       } yield {
+        val data: Map[String, AnyRef] = Map(
+          "userId" -> userId.toString.asInstanceOf[AnyRef],
+          "memo" -> memo.toString.asInstanceOf[AnyRef],
+          "amount" -> amount.toString.asInstanceOf[AnyRef]
+        )
         action match {
-          case "cancel" => operateOrderAct(userId, orderId, action, "canceled")
-          case "refund" => operateOrderAct(userId, orderId, action, "refundApplied")
+          case "cancel" => operateOrderAct(userId, orderId, action, "canceled", data)
+          case "refund" => operateOrderAct(userId, orderId, action, "refundApplied", data)
         }
       }
       ret.getOrElse(Future {
@@ -195,19 +204,20 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   )
 
-  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String): Future[Result] = {
+  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String, data: Map[String, AnyRef]): Future[Result] = {
     val orderMapper = new OrderStatusFormatter().objectMapper
     val act = new OrderActivity
     act.action = action
     act.timestamp = DateTime.now().toDate
-    act.data = Map("userId" -> userId.toString.asInstanceOf[AnyRef]).asJava
+    act.data = data.asJava
     for {
       update <- OrderAPI.updateOrderStatus(orderId, status, act)
-      order <- OrderAPI.getOrderOnlyStatus(orderId)
+      order <- OrderAPI.getOrderOnlyStatus(orderId) if update != null
     } yield {
       val node = orderMapper.valueToTree[JsonNode](order)
       HanseResult(data = Some(node))
     }
+
   }
 
   /**

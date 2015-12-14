@@ -123,4 +123,8 @@ object WechatPrepay {
 
   val VA_FAIL = "FAIL"
 
+  val PREPAY_ID = "prepay_id"
+
+  val MCH_ID = "mch_id"
+
 }

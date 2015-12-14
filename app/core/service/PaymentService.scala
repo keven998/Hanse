@@ -1,9 +1,11 @@
 package core.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.model.marketplace.order.Prepay
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.misc.Implicits._
-import core.misc.{ Global, HanseResult, Utils }
+import core.misc.{ HanseResult, Utils }
 import core.model.trade.order.WechatPrepay
 import org.bson.types.ObjectId
 import play.api.Play.current
@@ -16,15 +18,6 @@ import scala.xml.XML
  */
 object PaymentService {
 
-  lazy val config = Global.conf
-  val accountInfo = {
-    val appid = config.getString("wechatpay.appid").getOrElse("")
-    val mchid = config.getString("wechatpay.mchid").getOrElse("")
-    Map("appid" -> appid, "mch_id" -> mchid)
-  }
-
-  val apisecret = config.getString("wechatpay.apisecret").getOrElse("")
-
   /**
    * 微信统一下单接口
    *
@@ -34,6 +27,15 @@ object PaymentService {
     val notify_url = "http://182.92.168.171:11219/payment-webhook/wechat"
     val callBack = Map("notify_url" -> notify_url)
     val randomStr = Map("nonce_str" -> Utils.nonceStr())
+
+    val accountInfo = {
+      //      val appid = config.getString("wechatpay.appid").getOrElse("")
+      //      val mchid = config.getString("wechatpay.mchid").getOrElse("")
+      val mchid = "1278401701"
+      val appid = "wx86048e56adaf7486"
+      Map("appid" -> appid, "mch_id" -> mchid)
+    }
+    //    val apisecret = config.getString("wechatpay.apisecret").getOrElse("")
 
     val params = content ++ accountInfo ++ callBack ++ randomStr
     val sign = Map("sign" -> genSign(params))
@@ -56,6 +58,13 @@ object PaymentService {
     val url = "https://api.mch.weixin.qq.com/pay/orderquery"
     val randomStr = Map("nonce_str" -> Utils.nonceStr())
 
+    val accountInfo = {
+      //      val appid = config.getString("wechatpay.appid").getOrElse("")
+      //      val mchid = config.getString("wechatpay.mchid").getOrElse("")
+      val mchid = "1278401701"
+      val appid = "wx86048e56adaf7486"
+      Map("appid" -> appid, "mch_id" -> mchid)
+    }
     val params = content ++ accountInfo ++ randomStr
     val sign = Map("sign" -> genSign(params))
     val resultParams = params ++ sign
@@ -63,7 +72,7 @@ object PaymentService {
     val ret = WS.url(url)
       .withHeaders("Content-Type" -> "text/xml; charset=utf-8")
       .withRequestTimeout(30000)
-      .post(body.toString)
+      .post(body.toString())
     ret
   }
 
@@ -89,6 +98,8 @@ object PaymentService {
       None
     } else {
       val prepay = new Prepay()
+      //指定微信支付
+      prepay.provider = PaymentVendor.Wechat
       prepay.id = new ObjectId()
       prepay.prepayId = (elem \ "prepay_id" \*).toString()
       prepay.setVendor(PaymentVendor.Wechat)
@@ -101,6 +112,25 @@ object PaymentService {
     }
   }
 
+  def xml2OResult(body: String): ObjectNode = {
+    val elem = XML.loadString(body)
+    val returnCode = (elem \ WechatPrepay.FD_RETURN_CODE \*).toString()
+    val resultCode = (elem \ WechatPrepay.FD_RESULT_CODE \*).toString()
+    val node = new ObjectMapper().createObjectNode()
+    if (returnCode.equals(WechatPrepay.VA_FAIL) ||
+      resultCode.equals(WechatPrepay.VA_FAIL)) {
+      node.put("result", (elem \ WechatPrepay.FD_RETURN_CODE \*).toString())
+    } else {
+      node.put("result", (elem \ WechatPrepay.FD_RETURN_CODE \*).toString())
+      node.put("nonce_str", (elem \ WechatPrepay.FD_NONCE_STR \*).toString())
+      node.put("prepay_id", (elem \ WechatPrepay.PREPAY_ID \*).toString())
+      node.put("trade_type", (elem \ WechatPrepay.FD_TRADE_TYPE \*).toString())
+      node.put("sign", (elem \ WechatPrepay.FD_SIGN \*).toString())
+      node.put("mch_id", (elem \ WechatPrepay.MCH_ID \*).toString())
+
+    }
+  }
+
   /**
    * 取得签名
    *
@@ -108,6 +138,7 @@ object PaymentService {
    * @return
    */
   def genSign(content: Map[String, String]) = {
+    val apisecret = "ba912c7748715e3c8e2cc1a6be751e86"
     val stringA = (for ((k, v) <- content.toList.sorted) yield s"$k=$v").mkString("&")
     val stringSignTemp = stringA + "&key=" + apisecret
     Utils.MD5(stringSignTemp).toUpperCase

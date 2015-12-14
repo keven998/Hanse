@@ -64,6 +64,12 @@ object OrderAPI {
     }
   }
 
+  def getOrder(orderId: Long, fields: Seq[String])(implicit ds: Datastore): Future[Order] = {
+    Future {
+      ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, fields: _*).get
+    }
+  }
+
   /**
    *
    * @param orderId
@@ -95,7 +101,7 @@ object OrderAPI {
         val prepay = p.get.asInstanceOf[Prepay]
         val pm = new java.util.HashMap[String, Prepay]
         pm.put(prepay.provider, prepay)
-        val query = ds.createQuery(classOf[Order]).field("order").equal(order.orderId)
+        val query = ds.createQuery(classOf[Order]).field("orderId").equal(order.orderId)
         val updateOps = ds.createUpdateOperations(classOf[Order]).set("paymentInfo", pm)
         ds.updateFirst(query, updateOps)
       }
