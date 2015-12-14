@@ -4,9 +4,9 @@ import javax.inject.{ Inject, Named }
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
+import com.lvxingpai.model.account.RealNameInfo
 import core.api.TravellerAPI
 import core.formatter.marketplace.order.TravellersFormatter
-import core.formatter.misc.PersonParser
 import core.misc.HanseResult
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
@@ -31,7 +31,7 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
       val result = for {
         body <- request.body.asJson
       } yield {
-        val person = PersonParser.apply(body.toString())
+        val person = TravellersFormatter.instance.parse[RealNameInfo](body.toString())
         for {
           traveller <- TravellerAPI.addTraveller(userId, person)
         } yield {
@@ -52,26 +52,26 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @return 旅客信息和key
    */
   def updateTraveller(key: String, userId: Long) = Action.async(
-    request => {
-      val node = new ObjectMapper().createObjectNode()
-      val result = for {
-        body <- request.body.asJson
+    block = request => {
+    val node = new ObjectMapper().createObjectNode()
+    val result = for {
+      body <- request.body.asJson
+    } yield {
+      val person = TravellersFormatter.instance.parse[RealNameInfo](body.toString())
+      for {
+        traveller <- TravellerAPI.updateTraveller(userId, key, person)
+        ret <- TravellerAPI.getTraveller(userId, key)
       } yield {
-        val person = PersonParser.apply(body.toString())
-        for {
-          traveller <- TravellerAPI.updateTraveller(userId, key, person)
-          ret <- TravellerAPI.getTraveller(userId, key)
-        } yield {
-          node.put("key", key)
-          node.set("traveller", TravellersFormatter.instance.formatJsonNode(ret.get))
-          HanseResult(data = Some(node))
-        }
-      }
-      if (result.nonEmpty) result.get
-      else Future {
-        HanseResult.unprocessable()
+        node.put("key", key)
+        node.set("traveller", TravellersFormatter.instance.formatJsonNode(ret.get))
+        HanseResult(data = Some(node))
       }
     }
+    if (result.nonEmpty) result.get
+    else Future {
+      HanseResult.unprocessable()
+    }
+  }
   )
 
   /**

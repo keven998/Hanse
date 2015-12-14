@@ -105,6 +105,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         val date = new Date(rendezvousTime)
         val contact = ContactTemp(surname, givenName, phone, email)
         for {
+          // TODO controller中不应该包含业务逻辑
           commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId)
           tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
           order <- OrderAPI.createOrder(OrderTemp(commodity.title, commodity, contact, planId, quantity, comment, date, userId, tls.orNull).toOrder)

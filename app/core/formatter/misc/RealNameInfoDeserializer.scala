@@ -13,7 +13,7 @@ import org.joda.time.DateTime
 /**
  * Created by pengyt on 2015/11/19.
  */
-class PersonDeserializer extends JsonDeserializer[RealNameInfo] {
+class RealNameInfoDeserializer extends JsonDeserializer[RealNameInfo] {
   override def deserialize(p: JsonParser, ctxt: DeserializationContext): RealNameInfo = {
     val node = p.getCodec.readTree[JsonNode](p)
     val surname = if (node.has("surname")) node.get("surname").asText() else ""
