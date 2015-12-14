@@ -18,6 +18,7 @@ import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
+import play.api.libs.json._
 import play.api.mvc.{ Action, Controller, Result, Results }
 
 import scala.collection.JavaConverters._
@@ -48,6 +49,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       order.contact = contact.toContact
       order.planId = planId
       order.quantity = quantity
+      // TODO OOXX
+      order.totalPrice = quantity * commodity.price
       order.comment = comment
       order.rendezvousTime = time
       order.status = "pending"
@@ -60,7 +63,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       val act = new OrderActivity
       act.action = "create"
       act.timestamp = now
-      act.data = Map("userId" -> consumerId.toString.asInstanceOf[AnyRef]).asJava
+      act.data = Map[String, Any]("userId" -> consumerId).asJava
       // TODO act.data
       order.activities = util.Arrays.asList(act)
       order
@@ -204,10 +207,30 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       val ret = for {
         body <- request.body.asJson
         action <- (body \ "action").asOpt[String]
+        memo <- (body \ "memo").asOpt[String] //备注
+        amount <- (body \ "amount").asOpt[Double] // 退款金额
+        data1 <- (body \ "data").asOpt[JsObject] orElse Some(JsObject.apply(Seq()))
       } yield {
+        val data = Map(data1.fields map (entry => {
+          val key = entry._1
+          val value = entry._2 match {
+            case v: JsNumber =>
+              if (v.value.isDecimalDouble)
+                v.value.doubleValue()
+              else if (v.value.isDecimalFloat)
+                v.value.floatValue()
+            case v: JsBoolean =>
+              v.value
+            case v: JsString =>
+              v.value
+            case JsNull =>
+              null
+          }
+          key -> value
+        }): _*)
         action match {
-          case "cancel" => operateOrderAct(userId, orderId, action, "canceled")
-          case "refund" => operateOrderAct(userId, orderId, action, "refundApplied")
+          case "cancel" => operateOrderAct(userId, orderId, action, "canceled", data)
+          case "refund" => operateOrderAct(userId, orderId, action, "refundApplied", data)
           case _ => Future(HanseResult.unprocessable())
         }
       }
@@ -217,18 +240,20 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   )
 
-  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String): Future[Result] = {
+  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String,
+    data: Map[String, Any] = Map()): Future[Result] = {
     val act = new OrderActivity
     act.action = action
     act.timestamp = DateTime.now().toDate
-    act.data = Map("userId" -> userId.toString.asInstanceOf[AnyRef]).asJava
+    act.data = data.asJava
     for {
       update <- OrderAPI.updateOrderStatus(orderId, status, act)
-      order <- OrderAPI.getOrderOnlyStatus(orderId)
+      order <- OrderAPI.getOrderOnlyStatus(orderId) if update != null
     } yield {
       val node = OrderStatusFormatter.instance.formatJsonNode(order)
       HanseResult(data = Some(node))
     }
+
   }
 
   /**
