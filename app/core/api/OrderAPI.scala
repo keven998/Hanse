@@ -78,7 +78,7 @@ object OrderAPI {
    */
   def getOrderOnlyStatus(orderId: Long)(implicit ds: Datastore): Future[Order] = {
     Future {
-      ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, Seq("status"): _*).get
+      ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, Seq("consumerId", "status"): _*).get
     }
   }
 
@@ -389,7 +389,7 @@ object OrderAPI {
    */
   def getOrderList(userId: Long, status: Option[String], start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Order]] = {
     Future {
-      val query = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).order("-createTime").offset(start).limit(count) //生成时间逆序
+      val query = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).order("-id").offset(start).limit(count) //生成时间逆序
       if (status.nonEmpty) query.field("status").equal(status.get)
       query.asList()
     }

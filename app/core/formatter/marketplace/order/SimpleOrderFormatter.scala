@@ -19,7 +19,7 @@ import core.formatter.user.UserSerializer
  */
 class SimpleOrderFormatter extends BaseFormatter {
 
-  override val objectMapper = {
+  override protected val objectMapper = {
     val mapper = new ObjectMapper()
     val module = new SimpleModule()
     mapper.registerModule(DefaultScalaModule)
@@ -33,4 +33,8 @@ class SimpleOrderFormatter extends BaseFormatter {
     mapper.registerModule(module)
     mapper
   }
+}
+
+object SimpleOrderFormatter {
+  lazy val instance = new SimpleOrderFormatter
 }

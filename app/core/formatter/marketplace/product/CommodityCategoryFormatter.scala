@@ -11,7 +11,7 @@ import core.formatter.BaseFormatter
  */
 class CommodityCategoryFormatter extends BaseFormatter {
 
-  override val objectMapper = {
+  override protected val objectMapper = {
     val mapper = new ObjectMapper()
     val module = new SimpleModule()
     mapper.registerModule(DefaultScalaModule)
@@ -35,5 +35,8 @@ class CommodityCategoryFormatter extends BaseFormatter {
       gen.writeEndObject()
     }
   }
+}
 
+object CommodityCategoryFormatter {
+  lazy val instance = new CommodityCategoryFormatter
 }

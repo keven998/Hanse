@@ -4,7 +4,7 @@ import java.util
 import java.util.Date
 import javax.inject._
 
-import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
@@ -18,6 +18,7 @@ import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
+import play.api.libs.json._
 import play.api.mvc.{ Action, Controller, Result, Results }
 
 import scala.collection.JavaConverters._
@@ -34,6 +35,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
 
   val dateFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
+  // TODO 为何需要OrderTemp, ContactTemp, PhoneNumberTemp等临时类?
   case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
       quantity: Int, comment: String, time: Date,
       consumerId: Long, travellers: Map[String, RealNameInfo]) {
@@ -61,7 +63,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       val act = new OrderActivity
       act.action = "create"
       act.timestamp = now
-      act.data = Map("userId" -> consumerId.toString.asInstanceOf[AnyRef]).asJava
+      act.data = Map[String, Any]("userId" -> consumerId).asJava
       // TODO act.data
       order.activities = util.Arrays.asList(act)
       order
@@ -88,7 +90,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def createOrder() = Action.async(
     request => {
-      val orderFmt = (new OrderFormatter).objectMapper
+      // TODO 为何使用Header中的UserId? 如果没有正确提供UserId, 这里会抛出异常
       val userId = request.headers.get("UserId").getOrElse("").toLong
       val ret = for {
         body <- request.body.asJson
@@ -97,8 +99,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         rendezvousTime <- (body \ "rendezvousTime").asOpt[Long]
         quantity <- (body \ "quantity").asOpt[Int]
         travellers <- (body \ "travellers").asOpt[Array[String]]
-        phone <- (body \ "contactPhone").asOpt[PhoneNumberTemp]
-        email <- (body \ "contactEmail").asOpt[String]
+        phone <- (body \ "contactPhone").asOpt[PhoneNumberTemp] // TODO 为何需要PhoneNumberTemp?
+        email <- (body \ "contactEmail").asOpt[String] // TODO Email是必填项目吗?
         surname <- (body \ "contactSurname").asOpt[String]
         givenName <- (body \ "contactGivenName").asOpt[String]
         comment <- (body \ "comment").asOpt[String].orElse(Option(""))
@@ -106,11 +108,12 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         val date = new Date(rendezvousTime)
         val contact = ContactTemp(surname, givenName, phone, email)
         for {
+          // TODO controller中不应该包含业务逻辑
           commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId)
           tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
           order <- OrderAPI.createOrder(OrderTemp(commodity.title, commodity, contact, planId, quantity, comment, date, userId, tls.orNull).toOrder)
         } yield {
-          val node = orderFmt.valueToTree[JsonNode](order)
+          val node = OrderFormatter.instance.formatJsonNode(order)
           HanseResult(data = Some(node))
         }
       }
@@ -127,12 +130,19 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def getOrderInfo(orderId: Long) = Action.async(
     request => {
-      val orderMapper = new OrderFormatter().objectMapper
-      for {
-        order <- OrderAPI.getOrder(orderId)
-      } yield {
-        val node = orderMapper.valueToTree[JsonNode](order)
-        HanseResult(data = Some(node))
+      val callerId = request.headers get "UserId"
+      if (callerId.isEmpty) Future(HanseResult.forbidden())
+      else {
+        for {
+          order <- OrderAPI.getOrder(orderId)
+        } yield {
+          if (callerId.get == order.consumerId.toString) {
+            val node = OrderFormatter.instance.formatJsonNode(order)
+            HanseResult(data = Some(node))
+          } else {
+            HanseResult.forbidden()
+          }
+        }
       }
     }
   )
@@ -144,12 +154,20 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def getOrderStatus(orderId: Long) = Action.async(
     request => {
-      val orderMapper = new OrderStatusFormatter().objectMapper
-      for {
-        order <- OrderAPI.getOrderOnlyStatus(orderId)
-      } yield {
-        val node = orderMapper.valueToTree[JsonNode](order)
-        HanseResult(data = Some(node))
+      val callerId = request.headers get "UserId"
+      if (callerId.isEmpty) {
+        Future(HanseResult.forbidden())
+      } else {
+        for {
+          order <- OrderAPI.getOrderOnlyStatus(orderId)
+        } yield {
+          if (callerId.get == order.consumerId.toString) {
+            val node = OrderStatusFormatter.instance.formatJsonNode(order)
+            HanseResult(data = Some(node))
+          } else {
+            HanseResult.forbidden()
+          }
+        }
       }
     }
   )
@@ -164,11 +182,15 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def getOrders(userId: Long, status: Option[String], start: Int, count: Int) = Action.async(
     request => {
-      val orderMapper = new SimpleOrderFormatter().objectMapper
+      val callerId = request.headers get "UserId"
       for {
-        orders <- OrderAPI.getOrderList(userId, status, start, count)
+        orders <- {
+          // 检查Header中的UserId是否匹配
+          if (callerId.isEmpty || callerId.get != userId.toString) Future(Seq())
+          else OrderAPI.getOrderList(userId, status, start, count)
+        }
       } yield {
-        val node = orderMapper.valueToTree[JsonNode](orders)
+        val node = SimpleOrderFormatter.instance.formatJsonNode(orders)
         HanseResult(data = Some(node))
       }
     }
@@ -187,15 +209,29 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         action <- (body \ "action").asOpt[String]
         memo <- (body \ "memo").asOpt[String] //备注
         amount <- (body \ "amount").asOpt[Double] // 退款金额
+        data1 <- (body \ "data").asOpt[JsObject] orElse Some(JsObject.apply(Seq()))
       } yield {
-        val data: Map[String, AnyRef] = Map(
-          "userId" -> userId.toString.asInstanceOf[AnyRef],
-          "memo" -> memo.toString.asInstanceOf[AnyRef],
-          "amount" -> amount.toString.asInstanceOf[AnyRef]
-        )
+        val data = Map(data1.fields map (entry => {
+          val key = entry._1
+          val value = entry._2 match {
+            case v: JsNumber =>
+              if (v.value.isDecimalDouble)
+                v.value.doubleValue()
+              else if (v.value.isDecimalFloat)
+                v.value.floatValue()
+            case v: JsBoolean =>
+              v.value
+            case v: JsString =>
+              v.value
+            case JsNull =>
+              null
+          }
+          key -> value
+        }): _*)
         action match {
           case "cancel" => operateOrderAct(userId, orderId, action, "canceled", data)
           case "refund" => operateOrderAct(userId, orderId, action, "refundApplied", data)
+          case _ => Future(HanseResult.unprocessable())
         }
       }
       ret.getOrElse(Future {
@@ -204,8 +240,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   )
 
-  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String, data: Map[String, AnyRef]): Future[Result] = {
-    val orderMapper = new OrderStatusFormatter().objectMapper
+  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String,
+    data: Map[String, Any] = Map()): Future[Result] = {
     val act = new OrderActivity
     act.action = action
     act.timestamp = DateTime.now().toDate
@@ -214,7 +250,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       update <- OrderAPI.updateOrderStatus(orderId, status, act)
       order <- OrderAPI.getOrderOnlyStatus(orderId) if update != null
     } yield {
-      val node = orderMapper.valueToTree[JsonNode](order)
+      val node = OrderStatusFormatter.instance.formatJsonNode(order)
       HanseResult(data = Some(node))
     }
 
@@ -307,10 +343,10 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
             // 返回支付宝信息
             Results.Ok("success")
           } else {
-            HanseResult.forbidden(HanseResult.RetCode.FORBIDDEN, errorMsg = Some("invaild request"))
+            HanseResult.forbidden(errorMsg = Some("invaild request"))
           }
         } else {
-          HanseResult.forbidden(HanseResult.RetCode.FORBIDDEN, errorMsg = Some("invaild request"))
+          HanseResult.forbidden(errorMsg = Some("invaild request"))
         }
       }
     }

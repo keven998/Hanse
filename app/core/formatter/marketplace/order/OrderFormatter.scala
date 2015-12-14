@@ -21,7 +21,7 @@ import core.formatter.user.UserSerializer
  */
 class OrderFormatter extends BaseFormatter {
 
-  override val objectMapper = {
+  override protected val objectMapper = {
     val mapper = new ObjectMapper()
     val module = new SimpleModule()
     mapper.registerModule(DefaultScalaModule)
@@ -34,11 +34,15 @@ class OrderFormatter extends BaseFormatter {
     module.addSerializer(classOf[PhoneNumber], new PhoneNumberSerializer)
     module.addSerializer(classOf[UserInfo], new UserSerializer)
     module.addSerializer(classOf[ImageItem], new ImageItemSerializer)
-    module.addSerializer(classOf[RealNameInfo], new ContactAndTravellersSerializer)
+    module.addSerializer(classOf[RealNameInfo], new RealNameInfoSerializer)
     module.addSerializer(classOf[IdProof], new IdProofSerializer)
     module.addSerializer(classOf[Country], new SimpleCountrySerializer)
     module.addSerializer(classOf[Prepay], new PrepaySerializer)
     mapper.registerModule(module)
     mapper
   }
+}
+
+object OrderFormatter {
+  lazy val instance = new OrderFormatter
 }

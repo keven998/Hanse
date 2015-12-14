@@ -99,8 +99,12 @@ object TravellerAPI {
   def getTravellerList(userId: Long)(implicit ds: Datastore): Future[Map[String, RealNameInfo]] = {
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {
-      val ret = query.get
-      if (ret != null) mapAsScalaMapConverter(ret.travellers).asScala.toMap else Map[String, RealNameInfo]()
+      (for {
+        user <- Option(query.get)
+        travellers <- Option(user.travellers)
+      } yield {
+        travellers.asScala.toMap
+      }) getOrElse Map()
     }
   }
 }
