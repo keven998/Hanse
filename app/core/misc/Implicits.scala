@@ -63,10 +63,8 @@ object Implicits {
 
   implicit class ElemChild(ns: NodeSeq) {
     def \* = ns flatMap {
-      _ match {
-        case e: Elem => e.child
-        case _ => NodeSeq.Empty
-      }
+      case e: Elem => e.child
+      case _ => NodeSeq.Empty
     }
   }
 

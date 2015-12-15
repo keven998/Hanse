@@ -96,27 +96,30 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         body <- request.body.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
         planId <- (body \ "planId").asOpt[String]
+        price <- (body \ "price").asOpt[Float]
         rendezvousTime <- (body \ "rendezvousTime").asOpt[Long]
         quantity <- (body \ "quantity").asOpt[Int]
         travellers <- (body \ "travellers").asOpt[Array[String]]
         phone <- (body \ "contactPhone").asOpt[PhoneNumberTemp] // TODO 为何需要PhoneNumberTemp?
-        email <- (body \ "contactEmail").asOpt[String] // TODO Email是必填项目吗?
+        email <- (body \ "contactEmail").asOpt[String] orElse Option("")
         surname <- (body \ "contactSurname").asOpt[String]
         givenName <- (body \ "contactGivenName").asOpt[String]
-        comment <- (body \ "comment").asOpt[String].orElse(Option(""))
+        comment <- (body \ "comment").asOpt[String] orElse Option("")
       } yield {
         val date = new Date(rendezvousTime)
         val contact = ContactTemp(surname, givenName, phone, email)
         for {
           // TODO controller中不应该包含业务逻辑
-          commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId)
-          tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
-          order <- OrderAPI.createOrder(OrderTemp(commodity.title, commodity, contact, planId, quantity, comment, date, userId, tls.orNull).toOrder)
+          commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId, price, date)
+          tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq) if commodity.nonEmpty
+          order <- OrderAPI.createOrder(OrderTemp(commodity.get.title, commodity.get, contact, planId, quantity, comment, date, userId, tls.orNull).toOrder)
         } yield {
           val node = OrderFormatter.instance.formatJsonNode(order)
           HanseResult(data = Some(node))
         }
-      }
+      }.fallbackTo(Future {
+        HanseResult.unprocessableWithMsg(Some("下单失败。"))
+      })
       ret.getOrElse(Future {
         HanseResult.unprocessable()
       })

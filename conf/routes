@@ -69,10 +69,10 @@ GET           /users/$userId<\d+>/travellers                           @controll
 POST          /marketplace/orders/$id<\d+>/payments                    @controllers.PaymentCtrl.createPayments(id:Long)
 
 #查询订单
-GET           /orders/$id<\d+>/payments                                @controllers.PaymentCtrl.getPayments(id:Long)
+GET           /marketplace/orders/$id<\d+>/payments                    @controllers.PaymentCtrl.getPayments(id:Long,provider:String)
 
 #微信回调
-POST          /payment-webhook/wechat                                  @controllers.PaymentCtrl.wechatCallback()
+POST          /marketplace/orders/payment-webhook/wechat               @controllers.PaymentCtrl.wechatCallback()
 
 # 预支付
 POST          /prePay                                                  @controllers.TradeCtrl.prePay()

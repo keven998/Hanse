@@ -3,6 +3,7 @@ package core.model.trade.order
 import javax.validation.constraints.{ Min, NotNull }
 
 import core.model.BasicEntity
+import org.mongodb.morphia.annotations.Entity
 
 import scala.beans.BeanProperty
 
@@ -11,6 +12,7 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/20/15.
  */
+@Entity
 class Prepay extends BasicEntity {
 
   /**
