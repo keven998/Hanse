@@ -1,7 +1,10 @@
 package core.api
 
+import java.util
 import java.util.Date
 
+import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
 import com.lvxingpai.model.marketplace.product.Commodity
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
@@ -61,6 +64,53 @@ object CommodityAPI {
           Some(ret)
         else
           None
+      }
+    }
+  }
+
+  def createOrder(commodityId: Long, planId: String, rendezvous: Date, consumerId: Long,
+    travellers: Seq[RealNameInfo], contact: RealNameInfo, quantity: Int, comment: String)(implicit ds: Datastore): Future[Option[Order]] = {
+    val commoditySeq = Seq("commodityId", "title", "desc", "price", "plans", "seller", "category")
+    for {
+      commodityOpt <- CommodityAPI.getCommodityById(commodityId, commoditySeq)
+    } yield {
+      for {
+        commodity <- commodityOpt
+        plan <- commodity.plans.toSeq find (_.planId == planId) // 找到plan
+        pricing <- plan.pricing.toSeq find (pricing => {
+          // 找到价格
+          val start = Option(pricing.timeRange.head) getOrElse new Date(0)
+          val end = Option(pricing.timeRange.last) getOrElse new Date(2099, 1, 1)
+          (rendezvous after start) && (rendezvous before end)
+        })
+      } yield {
+        val order = new Order
+        val now = DateTime.now().toDate
+        order.id = new ObjectId
+        order.orderId = now.getTime
+        order.consumerId = consumerId
+        order.commodity = commodity
+        order.contact = contact
+        order.planId = planId
+        order.quantity = quantity
+        // 设定订单价格
+        order.totalPrice = quantity * pricing.price
+        order.comment = comment
+        order.rendezvousTime = rendezvous
+        order.status = "pending"
+        order.createTime = now
+        order.updateTime = now
+        // TODO 设置订单的失效时间为三天
+        val expireDate = DateTime.now().plusDays(3)
+        order.expireDate = expireDate.toDate
+        order.travellers = travellers
+        val act = new OrderActivity
+        act.action = "create"
+        act.timestamp = now
+        act.data = Map[String, Any]("userId" -> consumerId)
+        order.activities = util.Arrays.asList(act)
+        ds.save[Order](order)
+        order
       }
     }
   }

@@ -77,7 +77,7 @@ object TravellerAPI {
     }
   }
 
-  def getTravellerByKeys(userId: Long, key: Seq[String])(implicit ds: Datastore): Future[Option[Map[String, RealNameInfo]]] = {
+  def getTravellerByKeys(userId: Long, key: Seq[String])(implicit ds: Datastore): Future[Option[Seq[RealNameInfo]]] = {
     val query = ds.createQuery(classOf[UserInfo]).field("userId").equal(userId)
     Future {
       val userInfo = query.get()
@@ -86,7 +86,7 @@ object TravellerAPI {
         val ret = key.filter(userInfo.travellers.containsKey(_)).map(k => {
           k -> userInfo.travellers(k)
         }).toMap
-        Option(ret)
+        Option(ret.values.toSeq)
       }
     }
   }

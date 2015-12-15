@@ -24,7 +24,7 @@ object PaymentService {
    */
   def unifiedOrder(content: Map[String, String]) = {
     val url = "https://api.mch.weixin.qq.com/pay/unifiedorder"
-    val notify_url = "http://182.92.168.171:11219/payment-webhook/wechat"
+    val notify_url = "http://182.92.168.171:11219/marketplace/orders/payment-webhook/wechat"
     val callBack = Map("notify_url" -> notify_url)
     val randomStr = Map("nonce_str" -> Utils.nonceStr())
 

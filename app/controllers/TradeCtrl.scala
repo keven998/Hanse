@@ -1,20 +1,17 @@
 package controllers
 
-import java.util
 import java.util.Date
 import javax.inject._
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
-import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
-import com.lvxingpai.model.marketplace.product.Commodity
+import com.lvxingpai.model.marketplace.order.OrderActivity
 import com.lvxingpai.model.misc.PhoneNumber
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
-import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
@@ -35,40 +32,40 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
 
   val dateFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
-  // TODO 为何需要OrderTemp, ContactTemp, PhoneNumberTemp等临时类?
-  case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
-      quantity: Int, comment: String, time: Date,
-      consumerId: Long, travellers: Map[String, RealNameInfo]) {
-    def toOrder = {
-      val order = new Order
-      val now = DateTime.now().toDate
-      order.id = new ObjectId
-      order.orderId = now.getTime
-      order.consumerId = consumerId
-      order.commodity = commodity
-      order.contact = contact.toContact
-      order.planId = planId
-      order.quantity = quantity
-      // TODO OOXX
-      order.totalPrice = quantity * commodity.price
-      order.comment = comment
-      order.rendezvousTime = time
-      order.status = "pending"
-      order.createTime = now
-      order.updateTime = now
-      // TODO 设置订单的失效时间为三天
-      val expireDate = DateTime.now().plusDays(3)
-      order.expireDate = expireDate.toDate
-      order.travellers = if (travellers != null) travellers.map(_._2).toList.asJava else null
-      val act = new OrderActivity
-      act.action = "create"
-      act.timestamp = now
-      act.data = Map[String, Any]("userId" -> consumerId).asJava
-      // TODO act.data
-      order.activities = util.Arrays.asList(act)
-      order
-    }
-  }
+  //  // TODO 为何需要OrderTemp, ContactTemp, PhoneNumberTemp等临时类?
+  //  case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
+  //                       quantity: Int, comment: String, time: Date,
+  //                       consumerId: Long, travellers: Map[String, RealNameInfo]) {
+  //    def toOrder = {
+  //      val order = new Order
+  //      val now = DateTime.now().toDate
+  //      order.id = new ObjectId
+  //      order.orderId = now.getTime
+  //      order.consumerId = consumerId
+  //      order.commodity = commodity
+  //      order.contact = contact.toContact
+  //      order.planId = planId
+  //      order.quantity = quantity
+  //      // TODO OOXX
+  //      order.totalPrice = quantity * commodity.price
+  //      order.comment = comment
+  //      order.rendezvousTime = time
+  //      order.status = "pending"
+  //      order.createTime = now
+  //      order.updateTime = now
+  //      // TODO 设置订单的失效时间为三天
+  //      val expireDate = DateTime.now().plusDays(3)
+  //      order.expireDate = expireDate.toDate
+  //      order.travellers = if (travellers != null) travellers.map(_._2).toList.asJava else null
+  //      val act = new OrderActivity
+  //      act.action = "create"
+  //      act.timestamp = now
+  //      act.data = Map[String, Any]("userId" -> consumerId).asJava
+  //      // TODO act.data
+  //      order.activities = util.Arrays.asList(act)
+  //      order
+  //    }
+  //  }
 
   case class ContactTemp(surname: String, givenName: String, phone: PhoneNumber, email: String) {
     def toContact = {
@@ -90,13 +87,13 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def createOrder() = Action.async(
     request => {
+      val ip = request.remoteAddress
       // TODO 为何使用Header中的UserId? 如果没有正确提供UserId, 这里会抛出异常
       val userId = request.headers.get("UserId").getOrElse("").toLong
       val ret = for {
         body <- request.body.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
         planId <- (body \ "planId").asOpt[String]
-        price <- (body \ "price").asOpt[Float]
         rendezvousTime <- (body \ "rendezvousTime").asOpt[Long]
         quantity <- (body \ "quantity").asOpt[Int]
         travellers <- (body \ "travellers").asOpt[Array[String]]
@@ -110,9 +107,9 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         val contact = ContactTemp(surname, givenName, phone, email)
         for {
           // TODO controller中不应该包含业务逻辑
-          commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId, price, date)
-          tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq) if commodity.nonEmpty
-          order <- OrderAPI.createOrder(OrderTemp(commodity.get.title, commodity.get, contact, planId, quantity, comment, date, userId, tls.orNull).toOrder)
+          //commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId, price, date)
+          tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
+          order <- CommodityAPI.createOrder(commodityId, planId, date, userId, tls.getOrElse(Seq()), contact.toContact, quantity, comment)
         } yield {
           val node = OrderFormatter.instance.formatJsonNode(order)
           HanseResult(data = Some(node))
