@@ -1,10 +1,13 @@
 package core.model.trade.order
 
+import org.mongodb.morphia.annotations.Entity
+
 import scala.beans.BeanProperty
 
 /**
  * Created by topy on 2015/10/30.
  */
+@Entity
 class WechatPrepay extends Prepay {
 
   /**
