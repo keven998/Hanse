@@ -7,7 +7,6 @@ import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.misc.Implicits._
 import core.misc.{ HanseResult, Utils }
 import core.model.trade.order.WechatPrepay
-import org.bson.types.ObjectId
 import play.api.Play.current
 import play.api.libs.ws.WS
 
@@ -100,14 +99,14 @@ object PaymentService {
       val prepay = new Prepay()
       //指定微信支付
       prepay.provider = PaymentVendor.Wechat
-      prepay.id = new ObjectId()
+      //      prepay.id = new ObjectId()
       prepay.prepayId = (elem \ "prepay_id" \*).toString()
-      prepay.setVendor(PaymentVendor.Wechat)
-      prepay.setTradeType((elem \ WechatPrepay.FD_SIGN \*).toString())
+      //      prepay.setVendor(PaymentVendor.Wechat)
+      //      prepay.setTradeType((elem \ WechatPrepay.FD_SIGN \*).toString())
       //prepay.setTimestamp(new Date())
-      prepay.setSign((elem \ WechatPrepay.FD_SIGN \*).toString())
-      prepay.setNonceString((elem \ WechatPrepay.FD_NONCE_STR \*).toString())
-      prepay.setResult((elem \ WechatPrepay.FD_RETURN_MSG \*).toString())
+      //      prepay.setSign((elem \ WechatPrepay.FD_SIGN \*).toString())
+      //      prepay.setNonceString((elem \ WechatPrepay.FD_NONCE_STR \*).toString())
+      //      prepay.setResult((elem \ WechatPrepay.FD_RETURN_MSG \*).toString())
       Some(prepay)
     }
   }

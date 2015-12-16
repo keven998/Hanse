@@ -20,7 +20,6 @@ libraryDependencies ++= Seq(
   "com.lvxingpai" %% "morphia-play-injector" % "0.1.3-SNAPSHOT",
   "org.mongodb.morphia" % "morphia" % morphiaVersion,
   "org.mongodb.morphia" % "morphia-validation" % morphiaVersion,
-  //thrift
   "org.apache.thrift" % "libthrift" % "0.9.3",
   "com.twitter" %% "scrooge-core" % "4.2.0",
   "com.twitter" %% "finagle-thrift" % finagleVersion,

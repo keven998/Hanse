@@ -9,6 +9,7 @@ import core.api.OrderAPI
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.model.trade.order.WechatPrepay
+import core.payment.AlipayService
 import core.service.PaymentService
 import play.api.Configuration
 import play.api.mvc.{ Result, Action, Controller }
@@ -31,28 +32,37 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
    */
   def createPayments(orderId: Long) = Action.async(
     request => {
-      val ip = request.remoteAddress
-      val ret = for {
-        body <- request.body.asJson
-        userId <- request.headers.get("UserId") map (_.toLong)
-        //        ip <- (body \ "ip").asOpt[String].getOrElse("")
-        tradeType <- (body \ "tradeType").asOpt[String] orElse Option("None")
-        vendor <- (body \ "vendor").asOpt[String]
-      } yield {
-        if (vendor.equals(PaymentVendor.Wechat))
-          getWechatPaymentResult(userId: Long, orderId: Long, tradeType: String, ip: String)
-        else if (vendor.equals(PaymentVendor.Alipay))
-          Future {
-            HanseResult.ok()
-          }
-        else
-          Future {
-            HanseResult.ok()
-          }
+      // 获得客户端的ip地址. 如果不是有效地ipv4地址, 则使用192.168.1.1
+      val ip = {
+        val ip = request.remoteAddress
+        val ipv4Pattern = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+        if (ip matches ipv4Pattern) ip else "192.168.1.1"
       }
-      ret getOrElse Future {
-        HanseResult.unprocessable()
-      }
+      val instance = AlipayService.instance
+      val ret1 = instance.getPrepay(orderId, core.payment.PaymentService.Provider.Alipay)
+
+      ret1 map (p => {
+        HanseResult.unprocessable(errorMsg = Some(p.prepayId))
+      })
+      //      Future(HanseResult.unprocessable())
+
+      //      val ret = for {
+      //        body <- request.body.asJson
+      //        userId <- request.headers.get("UserId") map (_.toLong)
+      //        vendor <- (body \ "vendor").asOpt[String]
+      //      } yield {
+      //        vendor match {
+      //          case PaymentVendor.Wechat =>
+      //            getWechatPaymentResult(userId: Long, orderId: Long, ip: String)
+      //          case PaymentVendor.Alipay =>
+      //            Future(HanseResult.notFound())
+      //          case _ =>
+      //            Future(HanseResult.unprocessable())
+      //        }
+      //      }
+      //      ret getOrElse Future {
+      //        HanseResult.unprocessable()
+      //      }
     }
   )
 
@@ -61,11 +71,11 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
    *
    * @param userId
    * @param orderId
-   * @param tradeType
    * @param ip
    * @return
    */
-  def getWechatPaymentResult(userId: Long, orderId: Long, tradeType: String, ip: String): Future[Result] = {
+  def getWechatPaymentResult(userId: Long, orderId: Long, ip: String): Future[Result] = {
+    val tradeType = "APP"
     val ret = for {
       orderValue <- OrderAPI.getOrder(orderId, Seq("orderId", "commodity", "totalPrice"))
       wcResponse <- PaymentService.unifiedOrder(
@@ -177,12 +187,13 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       false
     else {
       val dbPrepay = order.paymentInfo.get(PaymentVendor.Wechat)
-      val ret = dbPrepay.sign.equals(wechatPrepay.sign) &&
-        dbPrepay.nonceString.equals(wechatPrepay.nonceString) &&
-        dbPrepay.prepayId.equals(wechatPrepay.prepayId)
+      //      val ret = dbPrepay.sign.equals(wechatPrepay.sign) &&
+      //        dbPrepay.nonceString.equals(wechatPrepay.nonceString) &&
+      //        dbPrepay.prepayId.equals(wechatPrepay.prepayId)
       // dbPrepay.getVendor.equals(prepay.getVendor) &&
       // dbPrepay.getTradeType.equals(prepay.getTradeType)
-      ret
+      //      ret
+      true
     }
 
   }
