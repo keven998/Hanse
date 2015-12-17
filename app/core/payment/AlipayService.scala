@@ -5,10 +5,12 @@ import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.{ Prepay, Order }
+import core.exception.ResourceNotFoundException
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
 import play.api.Play
 import play.api.Play.current
+import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -41,6 +43,27 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
       val updateResult = datastore.update(query, ops)
       if (updateResult.getUpdatedExisting) Some(prepay)
       else None
+    }
+  }
+
+  /**
+   * 获得订单在某个具体渠道的支付详情
+   * @param orderId 订单号
+   * @return
+   */
+  override def getPaymentStatus(orderId: Long): Future[Boolean] = {
+    val providerName = provider.toString
+
+    val query = datastore.createQuery(classOf[Order]).field("orderId").equal(orderId)
+      .retrievedFields(true, s"paymentInfo.$providerName")
+    Future {
+      val paid = Option(query.get) map (order => {
+        mapAsScalaMap(order.paymentInfo) get providerName exists (_.paid)
+      })
+      paid getOrElse {
+        // 如果paid为None, 说明query.get为null
+        throw ResourceNotFoundException(s"Order #$orderId does not exist.")
+      }
     }
   }
 }

@@ -54,6 +54,13 @@ trait PaymentService {
 
     result flatMap (r => r map (Future(_)) getOrElse getPrepay(orderId))
   }
+
+  /**
+   * 获得订单在某个具体渠道的支付详情
+   * @param orderId 订单号
+   * @return
+   */
+  def getPaymentStatus(orderId: Long): Future[Boolean]
 }
 
 object PaymentService {

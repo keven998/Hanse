@@ -24,4 +24,11 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    * @return
    */
   override def createPrepay(order: Order): Future[Option[Prepay]] = ???
+
+  /**
+   * 获得订单在某个具体渠道的支付详情
+   * @param orderId 订单号
+   * @return
+   */
+  override def getPaymentStatus(orderId: Long): Future[Boolean] = ???
 }
