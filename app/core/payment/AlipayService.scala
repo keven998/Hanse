@@ -76,7 +76,8 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
    */
   override protected def createSidecar(order: Order, prepay: Prepay): Map[String, Any] = {
     // 返回带有签名的请求字符串
-    val requestMap = AlipayService.RequestMap(prepay.prepayId, order.commodity.title, "", order.totalPrice - order.discount)
+    val requestMap = AlipayService.RequestMap(prepay.prepayId, order.commodity.title, order.commodity.title,
+      order.totalPrice - order.discount)
     Map("requestString" -> requestMap.requestString)
   }
 }
@@ -100,7 +101,7 @@ object AlipayService {
     val host = baseUrl.getHost
     val port = Some(baseUrl.getPort) flatMap (p => if (p == -1 || p == 80) None else Some(p))
     val path1 = baseUrl.getPath
-    val path2 = controllers.routes.PaymentCtrl.wechatCallback().url
+    val path2 = controllers.routes.PaymentCtrl.alipayCallback().url
     s"$protocol://$host${port map (p => s":$p") getOrElse ""}$path1$path2"
   }
 

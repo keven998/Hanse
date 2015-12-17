@@ -10,7 +10,7 @@ import core.api.OrderAPI
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.model.trade.order.WechatPrepay
-import core.payment.AlipayService
+import core.payment.{ WeChatPaymentService, AlipayService }
 import core.payment.PaymentService.Provider
 import core.service.PaymentService
 import play.api.Configuration
@@ -45,8 +45,18 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
   }
 
   def createWeChatPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
+    val instance = WeChatPaymentService.instance
 
-    null
+    instance getPrepay orderId map (entry => {
+      val node = new ObjectMapper().createObjectNode()
+      val sidecar = entry._2
+      sidecar foreach (entry => {
+        val key = entry._1
+        val value = entry._2
+        node.put(key, value.toString)
+      })
+      HanseResult.ok(data = Some(node))
+    })
   }
 
   /**
@@ -69,79 +79,18 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         userId <- request.headers.get("UserId") map (_.toLong)
         provider <- (body \ "provider").asOpt[String]
       } yield {
-        provider match {
+        (provider match {
           case s if s == Provider.Alipay.toString => createAlipayPayment(orderId: Long, ip: String, userId: Long)
           case s if s == Provider.WeChat.toString => createWeChatPayment(orderId: Long, ip: String, userId: Long)
           case _ => Future(HanseResult.unprocessable(errorMsg = Some(s"Invalid provider: $provider")))
+        }) recover {
+          case e: Throwable =>
+            // TODO 确定合适的HTTP status code
+            HanseResult.unprocessable(errorMsg = Some(e.getMessage))
         }
       }) getOrElse Future(HanseResult.unprocessable())
-
-      //
-      //      val instance = AlipayService.instance
-      //
-      //      val prepayOpt = instance.getPrepay(orderId)
-      //      val orderOpt = OrderAPI.getOrder(orderId, Seq("totalPrice", "discount", "commodity"))
-      //
-      //      for {
-      //        prepay <- prepayOpt
-      //        order <- orderOpt
-      //      } yield {
-      //        val requestString = AlipayService.RequestMap(System.currentTimeMillis, "套!", "商品", 100).requestString
-      //        //        val requestString = AlipayService.RequestMap(prepay.prepayId, order.commodity.title, "", order.totalPrice - order.discount).requestString
-      //        HanseResult.unprocessable(errorMsg = Some(requestString))
-      //      }
-      //
-      //      //        body <- request.body.asJson
-      //      //        userId <- request.headers.get("UserId") map (_.toLong)
-      //      //        vendor <- (body \ "vendor").asOpt[String]
-      //      //      } yield {
-      //      //        vendor match {
-      //      //          case PaymentVendor.Wechat =>
-      //      //            getWechatPaymentResult(userId: Long, orderId: Long, ip: String)
-      //      //          case PaymentVendor.Alipay =>
-      //      //            Future(HanseResult.notFound())
-      //      //          case _ =>
-      //      //            Future(HanseResult.unprocessable())
-      //      //        }
-      //      //      }
-      //      //      ret getOrElse Future {
-      //      //        HanseResult.unprocessable()
-      //      //      }
     }
   )
-
-  /**
-   * 取得微信支付的预支付对象
-   *
-   * @param userId
-   * @param orderId
-   * @param ip
-   * @return
-   */
-  def getWechatPaymentResult(userId: Long, orderId: Long, ip: String): Future[Result] = {
-    val tradeType = "APP"
-    val ret = for {
-      orderValue <- OrderAPI.getOrder(orderId, Seq("orderId", "commodity", "totalPrice"))
-      wcResponse <- PaymentService.unifiedOrder(
-        Map(
-          WechatPrepay.FD_OUT_TRADE_NO -> orderId,
-          WechatPrepay.FD_SPBILL_CREATE_IP -> ip,
-          WechatPrepay.FD_BODY -> orderValue.commodity.title,
-          WechatPrepay.FD_TRADE_TYPE -> tradeType,
-          WechatPrepay.FD_TOTAL_FEE -> (orderValue.totalPrice * 100).toInt
-        )
-      )
-      result <- OrderAPI.savePrepay(
-        PaymentService.xml2Obj(new String(wcResponse.bodyAsBytes, "UTF8")),
-        orderValue
-      )
-    } yield {
-      val str = new String(wcResponse.bodyAsBytes, "UTF8")
-      val ret = PaymentService.xml2OResult(str)
-      HanseResult(data = Some(ret))
-    }
-    ret
-  }
 
   val wechatCallBackOK =
     <xml>
