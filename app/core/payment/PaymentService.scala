@@ -1,7 +1,10 @@
 package core.payment
 
+import java.util.Date
+
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
+import core.exception.OrderStatusException
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
@@ -36,8 +39,16 @@ trait PaymentService {
     val providerName = provider.toString
 
     // 尝试从paymentInfo中获得Prepay, 否则就新建
-    val result = OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime",
-      "paymentInfo"))(datastore) flatMap (order => {
+    val result = OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime", "status",
+      "expireDate", "paymentInfo"))(datastore) flatMap (order => {
+
+      // 订单状态检查
+      if (order.status != "pending")
+        throw OrderStatusException(s"Order #$orderId status is ${order.status} instead of pending.")
+      // 订单过期就不允许支付了
+      if (order.expireDate before new Date())
+        throw OrderStatusException(s"Order #$orderId is expired at ${order.expireDate.toString}")
+
       mapAsScalaMap(order.paymentInfo) get providerName map (o => Future(Some(o))) getOrElse createPrepay(order)
     })
 
