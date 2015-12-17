@@ -66,7 +66,8 @@ object OrderAPI {
 
   def getOrder(orderId: Long, fields: Seq[String])(implicit ds: Datastore): Future[Order] = {
     Future {
-      ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, fields: _*).get
+      val ret = ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, fields: _*).get
+      ret
     }
   }
 

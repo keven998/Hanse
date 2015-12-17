@@ -74,6 +74,9 @@ GET           /marketplace/orders/$id<\d+>/payments                    @controll
 #微信回调
 POST          /marketplace/orders/payment-webhook/wechat               @controllers.PaymentCtrl.wechatCallback()
 
+#支付宝回调
+POST          /marketplace/orders/payment-webhook/alipay               @controllers.PaymentCtrl.alipayCallback()
+
 # 预支付
 POST          /prePay                                                  @controllers.TradeCtrl.prePay()
 

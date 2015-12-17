@@ -1,7 +1,8 @@
 package controllers
 
-import javax.inject.{ Named, Inject, Singleton }
+import javax.inject.{ Inject, Named, Singleton }
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
@@ -9,9 +10,11 @@ import core.api.OrderAPI
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.model.trade.order.WechatPrepay
+import core.payment.{ WeChatPaymentService, AlipayService }
+import core.payment.PaymentService.Provider
 import core.service.PaymentService
 import play.api.Configuration
-import play.api.mvc.{ Result, Action, Controller }
+import play.api.mvc.{ Action, Controller, Result }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,6 +27,39 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
   implicit lazy val ds = datastore.map.get("k2").get
 
   /**
+   * 创建支付宝payment
+   *
+   * @param orderId
+   * @param ip
+   * @param userId
+   * @return
+   */
+  def createAlipayPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
+    val instance = AlipayService.instance
+    instance.getPrepay(orderId) map (entry => {
+      val sidecar = entry._2
+      val node = new ObjectMapper().createObjectNode()
+      node.put("requestString", sidecar("requestString").toString)
+      HanseResult.ok(data = Some(node))
+    })
+  }
+
+  def createWeChatPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
+    val instance = WeChatPaymentService.instance
+
+    instance getPrepay orderId map (entry => {
+      val node = new ObjectMapper().createObjectNode()
+      val sidecar = entry._2
+      sidecar foreach (entry => {
+        val key = entry._1
+        val value = entry._2
+        node.put(key, value.toString)
+      })
+      HanseResult.ok(data = Some(node))
+    })
+  }
+
+  /**
    * 生成预支付对象
    *
    * @param orderId
@@ -31,63 +67,30 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
    */
   def createPayments(orderId: Long) = Action.async(
     request => {
-      val ip = request.remoteAddress
-      val ret = for {
+      // 获得客户端的ip地址. 如果不是有效地ipv4地址, 则使用192.168.1.1
+      val ip = {
+        val ip = request.remoteAddress
+        val ipv4Pattern = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+        if (ip matches ipv4Pattern) ip else "192.168.1.1"
+      }
+
+      (for {
         body <- request.body.asJson
         userId <- request.headers.get("UserId") map (_.toLong)
-        //        ip <- (body \ "ip").asOpt[String].getOrElse("")
-        tradeType <- (body \ "tradeType").asOpt[String] orElse Option("None")
-        vendor <- (body \ "vendor").asOpt[String]
+        provider <- (body \ "provider").asOpt[String]
       } yield {
-        if (vendor.equals(PaymentVendor.Wechat))
-          getWechatPaymentResult(userId: Long, orderId: Long, tradeType: String, ip: String)
-        else if (vendor.equals(PaymentVendor.Alipay))
-          Future {
-            HanseResult.ok()
-          }
-        else
-          Future {
-            HanseResult.ok()
-          }
-      }
-      ret getOrElse Future {
-        HanseResult.unprocessable()
-      }
+        (provider match {
+          case s if s == Provider.Alipay.toString => createAlipayPayment(orderId: Long, ip: String, userId: Long)
+          case s if s == Provider.WeChat.toString => createWeChatPayment(orderId: Long, ip: String, userId: Long)
+          case _ => Future(HanseResult.unprocessable(errorMsg = Some(s"Invalid provider: $provider")))
+        }) recover {
+          case e: Throwable =>
+            // TODO 确定合适的HTTP status code
+            HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+        }
+      }) getOrElse Future(HanseResult.unprocessable())
     }
   )
-
-  /**
-   * 取得微信支付的预支付对象
-   *
-   * @param userId
-   * @param orderId
-   * @param tradeType
-   * @param ip
-   * @return
-   */
-  def getWechatPaymentResult(userId: Long, orderId: Long, tradeType: String, ip: String): Future[Result] = {
-    val ret = for {
-      orderValue <- OrderAPI.getOrder(orderId, Seq("orderId", "commodity", "totalPrice"))
-      wcResponse <- PaymentService.unifiedOrder(
-        Map(
-          WechatPrepay.FD_OUT_TRADE_NO -> orderId,
-          WechatPrepay.FD_SPBILL_CREATE_IP -> ip,
-          WechatPrepay.FD_BODY -> orderValue.commodity.title,
-          WechatPrepay.FD_TRADE_TYPE -> tradeType,
-          WechatPrepay.FD_TOTAL_FEE -> (orderValue.totalPrice * 100).toInt
-        )
-      )
-      result <- OrderAPI.savePrepay(
-        PaymentService.xml2Obj(new String(wcResponse.bodyAsBytes, "UTF8")),
-        orderValue
-      )
-    } yield {
-      val str = new String(wcResponse.bodyAsBytes, "UTF8")
-      val ret = PaymentService.xml2OResult(str)
-      HanseResult(data = Some(ret))
-    }
-    ret
-  }
 
   val wechatCallBackOK =
     <xml>
@@ -145,6 +148,13 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
 
   )
 
+  def alipayCallback() = Action.async {
+    request =>
+      {
+        Future(HanseResult.ok())
+      }
+  }
+
   def getCallbackBody(body: NodeSeq) = {
     val payment = new WechatPrepay()
     val returnCode = (body \ WechatPrepay.FD_RETURN_CODE \*).toString()
@@ -177,12 +187,13 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       false
     else {
       val dbPrepay = order.paymentInfo.get(PaymentVendor.Wechat)
-      val ret = dbPrepay.sign.equals(wechatPrepay.sign) &&
-        dbPrepay.nonceString.equals(wechatPrepay.nonceString) &&
-        dbPrepay.prepayId.equals(wechatPrepay.prepayId)
+      //      val ret = dbPrepay.sign.equals(wechatPrepay.sign) &&
+      //        dbPrepay.nonceString.equals(wechatPrepay.nonceString) &&
+      //        dbPrepay.prepayId.equals(wechatPrepay.prepayId)
       // dbPrepay.getVendor.equals(prepay.getVendor) &&
       // dbPrepay.getTradeType.equals(prepay.getTradeType)
-      ret
+      //      ret
+      true
     }
 
   }
