@@ -1,7 +1,8 @@
 package controllers
 
-import javax.inject.{ Named, Inject, Singleton }
+import javax.inject.{ Inject, Named, Singleton }
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
@@ -10,9 +11,10 @@ import core.misc.HanseResult
 import core.misc.Implicits._
 import core.model.trade.order.WechatPrepay
 import core.payment.AlipayService
+import core.payment.PaymentService.Provider
 import core.service.PaymentService
 import play.api.Configuration
-import play.api.mvc.{ Result, Action, Controller }
+import play.api.mvc.{ Action, Controller, Result }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,6 +25,29 @@ import scala.xml.NodeSeq
 class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
 
   implicit lazy val ds = datastore.map.get("k2").get
+
+  /**
+   * 创建支付宝payment
+   *
+   * @param orderId
+   * @param ip
+   * @param userId
+   * @return
+   */
+  def createAlipayPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
+    val instance = AlipayService.instance
+    instance.getPrepay(orderId) map (entry => {
+      val sidecar = entry._2
+      val node = new ObjectMapper().createObjectNode()
+      node.put("requestString", sidecar("requestString").toString)
+      HanseResult.ok(data = Some(node))
+    })
+  }
+
+  def createWeChatPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
+
+    null
+  }
 
   /**
    * 生成预支付对象
@@ -38,31 +63,50 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         val ipv4Pattern = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
         if (ip matches ipv4Pattern) ip else "192.168.1.1"
       }
-      val instance = AlipayService.instance
-      val ret1 = instance.getPrepay(orderId)
 
-      ret1 map (p => {
-        HanseResult.unprocessable(errorMsg = Some(p.prepayId))
-      })
-      //      Future(HanseResult.unprocessable())
+      (for {
+        body <- request.body.asJson
+        userId <- request.headers.get("UserId") map (_.toLong)
+        provider <- (body \ "provider").asOpt[String]
+      } yield {
+        provider match {
+          case s if s == Provider.Alipay.toString => createAlipayPayment(orderId: Long, ip: String, userId: Long)
+          case s if s == Provider.WeChat.toString => createWeChatPayment(orderId: Long, ip: String, userId: Long)
+          case _ => Future(HanseResult.unprocessable(errorMsg = Some(s"Invalid provider: $provider")))
+        }
+      }) getOrElse Future(HanseResult.unprocessable())
 
-      //      val ret = for {
-      //        body <- request.body.asJson
-      //        userId <- request.headers.get("UserId") map (_.toLong)
-      //        vendor <- (body \ "vendor").asOpt[String]
+      //
+      //      val instance = AlipayService.instance
+      //
+      //      val prepayOpt = instance.getPrepay(orderId)
+      //      val orderOpt = OrderAPI.getOrder(orderId, Seq("totalPrice", "discount", "commodity"))
+      //
+      //      for {
+      //        prepay <- prepayOpt
+      //        order <- orderOpt
       //      } yield {
-      //        vendor match {
-      //          case PaymentVendor.Wechat =>
-      //            getWechatPaymentResult(userId: Long, orderId: Long, ip: String)
-      //          case PaymentVendor.Alipay =>
-      //            Future(HanseResult.notFound())
-      //          case _ =>
-      //            Future(HanseResult.unprocessable())
-      //        }
+      //        val requestString = AlipayService.RequestMap(System.currentTimeMillis, "套!", "商品", 100).requestString
+      //        //        val requestString = AlipayService.RequestMap(prepay.prepayId, order.commodity.title, "", order.totalPrice - order.discount).requestString
+      //        HanseResult.unprocessable(errorMsg = Some(requestString))
       //      }
-      //      ret getOrElse Future {
-      //        HanseResult.unprocessable()
-      //      }
+      //
+      //      //        body <- request.body.asJson
+      //      //        userId <- request.headers.get("UserId") map (_.toLong)
+      //      //        vendor <- (body \ "vendor").asOpt[String]
+      //      //      } yield {
+      //      //        vendor match {
+      //      //          case PaymentVendor.Wechat =>
+      //      //            getWechatPaymentResult(userId: Long, orderId: Long, ip: String)
+      //      //          case PaymentVendor.Alipay =>
+      //      //            Future(HanseResult.notFound())
+      //      //          case _ =>
+      //      //            Future(HanseResult.unprocessable())
+      //      //        }
+      //      //      }
+      //      //      ret getOrElse Future {
+      //      //        HanseResult.unprocessable()
+      //      //      }
     }
   )
 
@@ -154,6 +198,13 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
     }
 
   )
+
+  def alipayCallback() = Action.async {
+    request =>
+      {
+        Future(HanseResult.ok())
+      }
+  }
 
   def getCallbackBody(body: NodeSeq) = {
     val payment = new WechatPrepay()

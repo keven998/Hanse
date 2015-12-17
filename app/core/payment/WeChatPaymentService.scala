@@ -31,4 +31,10 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    * @return
    */
   override def getPaymentStatus(orderId: Long): Future[Boolean] = ???
+
+  /**
+   * 获得sidecar信息. (比如: 签名等, 就位于其中)
+   * @return
+   */
+  override protected def createSidecar(order: Order, prepay: Prepay): Map[String, Any] = ???
 }

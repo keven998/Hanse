@@ -8,6 +8,7 @@ import core.exception.OrderStatusException
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -28,31 +29,55 @@ trait PaymentService {
    * @param order 订单
    * @return
    */
-  def createPrepay(order: Order): Future[Option[Prepay]]
+  protected def createPrepay(order: Order): Future[Option[Prepay]]
+
+  /**
+   * 获得sidecar信息. (比如: 签名等, 就位于其中)
+   * @return
+   */
+  protected def createSidecar(order: Order, prepay: Prepay): Map[String, Any]
 
   /**
    * 获得一个Prepay对象. 如果对应的订单中已有Prepay, 则返回之; 否则创建一个.
    * @param orderId 订单号
    * @return
    */
-  def getPrepay(orderId: Long): Future[Prepay] = {
+  def getPrepay(orderId: Long): Future[(Prepay, Map[String, Any])] = {
     val providerName = provider.toString
 
     // 尝试从paymentInfo中获得Prepay, 否则就新建
-    val result = OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime", "status",
-      "expireDate", "paymentInfo"))(datastore) flatMap (order => {
+    val result: Future[Option[(Prepay, Map[String, Any])]] =
+      OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime", "status", "expireDate",
+        "commodity", "paymentInfo"))(datastore) flatMap (order => {
 
-      // 订单状态检查
-      if (order.status != "pending")
-        throw OrderStatusException(s"Order #$orderId status is ${order.status} instead of pending.")
-      // 订单过期就不允许支付了
-      if (order.expireDate before new Date())
-        throw OrderStatusException(s"Order #$orderId is expired at ${order.expireDate.toString}")
+        // 订单状态检查
+        if (order.status != "pending")
+          throw OrderStatusException(s"Order #$orderId status is ${order.status} instead of pending.")
+        // 订单过期就不允许支付了
+        if (order.expireDate before new Date())
+          throw OrderStatusException(s"Order #$orderId is expired at ${order.expireDate.toString}")
 
-      mapAsScalaMap(order.paymentInfo) get providerName map (o => Future(Some(o))) getOrElse createPrepay(order)
+        val paymentInfo = (Option(order.paymentInfo) map mapAsScalaMap) getOrElse mutable.Map()
+
+        if (paymentInfo contains providerName) {
+          // 获得prepay对象和相应的sidecar.
+          val prepay: Prepay = paymentInfo(providerName)
+          Future(Some(prepay -> createSidecar(order, prepay)))
+        } else {
+          // paymentInfo中没有相应的prepay, 新建一个
+          createPrepay(order) map (opt => {
+            opt map (prepay => prepay -> createSidecar(order, prepay))
+          })
+        }
+      })
+
+    result flatMap (v => {
+      v map (Future(_)) getOrElse {
+        // 乐观锁重试
+        Thread sleep 200
+        getPrepay(orderId)
+      }
     })
-
-    result flatMap (r => r map (Future(_)) getOrElse getPrepay(orderId))
   }
 
   /**
