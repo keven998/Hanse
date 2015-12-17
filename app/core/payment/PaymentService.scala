@@ -1,10 +1,10 @@
 package core.payment
 
-import java.util.{ UUID, Date }
+import java.util.{ Date, UUID }
 
-import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
+import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,22 +17,21 @@ import scala.concurrent.Future
  */
 trait PaymentService {
 
-  val morphiaMap: MorphiaMap
+  def provider: PaymentService.Provider.Value
+
+  def datastore: Datastore
 
   /**
    * 获得一个Prepay对象. 如果对应的订单中已有Prepay, 则返回之; 否则创建一个.
    * @param orderId 订单号
-   * @param provider 支付渠道标识
    * @return
    */
-  def getPrepay(orderId: Long, provider: PaymentService.Provider.Value): Future[Prepay] = {
-    implicit val ds = morphiaMap.map("k2")
-
+  def getPrepay(orderId: Long): Future[Prepay] = {
     val providerName = provider.toString
 
     val result =
       for {
-        order <- OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime", "paymentInfo"))
+        order <- OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime", "paymentInfo"))(datastore)
       } yield {
         mapAsScalaMap(order.paymentInfo) getOrElse (providerName, {
           // 创建新的Prepay对象
@@ -43,16 +42,16 @@ trait PaymentService {
           prepay.updateTime = new Date
           prepay.prepayId = UUID.randomUUID().toString
 
-          val query = ds.createQuery(classOf[Order]) field "orderId" equal order.orderId field
+          val query = datastore.createQuery(classOf[Order]) field "orderId" equal order.orderId field
             s"paymentInfo.$providerName" equal null
-          val ops = ds.createUpdateOperations(classOf[Order]).set(s"paymentInfo.$providerName", prepay)
-          val updateResult = ds.update(query, ops)
+          val ops = datastore.createUpdateOperations(classOf[Order]).set(s"paymentInfo.$providerName", prepay)
+          val updateResult = datastore.update(query, ops)
           if (updateResult.getUpdatedExisting) prepay
           else null
         })
       }
 
-    result flatMap (r => if (r == null) getPrepay(orderId, provider) else Future(r))
+    result flatMap (r => if (r == null) getPrepay(orderId) else Future(r))
   }
 }
 

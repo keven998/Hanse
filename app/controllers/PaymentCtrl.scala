@@ -39,7 +39,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         if (ip matches ipv4Pattern) ip else "192.168.1.1"
       }
       val instance = AlipayService.instance
-      val ret1 = instance.getPrepay(orderId, core.payment.PaymentService.Provider.Alipay)
+      val ret1 = instance.getPrepay(orderId)
 
       ret1 map (p => {
         HanseResult.unprocessable(errorMsg = Some(p.prepayId))

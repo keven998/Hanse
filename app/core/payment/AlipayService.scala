@@ -3,6 +3,8 @@ package core.payment
 import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
+import core.payment.PaymentService.Provider
+import org.mongodb.morphia.Datastore
 import play.api.Play
 import play.api.Play.current
 
@@ -12,7 +14,10 @@ import play.api.Play.current
  * Created by zephyre on 12/16/15.
  */
 class AlipayService @Inject() (private val m: MorphiaMap) extends PaymentService {
-  override val morphiaMap: MorphiaMap = m
+
+  override lazy val datastore: Datastore = m.map("k2")
+
+  override lazy val provider: Provider.Value = Provider.Alipay
 }
 
 object AlipayService {
