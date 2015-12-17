@@ -1,7 +1,5 @@
 package core.payment
 
-import java.util.{ Date, UUID }
-
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
 import org.mongodb.morphia.Datastore
@@ -22,6 +20,14 @@ trait PaymentService {
   def datastore: Datastore
 
   /**
+   * 创建一个新的Prepay. 如果创建失败, 比如发生乐观锁冲突之类的情况, 则返回Future(None)
+   *
+   * @param order 订单
+   * @return
+   */
+  def createPrepay(order: Order): Future[Option[Prepay]]
+
+  /**
    * 获得一个Prepay对象. 如果对应的订单中已有Prepay, 则返回之; 否则创建一个.
    * @param orderId 订单号
    * @return
@@ -29,29 +35,13 @@ trait PaymentService {
   def getPrepay(orderId: Long): Future[Prepay] = {
     val providerName = provider.toString
 
-    val result =
-      for {
-        order <- OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime", "paymentInfo"))(datastore)
-      } yield {
-        mapAsScalaMap(order.paymentInfo) getOrElse (providerName, {
-          // 创建新的Prepay对象
-          val prepay = new Prepay
-          prepay.provider = providerName
-          prepay.amount = order.totalPrice - order.discount
-          prepay.createTime = new Date
-          prepay.updateTime = new Date
-          prepay.prepayId = UUID.randomUUID().toString
+    // 尝试从paymentInfo中获得Prepay, 否则就新建
+    val result = OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime",
+      "paymentInfo"))(datastore) flatMap (order => {
+      mapAsScalaMap(order.paymentInfo) get providerName map (o => Future(Some(o))) getOrElse createPrepay(order)
+    })
 
-          val query = datastore.createQuery(classOf[Order]) field "orderId" equal order.orderId field
-            s"paymentInfo.$providerName" equal null
-          val ops = datastore.createUpdateOperations(classOf[Order]).set(s"paymentInfo.$providerName", prepay)
-          val updateResult = datastore.update(query, ops)
-          if (updateResult.getUpdatedExisting) prepay
-          else null
-        })
-      }
-
-    result flatMap (r => if (r == null) getPrepay(orderId) else Future(r))
+    result flatMap (r => r map (Future(_)) getOrElse getPrepay(orderId))
   }
 }
 
@@ -69,6 +59,7 @@ object PaymentService {
     /**
      * 微信
      */
-    val Wechat = Value("wechat")
+    val WeChat = Value("wechat")
   }
+
 }

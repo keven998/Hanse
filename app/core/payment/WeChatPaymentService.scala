@@ -1,0 +1,27 @@
+package core.payment
+
+import javax.inject.Inject
+
+import com.lvxingpai.inject.morphia.MorphiaMap
+import com.lvxingpai.model.marketplace.order.{ Prepay, Order }
+import core.payment.PaymentService.Provider
+import org.mongodb.morphia.Datastore
+
+import scala.concurrent.Future
+
+/**
+ * Created by zephyre on 12/17/15.
+ */
+class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extends PaymentService {
+  override def provider: Provider.Value = Provider.WeChat
+
+  override def datastore: Datastore = morphiaMap.map("k2")
+
+  /**
+   * 创建一个新的Prepay. 如果创建失败, 比如发生乐观锁冲突之类的情况, 则返回Future(None)
+   *
+   * @param order 订单
+   * @return
+   */
+  override def createPrepay(order: Order): Future[Option[Prepay]] = ???
+}
