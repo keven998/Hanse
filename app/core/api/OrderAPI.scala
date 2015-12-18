@@ -96,6 +96,23 @@ object OrderAPI {
   }
 
   /**
+   * 将某个订单设置为已支付
+   *
+   * @param orderId 订单号
+   * @param provider 支付渠道
+   */
+  def setPaid(orderId: Long, provider: PaymentService.Provider.Value)(implicit ds: Datastore): Future[Unit] = {
+    val providerName = provider.toString
+    val query = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
+      s"paymentInfo.$providerName" notEqual null
+    val ops = ds.createUpdateOperations(classOf[Order]).set("status", "paid")
+      .set(s"paymentInfo.$providerName.paid", true)
+    Future {
+      ds.findAndModify(query, ops)
+    }
+  }
+
+  /**
    * 根据订单id查询订单信息
    * @param orderId 订单id
    * @return 订单信息

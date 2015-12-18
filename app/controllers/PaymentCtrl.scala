@@ -7,14 +7,15 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.api.OrderAPI
+import core.exception.GeneralPaymentException
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.model.trade.order.WechatPrepay
-import core.payment.{ WeChatPaymentService, AlipayService }
 import core.payment.PaymentService.Provider
+import core.payment.{ AlipayService, WeChatPaymentService }
 import core.service.PaymentService
 import play.api.Configuration
-import play.api.mvc.{ Action, Controller, Result }
+import play.api.mvc.{ Action, Controller, Result, Results }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -112,6 +113,10 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       </return_msg>
     </xml>
 
+  /**
+   * 微信的回调接口
+   * @return
+   */
   def wechatCallback() = Action.async(
     request => {
       val ret = for {
@@ -148,10 +153,22 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
 
   )
 
+  /**
+   * 支付宝的回调接口
+   * @return
+   */
   def alipayCallback() = Action.async {
     request =>
-      {
-        Future(HanseResult.ok())
+      (for {
+        formData <- request.body.asFormUrlEncoded
+      } yield {
+        AlipayService.instance.handleCallback(formData) map (contents => Results.Ok(contents.toString)) recover {
+          case e: GeneralPaymentException =>
+            // 出现任何失败的情况
+            HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+        }
+      }) getOrElse Future {
+        HanseResult.unprocessable()
       }
   }
 
