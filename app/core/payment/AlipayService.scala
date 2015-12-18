@@ -6,14 +6,12 @@ import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
-import core.exception.ResourceNotFoundException
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
-import play.api.{ Configuration, Play }
 import play.api.Play.current
 import play.api.inject.BindingKey
+import play.api.{ Configuration, Play }
 
-import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -50,25 +48,11 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
   }
 
   /**
-   * 获得订单在某个具体渠道的支付详情
-   * @param orderId 订单号
+   * 获得订单在某个具体渠道的支付详情(即是否支付). 由于支付宝不提供主动查询接口, 所以直接返回paymentInfo中的值
+   * @param order 订单号
    * @return
    */
-  override def getPaymentStatus(orderId: Long): Future[Boolean] = {
-    val providerName = provider.toString
-
-    val query = datastore.createQuery(classOf[Order]).field("orderId").equal(orderId)
-      .retrievedFields(true, s"paymentInfo.$providerName")
-    Future {
-      val paid = Option(query.get) map (order => {
-        mapAsScalaMap(order.paymentInfo) get providerName exists (_.paid)
-      })
-      paid getOrElse {
-        // 如果paid为None, 说明query.get为null
-        throw ResourceNotFoundException(s"Order #$orderId does not exist.")
-      }
-    }
-  }
+  override def refreshPaymentStatus(order: Order): Future[Order] = Future(order)
 
   /**
    * 获得sidecar信息. (比如: 签名等, 就位于其中)

@@ -102,11 +102,11 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
   }
 
   /**
-   * 获得订单在某个具体渠道的支付详情
-   * @param orderId 订单号
+   * 获得订单在某个具体渠道的支付详情(即是否支付)
+   * @param order 订单号
    * @return
    */
-  override def getPaymentStatus(orderId: Long): Future[Boolean] = ???
+  override def refreshPaymentStatus(order: Order): Future[Order] = ???
 
   /**
    * 获得sidecar信息. (比如: 签名等, 就位于其中)

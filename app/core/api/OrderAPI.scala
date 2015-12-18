@@ -3,6 +3,7 @@ package core.api
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity, Prepay }
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.misc.Global
+import core.payment.{ WeChatPaymentService, AlipayService, PaymentService }
 import core.sign.RSA
 import org.mongodb.morphia.Datastore
 
@@ -54,6 +55,47 @@ object OrderAPI {
   }
 
   /**
+   * 如果订单处于未支付的时候, 刷新订单的支付状态
+   * @param order
+   * @return
+   */
+  def refreshOrderPayment(order: Order): Future[Order] = {
+    order.status match {
+      case "pending" =>
+        val paymentInfo = Option(order.paymentInfo) map mapAsScalaMap getOrElse scala.collection.mutable.Map()
+
+        // 以尾递归的形式, 查看具体支付渠道的支付结果
+        val itr = paymentInfo.iterator
+
+        // 查看某个具体的渠道
+        def refreshSinglePayment(): Future[Order] = {
+          val entry = itr.next()
+          val result: Future[Order] = entry._1 match {
+            case s if s == PaymentService.Provider.Alipay.toString =>
+              AlipayService.instance.refreshPaymentStatus(order)
+            case s if s == PaymentService.Provider.WeChat.toString =>
+              WeChatPaymentService.instance.refreshPaymentStatus(order)
+            case _ => Future(order) // 如果既不是微信, 也不是支付宝, 直接返回自身
+          }
+
+          result flatMap (order => {
+            if (order.status == "pending") {
+              // 依然处于待支付的状态, 尝试刷新下一个渠道
+              if (itr.hasNext) refreshSinglePayment()
+              else Future(order)
+            } else {
+              // 已经不再是待支付状态了
+              Future(order)
+            }
+          })
+        }
+        refreshSinglePayment()
+      case _ =>
+        Future(order)
+    }
+  }
+
+  /**
    * 根据订单id查询订单信息
    * @param orderId 订单id
    * @return 订单信息
@@ -61,7 +103,7 @@ object OrderAPI {
   def getOrder(orderId: Long)(implicit ds: Datastore): Future[Order] = {
     Future {
       ds.find(classOf[Order], "orderId", orderId).get
-    }
+    } flatMap refreshOrderPayment
   }
 
   def getOrder(orderId: Long, fields: Seq[String])(implicit ds: Datastore): Future[Order] = {
