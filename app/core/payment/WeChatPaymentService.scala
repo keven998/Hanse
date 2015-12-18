@@ -9,6 +9,7 @@ import com.lvxingpai.model.marketplace.order.{ Prepay, Order }
 import core.misc.Utils
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
+import play.api.http.Writeable
 import play.api.{ Configuration, Play }
 import play.api.inject.BindingKey
 import play.api.libs.ws.WS
@@ -123,6 +124,13 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
     )
     original + ("sign" -> genSign(original))
   }
+
+  /**
+   * 处理支付渠道服务器发来的异步调用
+   * @param params
+   * @return
+   */
+  override def handleCallback[C](params: Map[String, Any])(implicit wriable: Writeable[C]): C = ???
 }
 
 object WeChatPaymentService {

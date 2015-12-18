@@ -9,6 +9,7 @@ import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
 import play.api.Play.current
+import play.api.http.Writeable
 import play.api.inject.BindingKey
 import play.api.{ Configuration, Play }
 
@@ -64,6 +65,13 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
       order.totalPrice - order.discount)
     Map("requestString" -> requestMap.requestString)
   }
+
+  /**
+   * 处理支付渠道服务器发来的异步调用
+   * @param params
+   * @return
+   */
+  override def handleCallback[C](params: Map[String, Any])(implicit wriable: Writeable[C]): C = ???
 }
 
 object AlipayService {

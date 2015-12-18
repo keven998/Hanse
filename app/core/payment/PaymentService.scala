@@ -6,6 +6,7 @@ import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
 import core.exception.OrderStatusException
 import org.mongodb.morphia.Datastore
+import play.api.http.Writeable
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -86,6 +87,13 @@ trait PaymentService {
    * @return
    */
   def refreshPaymentStatus(order: Order): Future[Order]
+
+  /**
+   * 处理支付渠道服务器发来的异步调用
+   * @param params
+   * @return
+   */
+  def handleCallback[C](params: Map[String, Any])(implicit wriable: Writeable[C]): C
 }
 
 object PaymentService {
