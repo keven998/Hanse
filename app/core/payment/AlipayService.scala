@@ -6,10 +6,11 @@ import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
+import core.api.OrderAPI
+import core.exception.GeneralPaymentException
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
 import play.api.Play.current
-import play.api.http.Writeable
 import play.api.inject.BindingKey
 import play.api.{ Configuration, Play }
 
@@ -71,7 +72,31 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
    * @param params
    * @return
    */
-  override def handleCallback[C](params: Map[String, Any])(implicit wriable: Writeable[C]): C = ???
+  override def handleCallback(params: Map[String, Any]): Future[Any] = {
+    // 将Map[String, Seq[String]]转换成Map[String, String]
+    val data = params mapValues {
+      case ss: Seq[_] => ss mkString ""
+      case s: String => s
+    }
+
+    try {
+      if (!AlipayService.verifyAlipay(data, data("sign"))) throw GeneralPaymentException("Alipay signature check failed.")
+
+      // 更新数据库
+      val tradeNumber = params.getOrElse("out_trade_no", "").toString
+      val orderId = try {
+        tradeNumber.toLong
+      } catch {
+        case _: NumberFormatException => throw GeneralPaymentException(s"Invalid out_trade_no: $tradeNumber")
+      }
+
+      OrderAPI.setPaid(orderId, provider)(datastore) map (_ => "success")
+    } catch {
+      case e: GeneralPaymentException => Future {
+        throw e
+      }
+    }
+  }
 }
 
 object AlipayService {
@@ -102,6 +127,23 @@ object AlipayService {
    * @return 私钥字符串
    */
   lazy private val privateKey = (conf getString "hanse.payment.alipay.privateKey").get
+
+  lazy val alipayPublicKey = (conf getString "hanse.payment.alipay.alipayPublicKey").get
+
+  /**
+   * 验证支付宝签名
+   * @param params 签名所需的数据
+   * @param sign 签名
+   * @return 签名是否通过
+   */
+  def verifyAlipay(params: Map[String, String], sign: String): Boolean = {
+    // 将获取的数据按字典排序
+    val sortedKeys = params.keys.toSeq.sorted
+    // 剔除"sign", "sign_type"字段, 将数据组装成所需的字符串
+    val contents = sortedKeys filterNot (Seq("sign", "sign_type") contains _) map
+      (key => s"$key=${params(key)}") mkString "&"
+    RSA.verify(contents, sign, alipayPublicKey, "utf-8")
+  }
 
   /**
    * 支付宝调用请求

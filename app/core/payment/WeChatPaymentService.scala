@@ -5,18 +5,17 @@ import java.util.{ Date, UUID }
 import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
-import com.lvxingpai.model.marketplace.order.{ Prepay, Order }
+import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.misc.Utils
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
-import play.api.http.Writeable
-import play.api.{ Configuration, Play }
+import play.api.Play.current
 import play.api.inject.BindingKey
 import play.api.libs.ws.WS
-import play.api.Play.current
+import play.api.{ Configuration, Play }
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by zephyre on 12/17/15.
@@ -130,7 +129,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    * @param params
    * @return
    */
-  override def handleCallback[C](params: Map[String, Any])(implicit wriable: Writeable[C]): C = ???
+  override def handleCallback(params: Map[String, Any]): Future[Any] = ???
 }
 
 object WeChatPaymentService {
