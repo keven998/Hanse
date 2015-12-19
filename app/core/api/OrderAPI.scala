@@ -109,7 +109,7 @@ object OrderAPI {
     val ops = ds.createUpdateOperations(classOf[Order]).set("status", "paid")
       .set(s"paymentInfo.$providerName.paid", true)
     Future {
-      ds.findAndModify(query, ops)
+      ds.update(query, ops)
     }
   }
 
@@ -404,27 +404,6 @@ object OrderAPI {
       case "TRADE_SUCCESS" | "TRADE_FINISHED" => "finished"
       case "WAIT_BUYER_PAY" => "pending"
       //      case "TRADE_CLOSED" => "finished"
-    }
-  }
-
-  /**
-   * 根据订单号查询订单支付状态, 如果支付成功, 直接返回, 其他状态
-   * @param orderId 订单号
-   * @return 订单状态
-   */
-  def getOrderStatus(orderId: Long)(implicit ds: Datastore): Future[String] = {
-    // 根据订单号查询订单支付信息
-    Future {
-      val order = ds.createQuery(classOf[Order]).field("orderId").equal(orderId).get
-      if (order.status.equals("finished")) order.status
-      else {
-        // 订单未完成, 去支付宝查询订单状态, 核对订单状态
-        val alipayStatus = aliOrderStatus2OrderStatus(getAlipayOrderStatus(orderId))
-        if (!alipayStatus.equals(order.status)) {
-          updateOrderStatus(orderId, alipayStatus)
-          alipayStatus
-        } else order.status
-      }
     }
   }
 

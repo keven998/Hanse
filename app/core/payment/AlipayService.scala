@@ -79,10 +79,19 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
       case s: String => s
     }
 
-    try {
-      if (!AlipayService.verifyAlipay(data, data("sign"))) throw GeneralPaymentException("Alipay signature check failed.")
+    val providerName = provider.toString
 
-      // 更新数据库
+    try {
+      // 检查签名是否正常
+      if (!AlipayService.verifyAlipay(data, data("sign")))
+        throw GeneralPaymentException("Alipay signature check failed.")
+
+      // 检查交易状态
+      val tradeStatus = data.getOrElse("trade_status", "")
+      if (!(Seq("TRADE_FINISHED", "TRADE_SUCCESS") contains tradeStatus))
+        throw GeneralPaymentException(s"Payment failed: $tradeStatus")
+
+      // 获得订单状态
       val tradeNumber = data.getOrElse("out_trade_no", "").toString
       val orderId = try {
         tradeNumber.toLong
@@ -90,7 +99,29 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
         case _: NumberFormatException => throw GeneralPaymentException(s"Invalid out_trade_no: $tradeNumber")
       }
 
-      OrderAPI.setPaid(orderId, provider)(datastore) map (_ => "success")
+      OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", s"paymentInfo.$providerName"))(datastore) flatMap
+        (order => {
+
+          if (order == null) {
+            throw GeneralPaymentException(s"Invalid order: $orderId")
+          } else {
+            if (!(order.paymentInfo containsKey providerName))
+              throw GeneralPaymentException(s"Order $orderId doesn't have payment information")
+
+            // 订单数据中的价格
+            val orderPrice = order.totalPrice - order.discount
+            // 实际支付价格
+            val paidPrice = try {
+              data.getOrElse("total_fee", "").toFloat
+            } catch {
+              case _: NumberFormatException => Float.MinValue
+            }
+            // 如果二者不一致, 说明有误
+            if (Math.abs(paidPrice - orderPrice) > 1e-5) throw GeneralPaymentException("Invalid alipay callback")
+          }
+          // 通过各种验证
+          OrderAPI.setPaid(orderId, provider)(datastore) map (_ => "success")
+        })
     } catch {
       case e: GeneralPaymentException => Future {
         throw e

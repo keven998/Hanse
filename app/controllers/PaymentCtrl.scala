@@ -14,7 +14,7 @@ import core.model.trade.order.WechatPrepay
 import core.payment.PaymentService.Provider
 import core.payment.{ AlipayService, WeChatPaymentService }
 import core.service.PaymentService
-import play.api.Configuration
+import play.api.{ Logger, Configuration }
 import play.api.mvc.{ Action, Controller, Result, Results }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -162,7 +162,18 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       (for {
         formData <- request.body.asFormUrlEncoded
       } yield {
-        AlipayService.instance.handleCallback(formData) map (contents => Results.Ok(contents.toString)) recover {
+        val notifyId = formData("notify_id") mkString ","
+        val tradeId = formData("out_trade_no") mkString ","
+        val tradeStatus = formData("trade_status") mkString ","
+        val buyer = formData("buyer_email") mkString ","
+        val totalFee = formData("total_fee") mkString ","
+
+        Logger.info(s"Alipay callback: notify_id=$notifyId out_trade_no=$tradeId trade_status=$tradeStatus " +
+          s"buyer_email=$buyer total_fee=$totalFee")
+
+        AlipayService.instance.handleCallback(formData) map (contents => {
+          Results.Ok(contents.toString)
+        }) recover {
           case e: GeneralPaymentException =>
             // 出现任何失败的情况
             HanseResult.unprocessable(errorMsg = Some(e.getMessage))
