@@ -104,13 +104,24 @@ object OrderAPI {
    */
   def setPaid(orderId: Long, provider: PaymentService.Provider.Value)(implicit ds: Datastore): Future[Unit] = {
     val providerName = provider.toString
-    val query = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
+
+    // 设置payment状态
+    val paymentQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
       s"paymentInfo.$providerName" notEqual null
-    val ops = ds.createUpdateOperations(classOf[Order]).set("status", "paid")
-      .set(s"paymentInfo.$providerName.paid", true)
-    Future {
-      ds.update(query, ops)
-    }
+    val paymentOps = ds.createUpdateOperations(classOf[Order]).set(s"paymentInfo.$providerName.paid", true)
+
+    // 如果订单还处于pending, 则将其设置为paid
+    val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
+      s"paymentInfo.$providerName" notEqual null field "status" equal "pending"
+    val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", "paid")
+
+    Future.sequence(Seq(
+      Future {
+        ds.update(paymentQuery, paymentOps)
+      }, Future {
+        ds.update(statusQuery, statusOps)
+      }
+    )) map (_ => ())
   }
 
   /**
