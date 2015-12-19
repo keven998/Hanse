@@ -106,7 +106,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    * @param order 订单号
    * @return
    */
-  override def refreshPaymentStatus(order: Order): Future[Order] = ???
+  override def refreshPaymentStatus(order: Order): Future[Order] = Future(order)
 
   /**
    * 获得sidecar信息. (比如: 签名等, 就位于其中)

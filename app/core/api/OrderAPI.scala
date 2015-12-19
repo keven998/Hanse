@@ -89,7 +89,8 @@ object OrderAPI {
             }
           })
         }
-        refreshSinglePayment()
+        if (itr.hasNext) refreshSinglePayment()
+        else Future(order)
       case _ =>
         Future(order)
     }

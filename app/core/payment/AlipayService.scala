@@ -83,7 +83,7 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
       if (!AlipayService.verifyAlipay(data, data("sign"))) throw GeneralPaymentException("Alipay signature check failed.")
 
       // 更新数据库
-      val tradeNumber = params.getOrElse("out_trade_no", "").toString
+      val tradeNumber = data.getOrElse("out_trade_no", "").toString
       val orderId = try {
         tradeNumber.toLong
       } catch {
