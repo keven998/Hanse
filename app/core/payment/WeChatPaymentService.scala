@@ -5,7 +5,10 @@ import java.util.{ Date, UUID }
 import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
+
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
+import core.api.OrderAPI
+import core.exception.GeneralPaymentException
 import core.misc.Utils
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
@@ -21,9 +24,10 @@ import scala.concurrent.Future
  * Created by zephyre on 12/17/15.
  */
 class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extends PaymentService {
-  override def provider: Provider.Value = Provider.WeChat
 
-  override def datastore: Datastore = morphiaMap.map("k2")
+  override lazy val provider: Provider.Value = Provider.WeChat
+
+  override lazy val datastore: Datastore = morphiaMap.map("k2")
 
   /**
    * 计算签名
@@ -69,7 +73,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
         .withRequestTimeout(30000)
         .post(body)
     } yield {
-      val body = scala.xml.XML loadString (new String(response.bodyAsBytes, "UTF8"))
+      val body = scala.xml.XML loadString new String(response.bodyAsBytes, "UTF8")
       val prepayId = (body \ "prepay_id").text
       val returnCode = (body \ "return_code").text
       val resultCode = (body \ "result_code").text
@@ -106,7 +110,59 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    * @param order 订单号
    * @return
    */
-  override def refreshPaymentStatus(order: Order): Future[Order] = ???
+  override def refreshPaymentStatus(order: Order): Future[Order] = {
+    // 调用微信查询订单接口
+    val callBack = Map("notify_url" -> WeChatPaymentService.notifyUrl)
+    val randomStr = Map("nonce_str" -> UUID.randomUUID().toString.replace("-", ""))
+
+    val accountInfo = {
+      Map("appid" -> WeChatPaymentService.appid, "mch_id" -> WeChatPaymentService.mchid)
+    }
+    val content = Map(
+      // transaction_id 指微信订单号；out_trade_no指旅行派订单号
+      //"transaction_id" -> prepayId
+      "out_trade_no" -> order.orderId.toString
+    )
+    val params: Map[String, String] = content ++ accountInfo ++ callBack ++ randomStr
+    val sign = Map("sign" -> genSign(params))
+    val resultParams = params ++ sign
+
+    val body = Utils.addChildrenToXML(<xml></xml>, resultParams)
+    val wsFuture = WS.url(WeChatPaymentService.unifiedOrderUrl)
+      .withHeaders("Content-Type" -> "text/xml; charset=utf-8")
+      .withRequestTimeout(30000)
+      .post(body.toString())
+
+    wsFuture flatMap (ws => {
+      val body = scala.xml.XML loadString new String(ws.bodyAsBytes, "UTF8")
+      // 支付状态
+      val trade_state = (body \ "trade_state").text
+      // val transaction_id = (body \ "transaction_id").text // 微信支付订单号
+      // val out_trade_no = (body \ "out_trade_no").text // 商户订单号
+      val returnCode = (body \ "return_code").text
+      val resultCode = (body \ "result_code").text
+      val returnMsg = (body \ "return_msg").text
+      val errorCode = (body \ "err_code").text
+      val errorMsg = (body \ "err_code_des").text
+
+      if (returnCode != "SUCCESS" || resultCode != "SUCCESS") {
+        throw new RuntimeException(s"Error in creating WeChat prepay. return_msg=$returnMsg / " +
+          s"err_code=$errorCode / err_code_des=$errorMsg")
+      }
+
+      // 旅行派订单状态：pending|paid|committed|finished|cancelled|expired|refundApplied|refunded
+      // wx订单交易状态：SUCCESS—支付成功 REFUND—转入退款 NOTPAY—未支付 CLOSED—已关闭
+      // REVOKED—已撤销（刷卡支付） USERPAYING--用户支付中 PAYERROR--支付失败
+      if (trade_state.equals("SUCCESS")) {
+        OrderAPI.setPaid(order.orderId, PaymentService.Provider.WeChat)(datastore) map (_ => {
+          // TODO
+          order.status = "paid"
+          order
+        })
+      } else
+        Future(order)
+    })
+  }
 
   /**
    * 获得sidecar信息. (比如: 签名等, 就位于其中)
@@ -129,7 +185,30 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    * @param params
    * @return
    */
-  override def handleCallback(params: Map[String, Any]): Future[Any] = ???
+  override def handleCallback(params: Map[String, Any]): Future[Any] = {
+    val data = params mapValues { case ss: Any => ss.toString }
+    try {
+      if (!WeChatPaymentService.verifyWeChatPay(data, data("sign"))) {
+        Future {
+          WeChatPaymentService.wechatCallBackError
+        }
+      } else {
+        // 更新数据库
+        val tradeNumber = params.getOrElse("out_trade_no", "").toString
+        val orderId = try {
+          tradeNumber.toLong
+        } catch {
+          case _: NumberFormatException => throw GeneralPaymentException(s"Invalid out_trade_no: $tradeNumber")
+        }
+
+        OrderAPI.setPaid(orderId, provider)(datastore) map (_ => WeChatPaymentService.wechatCallBackError)
+      }
+    } catch {
+      case e: GeneralPaymentException => Future {
+        throw e
+      }
+    }
+  }
 }
 
 object WeChatPaymentService {
@@ -159,5 +238,41 @@ object WeChatPaymentService {
   lazy val apiSecrete = (conf getString "hanse.payment.wechat.apisecret").get
 
   lazy val mchid = (conf getString "hanse.payment.wechat.mchid").get
+
+  /**
+   * 验证微信签名
+   * @param params 签名所需的数据
+   * @param sign 签名
+   * @return 签名是否通过
+   */
+  def verifyWeChatPay(params: Map[String, String], sign: String): Boolean = {
+    // 将获取的数据按字典排序
+    val sortedKeys = params.keys.toSeq.sorted
+    // 剔除"sign"字段, 将数据组装成所需的字符串
+    val contents = sortedKeys filterNot (Seq("sign") contains _) map
+      (key => s"$key=${params(key)}") mkString "&"
+    val stringSignTemp = contents + "&key=" + WeChatPaymentService.apiSecrete
+    Utils.MD5(stringSignTemp).equals(sign)
+  }
+
+  val wechatCallBackOK =
+    <xml>
+      <return_code>
+        <![CDATA[SUCCESS]]>
+      </return_code>
+      <return_msg>
+        <![CDATA[OK]]>
+      </return_msg>
+    </xml>
+
+  val wechatCallBackError =
+    <xml>
+      <return_code>
+        <![CDATA[FAIL]]>
+      </return_code>
+      <return_msg>
+        <![CDATA[FAIL]]>
+      </return_msg>
+    </xml>
 
 }
