@@ -252,7 +252,7 @@ object WeChatPaymentService {
     val contents = sortedKeys filterNot (Seq("sign") contains _) map
       (key => s"$key=${params(key)}") mkString "&"
     val stringSignTemp = contents + "&key=" + WeChatPaymentService.apiSecrete
-    Utils.MD5(stringSignTemp).equals(sign)
+    Utils.MD5(stringSignTemp).toUpperCase.equals(sign)
   }
 
   val wechatCallBackOK =

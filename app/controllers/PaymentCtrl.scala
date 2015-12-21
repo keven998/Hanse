@@ -19,6 +19,7 @@ import play.api.mvc.{ Action, Controller, Result, Results }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
+import scala.xml.Elem
 
 @Singleton
 class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
@@ -100,9 +101,10 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       val ret = for {
         body <- request.body.asXml
       } yield {
-        val prePay: Map[String, String] = body map { x => x.label.toString -> x.text.toString } toMap
 
-        WeChatPaymentService.instance.handleCallback(prePay) map (_ => Ok(WeChatPaymentService.wechatCallBackOK)) recover {
+        val prePay: Map[String, String] = body.head.child map { x => x.label.toString -> x.text.toString } filter (c => c._1 != "#PCDATA") toMap
+
+        WeChatPaymentService.instance.handleCallback(prePay) map (contents => Ok(contents.asInstanceOf[Elem])) recover {
           case e: GeneralPaymentException =>
             // 出现任何失败的情况
             HanseResult.unprocessable(errorMsg = Some(e.getMessage))
