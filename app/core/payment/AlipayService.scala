@@ -6,14 +6,14 @@ import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
-import core.exception.ResourceNotFoundException
+import core.api.OrderAPI
+import core.exception.GeneralPaymentException
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
-import play.api.{ Configuration, Play }
 import play.api.Play.current
 import play.api.inject.BindingKey
+import play.api.{ Configuration, Play }
 
-import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -50,25 +50,11 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
   }
 
   /**
-   * 获得订单在某个具体渠道的支付详情
-   * @param orderId 订单号
+   * 获得订单在某个具体渠道的支付详情(即是否支付). 由于支付宝不提供主动查询接口, 所以直接返回paymentInfo中的值
+   * @param order 订单号
    * @return
    */
-  override def getPaymentStatus(orderId: Long): Future[Boolean] = {
-    val providerName = provider.toString
-
-    val query = datastore.createQuery(classOf[Order]).field("orderId").equal(orderId)
-      .retrievedFields(true, s"paymentInfo.$providerName")
-    Future {
-      val paid = Option(query.get) map (order => {
-        mapAsScalaMap(order.paymentInfo) get providerName exists (_.paid)
-      })
-      paid getOrElse {
-        // 如果paid为None, 说明query.get为null
-        throw ResourceNotFoundException(s"Order #$orderId does not exist.")
-      }
-    }
-  }
+  override def refreshPaymentStatus(order: Order): Future[Order] = Future(order)
 
   /**
    * 获得sidecar信息. (比如: 签名等, 就位于其中)
@@ -79,6 +65,69 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
     val requestMap = AlipayService.RequestMap(prepay.prepayId, order.commodity.title, order.commodity.title,
       order.totalPrice - order.discount)
     Map("requestString" -> requestMap.requestString)
+  }
+
+  /**
+   * 处理支付渠道服务器发来的异步调用
+   * @param params
+   * @return
+   */
+  override def handleCallback(params: Map[String, Any]): Future[Any] = {
+    // 将Map[String, Seq[String]]转换成Map[String, String]
+    val data = params mapValues {
+      case ss: Seq[_] => ss mkString ""
+      case s: String => s
+    }
+
+    val providerName = provider.toString
+
+    try {
+      // 检查签名是否正常
+      if (!AlipayService.verifyAlipay(data, data("sign")))
+        throw GeneralPaymentException("Alipay signature check failed.")
+
+      // 检查交易状态
+      val tradeStatus = data.getOrElse("trade_status", "")
+      tradeStatus match {
+        case "WAIT_BUYER_PAY" | "TRADE_CLOSED" => Future("success") // 忽略该请求
+        case "TRADE_SUCCESS" | "TRADE_FINISHED" =>
+          // 订单支付成功
+          // 获得订单状态
+          val tradeNumber = data.getOrElse("out_trade_no", "")
+          val orderId = try {
+            tradeNumber.toLong
+          } catch {
+            case _: NumberFormatException => throw GeneralPaymentException(s"Invalid out_trade_no: $tradeNumber")
+          }
+
+          OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", s"paymentInfo.$providerName"))(datastore) flatMap
+            (order => {
+              if (order == null) {
+                throw GeneralPaymentException(s"Invalid order: $orderId")
+              } else {
+                if (!(order.paymentInfo containsKey providerName))
+                  throw GeneralPaymentException(s"Order $orderId doesn't have payment information")
+
+                // 订单数据中的价格
+                val orderPrice = order.totalPrice - order.discount
+                // 实际支付价格
+                val paidPrice = try {
+                  data.getOrElse("total_fee", "").toFloat
+                } catch {
+                  case _: NumberFormatException => Float.MinValue
+                }
+                // 如果二者不一致, 说明有误
+                if (Math.abs(paidPrice - orderPrice) > 1e-5) throw GeneralPaymentException("Invalid alipay callback")
+              }
+              // 通过各种验证
+              OrderAPI.setPaid(orderId, provider)(datastore) map (_ => "success")
+            })
+      }
+    } catch {
+      case e: GeneralPaymentException => Future {
+        throw e
+      }
+    }
   }
 }
 
@@ -110,6 +159,23 @@ object AlipayService {
    * @return 私钥字符串
    */
   lazy private val privateKey = (conf getString "hanse.payment.alipay.privateKey").get
+
+  lazy val alipayPublicKey = (conf getString "hanse.payment.alipay.alipayPublicKey").get
+
+  /**
+   * 验证支付宝签名
+   * @param params 签名所需的数据
+   * @param sign 签名
+   * @return 签名是否通过
+   */
+  def verifyAlipay(params: Map[String, String], sign: String): Boolean = {
+    // 将获取的数据按字典排序
+    val sortedKeys = params.keys.toSeq.sorted
+    // 剔除"sign", "sign_type"字段, 将数据组装成所需的字符串
+    val contents = sortedKeys filterNot (Seq("sign", "sign_type") contains _) map
+      (key => s"$key=${params(key)}") mkString "&"
+    RSA.verify(contents, sign, alipayPublicKey, "utf-8")
+  }
 
   /**
    * 支付宝调用请求

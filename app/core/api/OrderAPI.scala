@@ -3,6 +3,7 @@ package core.api
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity, Prepay }
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.misc.Global
+import core.payment.{ WeChatPaymentService, AlipayService, PaymentService }
 import core.sign.RSA
 import org.mongodb.morphia.Datastore
 
@@ -54,6 +55,76 @@ object OrderAPI {
   }
 
   /**
+   * 如果订单处于未支付的时候, 刷新订单的支付状态
+   * @param order
+   * @return
+   */
+  def refreshOrderPayment(order: Order): Future[Order] = {
+    order.status match {
+      case "pending" =>
+        val paymentInfo = Option(order.paymentInfo) map mapAsScalaMap getOrElse scala.collection.mutable.Map()
+
+        // 以尾递归的形式, 查看具体支付渠道的支付结果
+        val itr = paymentInfo.iterator
+
+        // 查看某个具体的渠道
+        def refreshSinglePayment(): Future[Order] = {
+          val entry = itr.next()
+          val result: Future[Order] = entry._1 match {
+            case s if s == PaymentService.Provider.Alipay.toString =>
+              AlipayService.instance.refreshPaymentStatus(order)
+            case s if s == PaymentService.Provider.WeChat.toString =>
+              WeChatPaymentService.instance.refreshPaymentStatus(order)
+            case _ => Future(order) // 如果既不是微信, 也不是支付宝, 直接返回自身
+          }
+
+          result flatMap (order => {
+            if (order.status == "pending") {
+              // 依然处于待支付的状态, 尝试刷新下一个渠道
+              if (itr.hasNext) refreshSinglePayment()
+              else Future(order)
+            } else {
+              // 已经不再是待支付状态了
+              Future(order)
+            }
+          })
+        }
+        if (itr.hasNext) refreshSinglePayment()
+        else Future(order)
+      case _ =>
+        Future(order)
+    }
+  }
+
+  /**
+   * 将某个订单设置为已支付
+   *
+   * @param orderId 订单号
+   * @param provider 支付渠道
+   */
+  def setPaid(orderId: Long, provider: PaymentService.Provider.Value)(implicit ds: Datastore): Future[Unit] = {
+    val providerName = provider.toString
+
+    // 设置payment状态
+    val paymentQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
+      s"paymentInfo.$providerName" notEqual null
+    val paymentOps = ds.createUpdateOperations(classOf[Order]).set(s"paymentInfo.$providerName.paid", true)
+
+    // 如果订单还处于pending, 则将其设置为paid
+    val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
+      s"paymentInfo.$providerName" notEqual null field "status" equal "pending"
+    val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", "paid")
+
+    Future.sequence(Seq(
+      Future {
+        ds.update(paymentQuery, paymentOps)
+      }, Future {
+        ds.update(statusQuery, statusOps)
+      }
+    )) map (_ => ())
+  }
+
+  /**
    * 根据订单id查询订单信息
    * @param orderId 订单id
    * @return 订单信息
@@ -61,7 +132,7 @@ object OrderAPI {
   def getOrder(orderId: Long)(implicit ds: Datastore): Future[Order] = {
     Future {
       ds.find(classOf[Order], "orderId", orderId).get
-    }
+    } flatMap refreshOrderPayment
   }
 
   def getOrder(orderId: Long, fields: Seq[String])(implicit ds: Datastore): Future[Order] = {
@@ -344,27 +415,6 @@ object OrderAPI {
       case "TRADE_SUCCESS" | "TRADE_FINISHED" => "finished"
       case "WAIT_BUYER_PAY" => "pending"
       //      case "TRADE_CLOSED" => "finished"
-    }
-  }
-
-  /**
-   * 根据订单号查询订单支付状态, 如果支付成功, 直接返回, 其他状态
-   * @param orderId 订单号
-   * @return 订单状态
-   */
-  def getOrderStatus(orderId: Long)(implicit ds: Datastore): Future[String] = {
-    // 根据订单号查询订单支付信息
-    Future {
-      val order = ds.createQuery(classOf[Order]).field("orderId").equal(orderId).get
-      if (order.status.equals("finished")) order.status
-      else {
-        // 订单未完成, 去支付宝查询订单状态, 核对订单状态
-        val alipayStatus = aliOrderStatus2OrderStatus(getAlipayOrderStatus(orderId))
-        if (!alipayStatus.equals(order.status)) {
-          updateOrderStatus(orderId, alipayStatus)
-          alipayStatus
-        } else order.status
-      }
     }
   }
 

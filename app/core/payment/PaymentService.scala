@@ -81,11 +81,18 @@ trait PaymentService {
   }
 
   /**
-   * 获得订单在某个具体渠道的支付详情
-   * @param orderId 订单号
+   * 获得订单在某个具体渠道的支付详情(即是否支付).
+   * @param order 订单号
    * @return
    */
-  def getPaymentStatus(orderId: Long): Future[Boolean]
+  def refreshPaymentStatus(order: Order): Future[Order]
+
+  /**
+   * 处理支付渠道服务器发来的异步调用
+   * @param params
+   * @return
+   */
+  def handleCallback(params: Map[String, Any]): Future[Any]
 }
 
 object PaymentService {
