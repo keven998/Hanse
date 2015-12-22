@@ -207,6 +207,29 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       }
     }
   }
+
+  override def refundApply(params: Map[String, Any]): Future[Any] = {
+    // 调用微信退款申请接口
+    val randomStr = Map("nonce_str" -> UUID.randomUUID().toString.replace("-", ""))
+    val accountInfo = {
+      Map("appid" -> WeChatPaymentService.appid, "mch_id" -> WeChatPaymentService.mchid)
+    }
+    val content = Map( // transaction_id 指微信订单号；out_trade_no指旅行派订单号
+    //"transaction_id" -> prepayId
+    //"out_trade_no" -> order.orderId.toString
+    )
+    val params: Map[String, String] = content ++ accountInfo ++ randomStr
+    val sign = Map("sign" -> genSign(params))
+    val resultParams = params ++ sign
+    null
+  }
+
+  /**
+   * 查询退款
+   * @param params
+   * @return
+   */
+  override def refundQuery(params: Map[String, Any]): Future[Any] = ???
 }
 
 object WeChatPaymentService {

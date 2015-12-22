@@ -1,5 +1,7 @@
 package core.service
 
+import java.util.Date
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.model.marketplace.order.Prepay
@@ -10,6 +12,7 @@ import core.model.trade.order.WechatPrepay
 import play.api.Play.current
 import play.api.libs.ws.WS
 
+import scala.language.postfixOps
 import scala.xml.XML
 
 /**
@@ -65,6 +68,39 @@ object PaymentService {
       Map("appid" -> appid, "mch_id" -> mchid)
     }
     val params = content ++ accountInfo ++ randomStr
+    val sign = Map("sign" -> genSign(params))
+    val resultParams = params ++ sign
+    val body = Utils.addChildrenToXML(<xml></xml>, resultParams)
+    val ret = WS.url(url)
+      .withHeaders("Content-Type" -> "text/xml; charset=utf-8")
+      .withRequestTimeout(30000)
+      .post(body.toString())
+    ret
+  }
+
+  /**
+   * 查询订单接口
+   *
+   * @param content
+   * @return
+   */
+  def refund(content: Map[String, String]) = {
+    val url = "https://api.mch.weixin.qq.com/secapi/pay/refund"
+    val randomStr = Map("nonce_str" -> Utils.nonceStr())
+
+    val accountInfo = {
+      //      val appid = config.getString("wechatpay.appid").getOrElse("")
+      //      val mchid = config.getString("wechatpay.mchid").getOrElse("")
+      val mchid = "1278401701"
+      val appid = "wx86048e56adaf7486"
+      Map("appid" -> appid, "mch_id" -> mchid)
+    }
+
+    val refundInfo = {
+      Map("op_user_id" -> "1278401701") ++ Map("out_refund_no" -> (new Date getTime).toString)
+    }
+
+    val params = content ++ accountInfo ++ randomStr ++ refundInfo
     val sign = Map("sign" -> genSign(params))
     val resultParams = params ++ sign
     val body = Utils.addChildrenToXML(<xml></xml>, resultParams)

@@ -13,8 +13,8 @@ import core.model.trade.order.WechatPrepay
 import core.payment.PaymentService.Provider
 import core.payment.{ AlipayService, WeChatPaymentService }
 import core.service.PaymentService
-import play.api.{ Logger, Configuration }
 import play.api.mvc.{ Action, Controller, Result, Results }
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -146,33 +146,6 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       }
   }
 
-  //  def getCallbackBody(body: NodeSeq) = {
-  //    val payment = new WechatPrepay()
-  //    val returnCode = (body \ WechatPrepay.FD_RETURN_CODE \*).toString()
-  //    payment.setResult(returnCode)
-  //    payment.setReturnCode(returnCode)
-  //    payment.setReturnMsg((body \ WechatPrepay.FD_RETURN_MSG \*).toString())
-  //    if (returnCode.equals(WechatPrepay.VA_FAIL)) {
-  //      payment
-  //    } else {
-  //      payment.setResultCode((body \ WechatPrepay.FD_RESULT_CODE \*).toString())
-  //      payment.setErrCode((body \ WechatPrepay.FD_ERR_CODE \*).toString())
-  //      payment.setErrCode((body \ WechatPrepay.FD_ERR_CODE_DES \*).toString())
-  //      payment.setNonceString((body \ WechatPrepay.FD_NONCE_STR \*).toString())
-  //      payment.setSign((body \ WechatPrepay.FD_SIGN \*).toString())
-  //      payment.setOpenId((body \ WechatPrepay.FD_OPENID \*).toString())
-  //      payment.setTradeType((body \ WechatPrepay.FD_TRADE_TYPE \*).toString())
-  //      payment.setBankType((body \ WechatPrepay.FD_BANK_TYPE \*).toString())
-  //      payment.setTotalFee(body \ WechatPrepay.FD_TOTAL_FEE \*)
-  //      payment.setFeeType((body \ WechatPrepay.FD_FEE_TYPE \*).toString())
-  //      payment.setCashFee(body \ WechatPrepay.FD_CASH_FEE \*)
-  //      payment.setCashFeeType((body \ WechatPrepay.FD_CASH_FEE_TYPE \*).toString())
-  //      payment.setPrepayId((body \ WechatPrepay.FD_TRANSACTION_ID \*).toString())
-  //      payment.setTimestamp((body \ "time_end" \*).toString().toLong)
-  //      payment
-  //    }
-  //  }
-
   def getPaymentsStatus(orderId: Long) = Action.async(
     request => {
       val ret = for {
@@ -202,6 +175,50 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         Ok(str)
       }
       ret
+    }
+  )
+
+  //  def refund(orderId: Long) = Action.async(
+  //    request => {
+  //      val r = for {
+  //        body <- request.body.asJson
+  //        userId <- request.headers.get("UserId") map (_.toLong)
+  //        refundFee <- (body \ "refundFee").asOpt[Float]
+  //      } yield {
+  //          val refundNo = new Date getTime
+  //          for {
+  //           // od <- OrderAPI.getOrder(orderId, Seq("totalFee"))
+  //            ws <- PaymentService.refund(Map("refund_fee" -> refundFee * 100, "total_fee" -> (0.01 * 100).toString
+  //              , "out_refund_no" -> refundNo))
+  //        } yield {
+  //            val ret = new String(ws.bodyAsBytes, "UTF8")
+  //            val node = new ObjectMapper().createObjectNode()
+  //            node.put("ret", ret)
+  //            HanseResult.ok(data = Some(node))
+  //          }
+  //        }
+  //      r getOrElse Future(HanseResult.unprocessable())
+  //    }
+  //  )
+
+  def refund(orderId: Long) = Action.async(
+    request => {
+      val r = for {
+        body <- request.body.asJson
+        userId <- request.headers.get("UserId") map (_.toLong)
+        refundFee <- (body \ "refundFee").asOpt[Float]
+      } yield {
+        for {
+          order <- OrderAPI.getOrder(orderId, Seq("totalFee"))
+          ws <- PaymentService.refund(Map("refund_fee" -> refundFee * 100, "total_fee" -> (order.totalPrice * 100).toString, "out_trade_no" -> orderId))
+        } yield {
+          val ret = new String(ws.bodyAsBytes, "UTF8")
+          val node = new ObjectMapper().createObjectNode()
+          node.put("ret", ret)
+          HanseResult.ok(data = Some(node))
+        }
+      }
+      r getOrElse Future(HanseResult.unprocessable())
     }
   )
 

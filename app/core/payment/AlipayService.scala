@@ -129,6 +129,20 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
       }
     }
   }
+
+  /**
+   * 申请退款
+   * @param params
+   * @return
+   */
+  override def refundApply(params: Map[String, Any]): Future[Any] = ???
+
+  /**
+   * 查询退款
+   * @param params
+   * @return
+   */
+  override def refundQuery(params: Map[String, Any]): Future[Any] = ???
 }
 
 object AlipayService {

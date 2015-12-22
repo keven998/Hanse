@@ -93,6 +93,20 @@ trait PaymentService {
    * @return
    */
   def handleCallback(params: Map[String, Any]): Future[Any]
+
+  /**
+   * 申请退款
+   * @param params
+   * @return
+   */
+  def refundApply(params: Map[String, Any]): Future[Any]
+
+  /**
+   * 查询退款
+   * @param params
+   * @return
+   */
+  def refundQuery(params: Map[String, Any]): Future[Any]
 }
 
 object PaymentService {
