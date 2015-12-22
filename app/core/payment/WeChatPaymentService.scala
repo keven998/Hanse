@@ -112,9 +112,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    */
   override def refreshPaymentStatus(order: Order): Future[Order] = {
     // 调用微信查询订单接口
-    val callBack = Map("notify_url" -> WeChatPaymentService.notifyUrl)
     val randomStr = Map("nonce_str" -> UUID.randomUUID().toString.replace("-", ""))
-
     val accountInfo = {
       Map("appid" -> WeChatPaymentService.appid, "mch_id" -> WeChatPaymentService.mchid)
     }
@@ -123,12 +121,12 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       //"transaction_id" -> prepayId
       "out_trade_no" -> order.orderId.toString
     )
-    val params: Map[String, String] = content ++ accountInfo ++ callBack ++ randomStr
+    val params: Map[String, String] = content ++ accountInfo ++ randomStr
     val sign = Map("sign" -> genSign(params))
     val resultParams = params ++ sign
 
     val body = Utils.addChildrenToXML(<xml></xml>, resultParams)
-    val wsFuture = WS.url(WeChatPaymentService.unifiedOrderUrl)
+    val wsFuture = WS.url(WeChatPaymentService.queryUrl)
       .withHeaders("Content-Type" -> "text/xml; charset=utf-8")
       .withRequestTimeout(30000)
       .post(body.toString())
@@ -232,6 +230,8 @@ object WeChatPaymentService {
     val path2 = controllers.routes.PaymentCtrl.wechatCallback().url
     s"$protocol://$host${port map (p => s":$p") getOrElse ""}$path1$path2"
   }
+
+  lazy val queryUrl = (conf getString "hanse.payment.wechat.queryOrderUrl").get
 
   lazy val appid = (conf getString "hanse.payment.wechat.appid").get
 
