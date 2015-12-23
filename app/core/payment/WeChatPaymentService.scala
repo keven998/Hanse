@@ -54,12 +54,18 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
     val accountInfo = {
       Map("appid" -> WeChatPaymentService.appid, "mch_id" -> WeChatPaymentService.mchid)
     }
+
+    val totalFee = (order.totalPrice * 100).toInt
+    if (totalFee == 0) {
+      throw new RuntimeException(s"Error in creating WeChat prepay. return_msg=订单价格不能为0")
+    }
+
     val content = Map(
       "out_trade_no" -> order.orderId.toString,
       // WechatPrepay.FD_SPBILL_CREATE_IP -> ip,
       "body" -> order.commodity.title,
       "trade_type" -> "APP",
-      "total_fee" -> (order.totalPrice.toDouble * 100).toInt.toString
+      "total_fee" -> totalFee.toString
     )
     val params: Map[String, String] = content ++ accountInfo ++ callBack ++ randomStr
     val sign = Map("sign" -> genSign(params))
