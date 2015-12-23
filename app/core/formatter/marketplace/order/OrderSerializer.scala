@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.product.Commodity
+import core.misc.Utils
 
 import scala.collection.JavaConversions._
 
@@ -16,9 +17,9 @@ class OrderSerializer extends JsonSerializer[Order] {
   override def serialize(order: Order, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
     //gen.writeStringField("id", Option(order.id.toString) getOrElse "")
-    gen.writeNumberField("orderId", Option(order.orderId) getOrElse 0L)
-    gen.writeNumberField("consumerId", Option(order.consumerId) getOrElse 0L)
-    gen.writeStringField("planId", Option(order.planId) getOrElse "")
+    gen.writeNumberField("orderId", order.orderId)
+    gen.writeNumberField("consumerId", order.consumerId)
+    gen.writeStringField("planId", order.planId)
 
     // Commodity
     gen.writeFieldName("commodity")
@@ -57,14 +58,9 @@ class OrderSerializer extends JsonSerializer[Order] {
     //    }
     //    gen.writeEndArray()
 
-    // 计算商品总价
-    if (order.commodity != null && order.commodity.plans != null && order.commodity.plans.nonEmpty)
-      order.totalPrice = order.commodity.plans.get(0).price * order.quantity
-    else
-      order.totalPrice = 0
-    gen.writeNumberField("totalPrice", order.totalPrice)
-    gen.writeNumberField("discount", Option(order.discount) getOrElse 0)
-    gen.writeNumberField("quantity", Option(order.quantity) getOrElse 0)
+    gen.writeNumberField("totalPrice", Utils.getActualPrice(order.totalPrice))
+    gen.writeNumberField("discount", Utils.getActualPrice(order.discount))
+    gen.writeNumberField("quantity", order.quantity)
 
     // paymentInfo
     //    gen.writeFieldName("paymentInfo")

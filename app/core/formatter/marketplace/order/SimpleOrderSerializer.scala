@@ -4,8 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.product.Commodity
-
-import scala.collection.JavaConversions._
+import core.misc.Utils
 
 /**
  * Created by pengyt on 2015/11/21.
@@ -36,14 +35,9 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
     //    }
     //    gen.writeEndArray()
 
-    // 计算商品总价
-    if (order.commodity != null && order.commodity.plans != null && order.commodity.plans.nonEmpty)
-      order.totalPrice = order.commodity.plans.get(0).price * order.quantity
-    else
-      order.totalPrice = 0
-    gen.writeNumberField("totalPrice", order.totalPrice)
-    gen.writeNumberField("discount", Option(order.discount) getOrElse 0)
-    gen.writeNumberField("quantity", Option(order.quantity) getOrElse 0)
+    gen.writeNumberField("totalPrice", Utils.getActualPrice(order.totalPrice))
+    gen.writeNumberField("discount", Utils.getActualPrice(order.discount))
+    gen.writeNumberField("quantity", order.quantity)
 
     //gen.writeStringField("comment", Option(order.comment) getOrElse "")
     gen.writeStringField("status", Option(order.status) getOrElse "")

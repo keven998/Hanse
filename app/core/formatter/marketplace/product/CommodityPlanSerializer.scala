@@ -3,6 +3,7 @@ package core.formatter.marketplace.product
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
 import com.lvxingpai.model.marketplace.product.{ StockInfo, Pricing, CommodityPlan }
+import core.misc.Utils
 import scala.collection.JavaConversions._
 
 /**
@@ -30,9 +31,8 @@ class CommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
     }
     gen.writeEndArray()
 
-    gen.writeNumberField("marketPrice", Option(commodityPlan.marketPrice) getOrElse 0)
-
-    gen.writeNumberField("price", Option(commodityPlan.price) getOrElse 0)
+    gen.writeNumberField("marketPrice", Utils.getActualPrice(commodityPlan.marketPrice))
+    gen.writeNumberField("price", Utils.getActualPrice(commodityPlan.price))
 
     gen.writeFieldName("stockInfo")
     gen.writeStartArray()
