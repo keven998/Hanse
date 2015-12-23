@@ -30,9 +30,9 @@ class CommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
     }
     gen.writeEndArray()
 
-    gen.writeNumberField("marketPrice", Option(commodityPlan.marketPrice) getOrElse 0.0f)
+    gen.writeNumberField("marketPrice", Option(commodityPlan.marketPrice) getOrElse 0)
 
-    gen.writeNumberField("price", Option(commodityPlan.price) getOrElse 0.0f)
+    gen.writeNumberField("price", Option(commodityPlan.price) getOrElse 0)
 
     gen.writeFieldName("stockInfo")
     gen.writeStartArray()

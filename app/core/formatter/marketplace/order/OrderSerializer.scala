@@ -63,7 +63,7 @@ class OrderSerializer extends JsonSerializer[Order] {
     else
       order.totalPrice = 0
     gen.writeNumberField("totalPrice", order.totalPrice)
-    gen.writeNumberField("discount", Option(order.discount) getOrElse 0.0f)
+    gen.writeNumberField("discount", Option(order.discount) getOrElse 0)
     gen.writeNumberField("quantity", Option(order.quantity) getOrElse 0)
 
     // paymentInfo
