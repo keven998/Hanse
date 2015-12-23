@@ -22,6 +22,10 @@ object Utils {
     case _ => n
   }
 
+  def getActualPrice(data: Int): Double = {
+    Math.round(data * 100) / 10000.00
+  }
+
   def nonceStr() = {
     val str = Random.nextInt().toString + System.currentTimeMillis / 1000
     val msg = MessageDigest.getInstance("MD5").digest(str.getBytes("UTF-8"))

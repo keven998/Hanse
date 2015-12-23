@@ -6,6 +6,7 @@ import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.ImageItem
+import core.misc.Utils
 
 import scala.collection.JavaConversions._
 
@@ -19,9 +20,9 @@ class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeNumberField("commodityId", commodity.commodityId)
 
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
-    gen.writeNumberField("marketPrice", Option(commodity.marketPrice) getOrElse 0.0f)
-    gen.writeNumberField("price", Option(commodity.price) getOrElse 0.0f)
-    gen.writeNumberField("rating", Option(commodity.rating) getOrElse 0.0d)
+    gen.writeNumberField("marketPrice", Utils.getActualPrice(commodity.marketPrice))
+    gen.writeNumberField("price", Utils.getActualPrice(commodity.price))
+    //gen.writeNumberField("rating", Utils.getActualPrice(commodity.rating))
     gen.writeNumberField("salesVolume", Option(commodity.salesVolume) getOrElse 0)
 
     gen.writeFieldName("seller")

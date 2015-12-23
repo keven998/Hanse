@@ -6,6 +6,7 @@ import com.lvxingpai.model.geo.{ Country, Locality }
 import com.lvxingpai.model.marketplace.product.{ CommodityPlan, Commodity }
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.{ ImageItem, RichText }
+import core.misc.Utils
 
 import scala.collection.JavaConversions._
 
@@ -22,8 +23,8 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
     gen.writeNumberField("rating", Option(commodity.rating) getOrElse 0.0d)
     gen.writeNumberField("salesVolume", Option(commodity.salesVolume) getOrElse 0)
-    gen.writeNumberField("marketPrice", Option(commodity.marketPrice) getOrElse 0.0f)
-    gen.writeNumberField("price", Option(commodity.price) getOrElse 0.0f)
+    gen.writeNumberField("marketPrice", Utils.getActualPrice(commodity.marketPrice))
+    gen.writeNumberField("price", Utils.getActualPrice(commodity.price))
 
     // categories
     gen.writeFieldName("category")

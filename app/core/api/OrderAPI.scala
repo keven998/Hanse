@@ -279,7 +279,7 @@ object OrderAPI {
   def updatePayment(paymentVendor: String, amount: Float, order: Order)(implicit ds: Datastore): Unit = {
     val prepay = new Prepay()
     prepay.provider = paymentVendor
-    prepay.amount = amount
+    prepay.amount = Math.round(amount * 10000) / 100
     //prepay.timestamp = new Date()
     order.paymentInfo.put(paymentVendor, prepay)
     val query = ds.createQuery(classOf[Order]).field("orderId").equal(order.orderId)
