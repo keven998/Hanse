@@ -32,7 +32,6 @@ class CommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
     gen.writeEndArray()
 
     gen.writeNumberField("marketPrice", Utils.getActualPrice(commodityPlan.marketPrice))
-
     gen.writeNumberField("price", Utils.getActualPrice(commodityPlan.price))
 
     gen.writeFieldName("stockInfo")

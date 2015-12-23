@@ -58,11 +58,6 @@ class OrderSerializer extends JsonSerializer[Order] {
     //    }
     //    gen.writeEndArray()
 
-    // TODO 计算商品总价
-    //    if (order.commodity != null && order.commodity.plans != null && order.commodity.plans.nonEmpty)
-    //      order.totalPrice = order.commodity.plans.get(0).price * order.quantity
-    //    else
-    //      order.totalPrice = 0
     gen.writeNumberField("totalPrice", Utils.getActualPrice(order.totalPrice))
     gen.writeNumberField("discount", Utils.getActualPrice(order.discount))
     gen.writeNumberField("quantity", order.quantity)
