@@ -31,41 +31,6 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
 
   val dateFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
-  //  // TODO 为何需要OrderTemp, ContactTemp, PhoneNumberTemp等临时类?
-  //  case class OrderTemp(name: String, commodity: Commodity, contact: ContactTemp, planId: String,
-  //                       quantity: Int, comment: String, time: Date,
-  //                       consumerId: Long, travellers: Map[String, RealNameInfo]) {
-  //    def toOrder = {
-  //      val order = new Order
-  //      val now = DateTime.now().toDate
-  //      order.id = new ObjectId
-  //      order.orderId = now.getTime
-  //      order.consumerId = consumerId
-  //      order.commodity = commodity
-  //      order.contact = contact.toContact
-  //      order.planId = planId
-  //      order.quantity = quantity
-  //      // TODO OOXX
-  //      order.totalPrice = quantity * commodity.price
-  //      order.comment = comment
-  //      order.rendezvousTime = time
-  //      order.status = "pending"
-  //      order.createTime = now
-  //      order.updateTime = now
-  //      // TODO 设置订单的失效时间为三天
-  //      val expireDate = DateTime.now().plusDays(3)
-  //      order.expireDate = expireDate.toDate
-  //      order.travellers = if (travellers != null) travellers.map(_._2).toList.asJava else null
-  //      val act = new OrderActivity
-  //      act.action = "create"
-  //      act.timestamp = now
-  //      act.data = Map[String, Any]("userId" -> consumerId).asJava
-  //      // TODO act.data
-  //      order.activities = util.Arrays.asList(act)
-  //      order
-  //    }
-  //  }
-
   case class ContactTemp(surname: String, givenName: String, phone: PhoneNumber, email: String) {
     def toContact = {
       val contact = new RealNameInfo
@@ -133,14 +98,17 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       if (callerId.isEmpty) Future(HanseResult.forbidden())
       else {
         for {
-          order <- OrderAPI.getOrder(orderId)
+          opt <- OrderAPI.getOrder(orderId)
         } yield {
-          if (callerId.get == order.consumerId.toString) {
-            val node = OrderFormatter.instance.formatJsonNode(order)
-            HanseResult(data = Some(node))
-          } else {
-            HanseResult.forbidden()
-          }
+          opt map (order => {
+            val order = opt.get
+            if (callerId.get == order.consumerId.toString) {
+              val node = OrderFormatter.instance.formatJsonNode(order)
+              HanseResult(data = Some(node))
+            } else {
+              HanseResult.forbidden()
+            }
+          }) getOrElse HanseResult.notFound(Some(s"Invalid order id: $orderId"))
         }
       }
     }

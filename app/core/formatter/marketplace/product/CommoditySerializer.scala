@@ -22,8 +22,8 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
     gen.writeNumberField("rating", Option(commodity.rating) getOrElse 0.0d)
     gen.writeNumberField("salesVolume", Option(commodity.salesVolume) getOrElse 0)
-    gen.writeNumberField("marketPrice", Option(commodity.marketPrice) getOrElse 0.0f)
-    gen.writeNumberField("price", Option(commodity.price) getOrElse 0.0f)
+    gen.writeNumberField("marketPrice", Option(commodity.marketPrice) getOrElse 0)
+    gen.writeNumberField("price", Option(commodity.price) getOrElse 0)
 
     // categories
     gen.writeFieldName("category")

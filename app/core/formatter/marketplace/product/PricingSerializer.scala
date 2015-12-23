@@ -13,7 +13,7 @@ class PricingSerializer extends JsonSerializer[Pricing] {
   override def serialize(pricing: Pricing, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
 
-    gen.writeNumberField("price", Option(pricing.price) getOrElse 0.0f)
+    gen.writeNumberField("price", Option(pricing.price) getOrElse 0)
 
     gen.writeFieldName("timeRange")
     gen.writeStartArray()

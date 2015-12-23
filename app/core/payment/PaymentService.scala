@@ -4,7 +4,7 @@ import java.util.Date
 
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
-import core.exception.OrderStatusException
+import core.exception.{ ResourceNotFoundException, OrderStatusException }
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
@@ -38,7 +38,7 @@ trait PaymentService {
   protected def createSidecar(order: Order, prepay: Prepay): Map[String, Any]
 
   /**
-   * 获得一个Prepay对象. 如果对应的订单中已有Prepay, 则返回之; 否则创建一个.
+   * 获得一个Prepay对象. 如果对应的订单中已有Prepay, 则返回之; 否则创建一个. 如果orderId错误, 将抛出ResourceNotFoundException异常
    * @param orderId 订单号
    * @return
    */
@@ -48,7 +48,8 @@ trait PaymentService {
     // 尝试从paymentInfo中获得Prepay, 否则就新建
     val result: Future[Option[(Prepay, Map[String, Any])]] =
       OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", "updateTime", "status", "expireDate",
-        "commodity", "paymentInfo"))(datastore) flatMap (order => {
+        "commodity", "paymentInfo"))(datastore) flatMap (opt => {
+        val order = if (opt.nonEmpty) opt.get else throw ResourceNotFoundException(s"Invalid order id: $orderId")
 
         // 订单状态检查
         if (order.status != "pending")
