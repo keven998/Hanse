@@ -3,6 +3,7 @@ package core.model.trade.order
 import javax.validation.constraints.{ Min, NotNull }
 
 import core.model.BasicEntity
+import org.mongodb.morphia.annotations.Entity
 
 import scala.beans.BeanProperty
 
@@ -11,7 +12,34 @@ import scala.beans.BeanProperty
  *
  * Created by zephyre on 10/20/15.
  */
+@Entity
 class Prepay extends BasicEntity {
+
+  /**
+   * 第三方系统中的订单号
+   */
+  @NotNull
+  @BeanProperty
+  var prepayId: String = null
+
+  /**
+   * 随机字符串
+   */
+  @BeanProperty
+  var nonceString: String = null
+
+  /**
+   * 签名
+   */
+  @BeanProperty
+  var sign: String = null
+
+  /**
+   * 交易类型
+   */
+  @NotNull
+  @BeanProperty
+  var tradeType: String = null
 
   /**
    * 对应于哪个支付平台
@@ -33,4 +61,11 @@ class Prepay extends BasicEntity {
   @NotNull
   @BeanProperty
   var timestamp: Long = 0
+
+  /**
+   * 预支付结果
+   */
+  @NotNull
+  @BeanProperty
+  var result: String = null
 }

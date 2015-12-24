@@ -1,22 +1,31 @@
-name := """play-scala"""
+name := """hanse"""
+
+organization := "com.lvxingpai"
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+val hanse = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.4"
 val morphiaVersion = "1.0.0"
+val finagleVersion = "6.30.0"
 
 libraryDependencies ++= Seq(
   jdbc,
   cache,
   ws,
   specs2 % Test,
-  "com.lvxingpai" %% "appconfig" % "0.2.1-SNAPSHOT",
-  "com.lvxingpai" %% "core-model" % "0.1.0-SNAPSHOT",
-  "com.twitter" %% "util-collection" % "6.27.0",
+  "com.lvxingpai" %% "core-model" % "0.2.0-SNAPSHOT",
+  "com.lvxingpai" %% "etcd-store-play" % "0.1.1-SNAPSHOT",
+  "com.lvxingpai" %% "morphia-play-injector" % "0.1.3-SNAPSHOT",
   "org.mongodb.morphia" % "morphia" % morphiaVersion,
-  "org.mongodb.morphia" % "morphia-validation" % morphiaVersion
+  "org.mongodb.morphia" % "morphia-validation" % morphiaVersion,
+  "org.apache.thrift" % "libthrift" % "0.9.3",
+  "com.twitter" %% "scrooge-core" % "4.2.0",
+  "com.twitter" %% "finagle-thrift" % finagleVersion,
+  "com.twitter" %% "finagle-core" % finagleVersion,
+  "com.twitter" %% "finagle-thrift" % finagleVersion,
+  "com.twitter" %% "finagle-thriftmux" % finagleVersion
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
