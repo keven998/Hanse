@@ -8,14 +8,14 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
-import core.exception.GeneralPaymentException
+import core.exception.{ ResourceNotFoundException, GeneralPaymentException }
 import core.misc.Utils
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
 import play.api.Play.current
 import play.api.inject.BindingKey
 import play.api.libs.ws.WS
-import play.api.{ Configuration, Play }
+import play.api.{ Logger, Configuration, Play }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -54,12 +54,18 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
     val accountInfo = {
       Map("appid" -> WeChatPaymentService.appid, "mch_id" -> WeChatPaymentService.mchid)
     }
+
+    val totalFee = order.totalPrice
+    if (totalFee == 0) {
+      throw new RuntimeException(s"Error in creating WeChat prepay. return_msg=订单价格不能为0")
+    }
+
     val content = Map(
       "out_trade_no" -> order.orderId.toString,
       // WechatPrepay.FD_SPBILL_CREATE_IP -> ip,
       "body" -> order.commodity.title,
       "trade_type" -> "APP",
-      "total_fee" -> (order.totalPrice.toDouble * 100).toInt.toString
+      "total_fee" -> totalFee.toString
     )
     val params: Map[String, String] = content ++ accountInfo ++ callBack ++ randomStr
     val sign = Map("sign" -> genSign(params))
@@ -206,6 +212,45 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
         throw e
       }
     }
+  }
+
+  /**
+   * 执行退款操作
+   *
+   * @return
+   */
+  def refund(orderId: Long, refundPrice: Int): Future[Unit] = {
+    OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice"))(datastore) flatMap (opt => {
+      val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
+
+      val content = Map("refund_fee" -> refundPrice.toString, "total_fee" -> order.totalPrice.toString,
+        "out_trade_no" -> orderId.toString)
+
+      val url = "https://api.mch.weixin.qq.com/secapi/pay/refund"
+      val randomStr = Map("nonce_str" -> Utils.nonceStr())
+
+      val accountInfo = {
+        val mchid = "1278401701"
+        val appid = "wx86048e56adaf7486"
+        Map("appid" -> appid, "mch_id" -> mchid)
+      }
+
+      val refundInfo = {
+        Map("op_user_id" -> "1278401701") ++ Map("out_refund_no" -> System.currentTimeMillis.toString)
+      }
+
+      val params = content ++ accountInfo ++ randomStr ++ refundInfo
+      val sign = Map("sign" -> genSign(params))
+      val resultParams = params ++ sign
+      val body = Utils.addChildrenToXML(<xml></xml>, resultParams)
+      val ret = WS.url(url)
+        .withHeaders("Content-Type" -> "text/xml; charset=utf-8")
+        .withRequestTimeout(30000)
+        .post(body.toString())
+      ret
+    }) map (response => {
+      Logger.info(response.body)
+    })
   }
 
   override def refundApply(params: Map[String, Any]): Future[Any] = {

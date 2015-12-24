@@ -7,7 +7,7 @@ import javax.inject.Inject
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
-import core.exception.GeneralPaymentException
+import core.exception.{ ResourceNotFoundException, GeneralPaymentException }
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
 import play.api.Play.current
@@ -101,10 +101,10 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
           }
 
           OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", s"paymentInfo.$providerName"))(datastore) flatMap
-            (order => {
-              if (order == null) {
-                throw GeneralPaymentException(s"Invalid order: $orderId")
-              } else {
+            (opt => {
+              if (opt.isEmpty) throw ResourceNotFoundException(s"Invalid order id: $orderId")
+              else {
+                val order = opt.get
                 if (!(order.paymentInfo containsKey providerName))
                   throw GeneralPaymentException(s"Order $orderId doesn't have payment information")
 
@@ -143,6 +143,14 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
    * @return
    */
   override def refundQuery(params: Map[String, Any]): Future[Any] = ???
+
+  /**
+   * 执行退款操作
+   * @param orderId
+   * @param refundPrice
+   * @return
+   */
+  override def refund(orderId: Long, refundPrice: Int): Future[Unit] = ???
 }
 
 object AlipayService {

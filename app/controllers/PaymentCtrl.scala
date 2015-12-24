@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.api.OrderAPI
-import core.exception.GeneralPaymentException
+import core.exception.{ ResourceNotFoundException, GeneralPaymentException }
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.model.trade.order.WechatPrepay
@@ -41,7 +41,9 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       val node = new ObjectMapper().createObjectNode()
       node.put("requestString", sidecar("requestString").toString)
       HanseResult.ok(data = Some(node))
-    })
+    }) recover {
+      case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+    }
   }
 
   def createWeChatPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
@@ -56,7 +58,9 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         node.put(key, value.toString)
       })
       HanseResult.ok(data = Some(node))
-    })
+    }) recover {
+      case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+    }
   }
 
   /**
@@ -108,6 +112,8 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           case e: GeneralPaymentException =>
             // 出现任何失败的情况
             HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+          case e: ResourceNotFoundException =>
+            HanseResult.notFound(Some(e.getMessage))
         }
       }
       ret getOrElse Future {
@@ -140,66 +146,13 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           case e: GeneralPaymentException =>
             // 出现任何失败的情况
             HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+          case e: ResourceNotFoundException =>
+            HanseResult.notFound(Some(e.getMessage))
         }
       }) getOrElse Future {
         HanseResult.unprocessable()
       }
   }
-
-  def getPaymentsStatus(orderId: Long) = Action.async(
-    request => {
-      val ret = for {
-        orderValue <- OrderAPI.getOrder(orderId)
-        wcResponse <- PaymentService.queryOrder(
-          Map(WechatPrepay.FD_TRANSACTION_ID ->
-            orderValue.paymentInfo.get(PaymentVendor.Wechat).prepayId)
-        )
-      } yield {
-        val str = orderValue.status
-        Ok(str)
-      }
-      ret
-    }
-  )
-
-  def getPayments(orderId: Long, provider: String) = Action.async(
-    request => {
-      val ret = for {
-        orderValue <- OrderAPI.getOrder(orderId)
-        wcResponse <- PaymentService.queryOrder(
-          Map(WechatPrepay.FD_TRANSACTION_ID ->
-            orderValue.paymentInfo.get(PaymentVendor.Wechat).prepayId)
-        )
-      } yield {
-        val str = orderValue.status
-        Ok(str)
-      }
-      ret
-    }
-  )
-
-  //  def refund(orderId: Long) = Action.async(
-  //    request => {
-  //      val r = for {
-  //        body <- request.body.asJson
-  //        userId <- request.headers.get("UserId") map (_.toLong)
-  //        refundFee <- (body \ "refundFee").asOpt[Float]
-  //      } yield {
-  //          val refundNo = new Date getTime
-  //          for {
-  //           // od <- OrderAPI.getOrder(orderId, Seq("totalFee"))
-  //            ws <- PaymentService.refund(Map("refund_fee" -> refundFee * 100, "total_fee" -> (0.01 * 100).toString
-  //              , "out_refund_no" -> refundNo))
-  //        } yield {
-  //            val ret = new String(ws.bodyAsBytes, "UTF8")
-  //            val node = new ObjectMapper().createObjectNode()
-  //            node.put("ret", ret)
-  //            HanseResult.ok(data = Some(node))
-  //          }
-  //        }
-  //      r getOrElse Future(HanseResult.unprocessable())
-  //    }
-  //  )
 
   def refund(orderId: Long) = Action.async(
     request => {
@@ -208,14 +161,8 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         userId <- request.headers.get("UserId") map (_.toLong)
         refundFee <- (body \ "refundFee").asOpt[Float]
       } yield {
-        for {
-          order <- OrderAPI.getOrder(orderId, Seq("totalFee"))
-          ws <- PaymentService.refund(Map("refund_fee" -> refundFee * 100, "total_fee" -> (order.totalPrice * 100).toString, "out_trade_no" -> orderId))
-        } yield {
-          val ret = new String(ws.bodyAsBytes, "UTF8")
-          val node = new ObjectMapper().createObjectNode()
-          node.put("ret", ret)
-          HanseResult.ok(data = Some(node))
+        WeChatPaymentService.instance.refund(orderId, (refundFee * 100).toInt) map (_ => HanseResult.ok()) recover {
+          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
         }
       }
       r getOrElse Future(HanseResult.unprocessable())
