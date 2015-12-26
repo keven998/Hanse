@@ -1,10 +1,14 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
+import core.model.trade.order.OrderStatus
 import core.payment.{ AlipayService, PaymentService, WeChatPaymentService }
+import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
+import org.mongodb.morphia.query.UpdateResults
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -74,6 +78,10 @@ object OrderAPI {
    */
   def setPaid(orderId: Long, provider: PaymentService.Provider.Value)(implicit ds: Datastore): Future[Unit] = {
     val providerName = provider.toString
+    // 设置activity
+    val act = new OrderActivity
+    act.action = OrderStatus.Paid
+    act.timestamp = DateTime.now().toDate
 
     // 设置payment状态
     val paymentQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
@@ -83,7 +91,7 @@ object OrderAPI {
     // 如果订单还处于pending, 则将其设置为paid
     val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
       s"paymentInfo.$providerName" notEqual null field "status" equal "pending"
-    val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", "paid")
+    val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", "paid").add("activities", act)
 
     Future.sequence(Seq(
       Future {
@@ -92,6 +100,52 @@ object OrderAPI {
         ds.update(statusQuery, statusOps)
       }
     )) map (_ => ())
+  }
+
+  /**
+   * 将某个订单设置为取消
+   *
+   * @param orderId
+   * @param data
+   * @param ds
+   * @return
+   */
+  def setCancel(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
+    // 设置activity
+    val act = new OrderActivity
+    act.action = OrderStatus.Canceled
+    act.timestamp = DateTime.now().toDate
+    act.data = data.asJava
+    Future {
+      // 预支付订单，可关闭
+      val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(OrderStatus.Pending)
+      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", OrderStatus.Canceled).add("activities", act)
+      val ret = ds.update(query, updateOps)
+      ret
+    }
+  }
+
+  /**
+   * 将某个订单设置为申请退款
+   *
+   * @param orderId
+   * @param data
+   * @param ds
+   * @return
+   */
+  def setRefundApplied(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
+    // 设置activity
+    val act = new OrderActivity
+    act.action = OrderStatus.RefundApplied
+    act.timestamp = DateTime.now().toDate
+    act.data = data.asJava
+    Future {
+      val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
+      // 已支付或已发货的订单，可申请退款
+      query.or(query.criteria("status").equal(OrderStatus.Paid), query.criteria("status").equal(OrderStatus.Committed))
+      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", OrderStatus.RefundApplied).add("activities", act)
+      ds.update(query, updateOps)
+    }
   }
 
   /**
@@ -148,7 +202,7 @@ object OrderAPI {
    * @param orderId 订单号
    * @param status 订单状态
    */
-  def updateOrderStatus(orderId: Long, status: String, act: OrderActivity)(implicit ds: Datastore) = {
+  def updateOrderStatus(orderId: Long, status: String, act: OrderActivity)(implicit ds: Datastore): Future[UpdateResults] = {
     Future {
       val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
       val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", status).add("activities", act)

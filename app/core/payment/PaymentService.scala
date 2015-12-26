@@ -3,8 +3,10 @@ package core.payment
 import java.util.Date
 
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
+import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.api.OrderAPI
-import core.exception.{ ResourceNotFoundException, OrderStatusException }
+import core.exception.{ OrderStatusException, ResourceNotFoundException }
+import core.model.trade.order.OrderStatus
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
@@ -94,6 +96,55 @@ trait PaymentService {
    * @return
    */
   def handleCallback(params: Map[String, Any]): Future[Any]
+
+  /**
+   * 执行退款操作
+   * @param orderId
+   * @param refundPrice
+   * @return
+   */
+  def refund(userId: Long, orderId: Long, refundPrice: Int): Future[Unit] = {
+    OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "paymentInfo", "status"))(datastore) flatMap (opt => {
+      val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
+
+      // 只有申请退款的订单才能退款
+      if (!order.status.equals(OrderStatus.RefundApplied))
+        throw OrderStatusException(s"Not refund Applied order id: $orderId")
+      val payment = Option(order.paymentInfo)
+
+      // 判断退款是否超额
+      val totalPrice = order.totalPrice
+      if (refundPrice > totalPrice)
+        throw ResourceNotFoundException(s"Refund price express. " +
+          s"TotalPrice:$totalPrice,RefundPrice:$refundPrice,OrderId:$orderId")
+
+      // 判断是否有支付信息
+      if (payment.isEmpty)
+        throw ResourceNotFoundException(s"Order not paid order id: $orderId")
+
+      val wc = payment.get.get(PaymentVendor.Wechat)
+
+      // 判断微信支付信息是否已经支付
+      if (wc != null && wc.paid)
+        refundProcess(userId, order, refundPrice)
+      else
+        throw ResourceNotFoundException(s"Order not paid by weixin order id: $orderId")
+    })
+  }
+
+  /**
+   * 退款操作
+   * @param refundPrice
+   * @return
+   */
+  def refundProcess(userId: Long, order: Order, refundPrice: Int): Future[Unit]
+
+  /**
+   * 查询退款
+   * @param params
+   * @return
+   */
+  def refundQuery(params: Map[String, Any]): Future[Any]
 }
 
 object PaymentService {

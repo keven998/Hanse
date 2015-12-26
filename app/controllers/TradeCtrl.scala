@@ -5,19 +5,16 @@ import javax.inject._
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
-import com.lvxingpai.model.marketplace.order.OrderActivity
 import com.lvxingpai.model.misc.PhoneNumber
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
-import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.libs.json._
-import play.api.mvc.{ Action, Controller, Result }
+import play.api.mvc.{ Action, Controller }
 
-import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -170,12 +167,9 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def operateOrder(orderId: Long) = Action.async(
     request => {
-      val userId = request.headers.get("UserId").getOrElse("").toLong
       val ret = for {
         body <- request.body.asJson
         action <- (body \ "action").asOpt[String]
-        memo <- (body \ "memo").asOpt[String] //备注
-        amount <- (body \ "amount").asOpt[Double] // 退款金额
         data1 <- (body \ "data").asOpt[JsObject] orElse Some(JsObject.apply(Seq()))
       } yield {
         val data = Map(data1.fields map (entry => {
@@ -193,11 +187,15 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
             case JsNull =>
               null
           }
-          key -> value
+          val filterValue = key match {
+            case "amount" => (value.asInstanceOf[Double] * 100).toInt
+            case _ => value
+          }
+          key -> filterValue
         }): _*)
         action match {
-          case "cancel" => operateOrderAct(userId, orderId, action, "canceled", data)
-          case "refund" => operateOrderAct(userId, orderId, action, "refundApplied", data)
+          case "cancel" => OrderAPI.setCancel(orderId, data) map (_ => HanseResult.ok())
+          case "refund" => OrderAPI.setRefundApplied(orderId, data) map (_ => HanseResult.ok())
           case _ => Future(HanseResult.unprocessable())
         }
       }
@@ -207,19 +205,50 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
     }
   )
 
-  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String,
-    data: Map[String, Any] = Map()): Future[Result] = {
-    val act = new OrderActivity
-    act.action = action
-    act.timestamp = DateTime.now().toDate
-    act.data = data.asJava
-    for {
-      update <- OrderAPI.updateOrderStatus(orderId, status, act)
-      order <- OrderAPI.getOrderOnlyStatus(orderId) if update != null
-    } yield {
-      val node = OrderStatusFormatter.instance.formatJsonNode(order)
-      HanseResult(data = Some(node))
-    }
+  //  def operateOrderAct(userId: Long, orderId: Long, action: String, status: String,
+  //                      data: Map[String, Any] = Map()): Future[Result] = {
+  //    val act = new OrderActivity
+  //    act.action = action
+  //    act.timestamp = DateTime.now().toDate
+  //    act.data = data.asJava
+  //
+  //    OrderAPI.getOrder(orderId) map (orderOp => {
+  //      val order = orderOp.get
+  //      val status = order.status
+  //
+  //      val ret = if (action.equals("canceled") {
+  //        // 对准备付款或已付款的订单，可以取消
+  //        val rr = if (status.equals(OrderStatus.Pending) || status.equals(OrderStatus.Paid)) {
+  //          OrderAPI.updateOrderStatus(orderId, status, act) flatMap  (_ => Future{HanseResult.ok()})
+  //        }else
+  //        // HanseResult.forbidden(None,Some(s"Order can not canceled. Order status is $status"))
+  //          Future{HanseResult.notFound(Some(s"Order can not canceled. Order status is $status"))}
+  //        rr
+  //        //对已付款或已发货的订单，可以申请退款
+  //      }else if (action.equals("refundApplied")) {
+  //        if (status.equals(OrderStatus.Paid) || status.equals(OrderStatus.Committed))
+  //          Future {
+  //            HanseResult.ok()
+  //          }
+  //        else
+  //          Future {
+  //            HanseResult.notFound(Some(s"Order can not canceled. Order status is $status"))
+  //          }
+  //      } else
+  //        Future {
+  //          HanseResult.notFound(Some(s"Order can not canceled. Order status is $status"))
+  //        }
+  //      Option(ret)
+  //    })
 
-  }
+  //    for {
+  //      OrderAPI.getOrder()
+  //        update <- OrderAPI.updateOrderStatus(orderId, status, act)
+  //      order <- OrderAPI.getOrderOnlyStatus(orderId) if update != null
+  //    } yield {
+  //      val node = OrderStatusFormatter.instance.formatJsonNode(order)
+  //      HanseResult(data = Some(node))
+  //    }
+
+  //  }
 }

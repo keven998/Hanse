@@ -4,7 +4,7 @@ import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.exception.{ ResourceNotFoundException, GeneralPaymentException }
+import core.exception.{ GeneralPaymentException, ResourceNotFoundException }
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.payment.PaymentService.Provider
@@ -149,5 +149,20 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         HanseResult.unprocessable()
       }
   }
+
+  def refund(orderId: Long) = Action.async(
+    request => {
+      val r = for {
+        body <- request.body.asJson
+        userId <- request.headers.get("UserId") map (_.toLong)
+        refundFee <- (body \ "refundFee").asOpt[Float]
+      } yield {
+        WeChatPaymentService.instance.refund(userId, orderId, (refundFee * 100).toInt) map (_ => HanseResult.ok()) recover {
+          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+        }
+      }
+      r getOrElse Future(HanseResult.unprocessable())
+    }
+  )
 
 }
