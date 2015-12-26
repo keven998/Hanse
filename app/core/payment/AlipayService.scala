@@ -113,12 +113,12 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
                 val orderPrice = order.totalPrice - order.discount
                 // 实际支付价格
                 val paidPrice = try {
-                  data.getOrElse("total_fee", "").toFloat
+                  (data.getOrElse("total_fee", "").toFloat * 100).toInt
                 } catch {
                   case _: NumberFormatException => Float.MinValue
                 }
                 // 如果二者不一致, 说明有误
-                if (Math.abs(paidPrice - orderPrice) > 1e-5) throw GeneralPaymentException("Invalid alipay callback")
+                if (paidPrice != orderPrice) throw GeneralPaymentException("Invalid alipay callback")
               }
               // 通过各种验证
               OrderAPI.setPaid(orderId, provider)(datastore) map (_ => "success")
@@ -270,7 +270,7 @@ object AlipayService {
 
     lazy val requestString = {
       val requestMap = Map("service" -> service, "partner" -> partner, "_input_charset" -> charset,
-        "seller_id" -> sellerId, "total_fee" -> amount.toString,
+        "seller_id" -> sellerId, "total_fee" -> (amount / 100.0).toString,
         "notify_url" -> notifyUrl, "out_trade_no" -> (outTradeNo take 64), "payment_type" -> paymentType,
         "subject" -> (subject take 128).replaceAllLiterally("\"", ""),
         "body" -> (body take 512).replaceAllLiterally("\"", ""))
