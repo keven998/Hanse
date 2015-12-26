@@ -4,15 +4,11 @@ import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
-import com.lvxingpai.model.marketplace.trade.PaymentVendor
-import core.api.OrderAPI
-import core.exception.{ ResourceNotFoundException, GeneralPaymentException }
+import core.exception.{ GeneralPaymentException, ResourceNotFoundException }
 import core.misc.HanseResult
 import core.misc.Implicits._
-import core.model.trade.order.WechatPrepay
 import core.payment.PaymentService.Provider
 import core.payment.{ AlipayService, WeChatPaymentService }
-import core.service.PaymentService
 import play.api.mvc.{ Action, Controller, Result, Results }
 import play.api.{ Configuration, Logger }
 
@@ -161,7 +157,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         userId <- request.headers.get("UserId") map (_.toLong)
         refundFee <- (body \ "refundFee").asOpt[Float]
       } yield {
-        WeChatPaymentService.instance.refund(orderId, (refundFee * 100).toInt) map (_ => HanseResult.ok()) recover {
+        WeChatPaymentService.instance.refund(userId, orderId, (refundFee * 100).toInt) map (_ => HanseResult.ok()) recover {
           case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
         }
       }

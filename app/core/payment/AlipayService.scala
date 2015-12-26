@@ -7,7 +7,8 @@ import javax.inject.Inject
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
-import core.exception.{ ResourceNotFoundException, GeneralPaymentException }
+import core.exception.{ GeneralPaymentException, ResourceNotFoundException }
+import core.misc.Utils
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
 import play.api.Play.current
@@ -131,13 +132,6 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
   }
 
   /**
-   * 申请退款
-   * @param params
-   * @return
-   */
-  override def refundApply(params: Map[String, Any]): Future[Any] = ???
-
-  /**
    * 查询退款
    * @param params
    * @return
@@ -150,7 +144,66 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
    * @param refundPrice
    * @return
    */
-  override def refund(orderId: Long, refundPrice: Int): Future[Unit] = ???
+  override def refund(userId: Long, orderId: Long, refundPrice: Int): Future[Unit] = ???
+
+  //  {
+  //    // TODO 当前支付宝不支持手机退款
+  //    OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice"))(datastore) flatMap (opt => {
+  //      val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
+  //
+  //      val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+  //      val now = formatter.format(new Date())
+  //      val refundNo = System.currentTimeMillis().toString
+  //      val content = Map(
+  //        "service" -> "refund_fastpay_by_platform_pwd",
+  //        "partner" -> AlipayService.partner,
+  //        "_input_charset" -> "UTF-8",
+  //        "seller_email" -> AlipayService.sellerId,
+  //        "seller_user_id" -> AlipayService.partner,
+  //        "refund_date" -> now,
+  //        "batch_no" -> refundNo,
+  //        "batch_num" -> 1.toString,
+  //        "detail_data" -> (orderId + "^" + refundPrice / 100.00 + "^" + "我要退款")
+  //      )
+  //      // notify_url
+  //      val url = AlipayService.refundOrderUrl
+  //      val sign = Map("sign" -> genSign(content))
+  //      val queryString = (content ++ sign ++ Map("sign_type" -> "MD5")).map(x => {
+  //        val k = x._1
+  //        val v = x._2
+  //        s"&$k=$v"
+  //      }).mkString
+  //
+  //      val qString = queryString.substring(1, queryString.length)
+  //
+  //      val query = s"$url?$qString"
+  //
+  //      val ret = WS.url(query)
+  //        .withRequestTimeout(30000)
+  //        .get()
+  //      ret
+  //    }) map (response => {
+  //      Logger.info(response.body)
+  //    })
+  //  }
+
+  /**
+   * 计算签名
+   * @param data
+   * @return
+   */
+  private def genSign(data: Map[String, String]): String = {
+    val stringA = (for ((k, v) <- data.toList.sorted) yield s"$k=$v").mkString("&")
+    val stringSignTemp = stringA + "&key=" + AlipayService.md5Key
+    Utils.MD5(stringSignTemp).toUpperCase
+  }
+
+  /**
+   * 退款操作
+   * @param refundPrice
+   * @return
+   */
+  override def refundProcess(userId: Long, order: Order, refundPrice: Int): Future[Unit] = ???
 }
 
 object AlipayService {
@@ -164,6 +217,8 @@ object AlipayService {
   lazy private val partner = (conf getString "hanse.payment.alipay.partner").get
 
   lazy private val sellerId = (conf getString "hanse.payment.alipay.id").get
+  lazy private val refundOrderUrl = (conf getString "hanse.payment.alipay.refundOrderUrl").get
+  lazy private val md5Key = (conf getString "hanse.payment.alipay.md5Key").get
 
   private val notifyUrl = {
     val baseUrl = new URL(conf getString "hanse.baseUrl" getOrElse "http://localhost:9000")
