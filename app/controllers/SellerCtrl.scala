@@ -30,7 +30,10 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
         seller <- SellerAPI.getSeller(id)
         //user <- FinagleFactory.client.getUserById(sId, Some(fields), selfId)
       } yield {
-        HanseResult(data = seller map (SellerFormatter.instance.formatJsonNode(_)))
+        if (seller.nonEmpty)
+          HanseResult(data = seller map (SellerFormatter.instance.formatJsonNode(_)))
+        else
+          HanseResult.notFound(Some(s"Seller not found. sellId is $id"))
       }
       ret
     }

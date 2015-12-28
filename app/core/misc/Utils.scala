@@ -22,9 +22,10 @@ object Utils {
     case _ => n
   }
 
-  def getActualPrice(data: Int): Double = {
-    Math.round(data * 100) / 10000.00
-  }
+  /**
+   * 存放在数据库中的价格信息, 都是以分为单位的. 发送给前端的时候, 需要转换成浮点数(元为单位)
+   */
+  def getActualPrice(data: Int): Double = data / 100.0
 
   def nonceStr() = {
     val str = Random.nextInt().toString + System.currentTimeMillis / 1000
@@ -36,9 +37,4 @@ object Utils {
     val bytes = MessageDigest.getInstance("MD5").digest(str.getBytes("UTF-8"))
     new String(Hex.encodeHex(bytes))
   }
-
-  def main(args: Array[String]) {
-    print(nonceStr)
-  }
-
 }

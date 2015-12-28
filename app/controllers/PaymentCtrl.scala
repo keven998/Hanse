@@ -4,17 +4,13 @@ import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
-import com.lvxingpai.model.marketplace.trade.PaymentVendor
-import core.api.OrderAPI
-import core.exception.GeneralPaymentException
+import core.exception.{ GeneralPaymentException, ResourceNotFoundException }
 import core.misc.HanseResult
 import core.misc.Implicits._
-import core.model.trade.order.WechatPrepay
 import core.payment.PaymentService.Provider
 import core.payment.{ AlipayService, WeChatPaymentService }
-import core.service.PaymentService
-import play.api.{ Logger, Configuration }
 import play.api.mvc.{ Action, Controller, Result, Results }
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -41,7 +37,9 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       val node = new ObjectMapper().createObjectNode()
       node.put("requestString", sidecar("requestString").toString)
       HanseResult.ok(data = Some(node))
-    })
+    }) recover {
+      case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+    }
   }
 
   def createWeChatPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
@@ -56,7 +54,9 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         node.put(key, value.toString)
       })
       HanseResult.ok(data = Some(node))
-    })
+    }) recover {
+      case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+    }
   }
 
   /**
@@ -108,6 +108,8 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           case e: GeneralPaymentException =>
             // 出现任何失败的情况
             HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+          case e: ResourceNotFoundException =>
+            HanseResult.notFound(Some(e.getMessage))
         }
       }
       ret getOrElse Future {
@@ -140,68 +142,26 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           case e: GeneralPaymentException =>
             // 出现任何失败的情况
             HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+          case e: ResourceNotFoundException =>
+            HanseResult.notFound(Some(e.getMessage))
         }
       }) getOrElse Future {
         HanseResult.unprocessable()
       }
   }
 
-  //  def getCallbackBody(body: NodeSeq) = {
-  //    val payment = new WechatPrepay()
-  //    val returnCode = (body \ WechatPrepay.FD_RETURN_CODE \*).toString()
-  //    payment.setResult(returnCode)
-  //    payment.setReturnCode(returnCode)
-  //    payment.setReturnMsg((body \ WechatPrepay.FD_RETURN_MSG \*).toString())
-  //    if (returnCode.equals(WechatPrepay.VA_FAIL)) {
-  //      payment
-  //    } else {
-  //      payment.setResultCode((body \ WechatPrepay.FD_RESULT_CODE \*).toString())
-  //      payment.setErrCode((body \ WechatPrepay.FD_ERR_CODE \*).toString())
-  //      payment.setErrCode((body \ WechatPrepay.FD_ERR_CODE_DES \*).toString())
-  //      payment.setNonceString((body \ WechatPrepay.FD_NONCE_STR \*).toString())
-  //      payment.setSign((body \ WechatPrepay.FD_SIGN \*).toString())
-  //      payment.setOpenId((body \ WechatPrepay.FD_OPENID \*).toString())
-  //      payment.setTradeType((body \ WechatPrepay.FD_TRADE_TYPE \*).toString())
-  //      payment.setBankType((body \ WechatPrepay.FD_BANK_TYPE \*).toString())
-  //      payment.setTotalFee(body \ WechatPrepay.FD_TOTAL_FEE \*)
-  //      payment.setFeeType((body \ WechatPrepay.FD_FEE_TYPE \*).toString())
-  //      payment.setCashFee(body \ WechatPrepay.FD_CASH_FEE \*)
-  //      payment.setCashFeeType((body \ WechatPrepay.FD_CASH_FEE_TYPE \*).toString())
-  //      payment.setPrepayId((body \ WechatPrepay.FD_TRANSACTION_ID \*).toString())
-  //      payment.setTimestamp((body \ "time_end" \*).toString().toLong)
-  //      payment
-  //    }
-  //  }
-
-  def getPaymentsStatus(orderId: Long) = Action.async(
+  def refund(orderId: Long) = Action.async(
     request => {
-      val ret = for {
-        orderValue <- OrderAPI.getOrder(orderId)
-        wcResponse <- PaymentService.queryOrder(
-          Map(WechatPrepay.FD_TRANSACTION_ID ->
-            orderValue.paymentInfo.get(PaymentVendor.Wechat).prepayId)
-        )
+      val r = for {
+        body <- request.body.asJson
+        userId <- request.headers.get("UserId") map (_.toLong)
+        refundFee <- (body \ "refundFee").asOpt[Float]
       } yield {
-        val str = orderValue.status
-        Ok(str)
+        WeChatPaymentService.instance.refund(userId, orderId, (refundFee * 100).toInt) map (_ => HanseResult.ok()) recover {
+          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+        }
       }
-      ret
-    }
-  )
-
-  def getPayments(orderId: Long, provider: String) = Action.async(
-    request => {
-      val ret = for {
-        orderValue <- OrderAPI.getOrder(orderId)
-        wcResponse <- PaymentService.queryOrder(
-          Map(WechatPrepay.FD_TRANSACTION_ID ->
-            orderValue.paymentInfo.get(PaymentVendor.Wechat).prepayId)
-        )
-      } yield {
-        val str = orderValue.status
-        Ok(str)
-      }
-      ret
+      r getOrElse Future(HanseResult.unprocessable())
     }
   )
 

@@ -4,12 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.model.marketplace.order.Prepay
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
+import core.api.OrderAPI
+import core.exception.ResourceNotFoundException
 import core.misc.Implicits._
 import core.misc.{ HanseResult, Utils }
 import core.model.trade.order.WechatPrepay
 import play.api.Play.current
 import play.api.libs.ws.WS
 
+import scala.concurrent.Future
+import scala.language.postfixOps
 import scala.xml.XML
 
 /**
