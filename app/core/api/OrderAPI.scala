@@ -80,7 +80,7 @@ object OrderAPI {
     val providerName = provider.toString
     // 设置activity
     val act = new OrderActivity
-    act.action = OrderStatus.Paid
+    act.action = "pay"
     act.timestamp = DateTime.now().toDate
 
     // 设置payment状态
@@ -113,7 +113,7 @@ object OrderAPI {
   def setCancel(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
     // 设置activity
     val act = new OrderActivity
-    act.action = OrderStatus.Canceled
+    act.action = "cancel"
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
     Future {
@@ -136,7 +136,7 @@ object OrderAPI {
   def setRefundApplied(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
     // 设置activity
     val act = new OrderActivity
-    act.action = OrderStatus.RefundApplied
+    act.action = "refund"
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
     Future {

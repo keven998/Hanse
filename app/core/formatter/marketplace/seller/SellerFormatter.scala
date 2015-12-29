@@ -19,9 +19,9 @@ class SellerFormatter extends BaseFormatter {
     val module = new SimpleModule()
     mapper.registerModule(DefaultScalaModule)
     module.addSerializer(classOf[Seller], new SellerSerializer)
+    module.addSerializer(classOf[ImageItem], new ImageItemSerializer)
     module.addSerializer(classOf[UserInfo], new UserSerializer)
     module.addSerializer(classOf[RichText], new RichTextSerializer)
-    module.addSerializer(classOf[ImageItem], new ImageItemSerializer)
     module.addSerializer(classOf[PhoneNumber], new PhoneNumberSerializer)
     mapper.registerModule(module)
     mapper

@@ -1,12 +1,12 @@
 package core.formatter.marketplace.seller
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.account.UserInfo
+import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
 import com.lvxingpai.model.geo.GeoEntity
-import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
-import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
-import collection.JavaConversions._
+import com.lvxingpai.model.marketplace.seller.Seller
+import com.lvxingpai.model.misc.{ImageItem, RichText}
+
+import scala.collection.JavaConversions._
 
 /**
  * Created by topy on 2015/11/3.
@@ -18,7 +18,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
     gen.writeStringField("id", seller.id.toString)
 
     gen.writeNumberField("sellerId", seller.sellerId)
-    gen.writeStringField("name", Option(seller.name) getOrElse "")
+    gen.writeStringField("name", seller.name)
 
     gen.writeFieldName("desc")
     val desc = seller.desc
@@ -26,11 +26,11 @@ class SellerSerializer extends JsonSerializer[Seller] {
     else serializers.findNullValueSerializer(null)
     retDesc.serialize(desc, gen, serializers)
 
-    gen.writeFieldName("user")
-    val userInfo = seller.userInfo
-    val retUserInfo = if (userInfo != null) serializers.findValueSerializer(classOf[UserInfo], null)
-    else serializers.findNullValueSerializer(null)
-    retUserInfo.serialize(userInfo, gen, serializers)
+    //    gen.writeFieldName("user")
+    //    val userInfo = seller.userInfo
+    //    val retUserInfo = if (userInfo != null) serializers.findValueSerializer(classOf[UserInfo], null)
+    //    else serializers.findNullValueSerializer(null)
+    //    retUserInfo.serialize(userInfo, gen, serializers)
 
     gen.writeFieldName("lang")
     gen.writeStartArray()
@@ -50,6 +50,15 @@ class SellerSerializer extends JsonSerializer[Seller] {
     gen.writeEndArray()
 
     // 服务区域，可以是国家，也可以是目的地
+    gen.writeFieldName("services")
+    gen.writeStartArray()
+    if (seller.services != null) {
+      for (l: String <- seller.services)
+        gen.writeString(l)
+    }
+    gen.writeEndArray()
+
+    // 服务区域，可以是国家，也可以是目的地
     gen.writeFieldName("serviceZones")
     gen.writeStartArray()
     val serviceZones = seller.serviceZones
@@ -61,32 +70,33 @@ class SellerSerializer extends JsonSerializer[Seller] {
     }
     gen.writeEndArray()
 
-    gen.writeFieldName("bankAccounts")
-    gen.writeStartArray()
-    val bankAccounts = seller.bankAccounts
-    if (bankAccounts != null && !bankAccounts.isEmpty) {
-      val retBankAccounts = serializers.findValueSerializer(classOf[BankAccount], null)
-      for (bankAccount <- bankAccounts) {
-        retBankAccounts.serialize(bankAccount, gen, serializers)
-      }
-    }
-    gen.writeEndArray()
+    //    gen.writeFieldName("bankAccounts")
+    //    gen.writeStartArray()
+    //    val bankAccounts = seller.bankAccounts
+    //    if (bankAccounts != null && !bankAccounts.isEmpty) {
+    //      val retBankAccounts = serializers.findValueSerializer(classOf[BankAccount], null)
+    //      for (bankAccount <- bankAccounts) {
+    //        retBankAccounts.serialize(bankAccount, gen, serializers)
+    //      }
+    //    }
+    //    gen.writeEndArray()
+    //
 
-    gen.writeFieldName("phone")
-    gen.writeStartArray()
-    val phone = seller.phone
-    if (phone != null && !phone.isEmpty) {
-      val retPhone = serializers.findValueSerializer(classOf[PhoneNumber], null)
-      for (p <- phone) {
-        retPhone.serialize(p, gen, serializers)
-      }
-    }
-    gen.writeEndArray()
+    //    gen.writeFieldName("phone")
+    //    gen.writeStartArray()
+    //    val phone = seller.phone
+    //    if (phone != null && !phone.isEmpty) {
+    //      val retPhone = serializers.findValueSerializer(classOf[PhoneNumber], null)
+    //      for (p <- phone) {
+    //        retPhone.serialize(p, gen, serializers)
+    //      }
+    //    }
+    //    gen.writeEndArray()
 
-    gen.writeStringField("address", Option(seller.address) getOrElse "")
+    gen.writeStringField("address", seller.address)
 
-    gen.writeNumberField("favorCnt", Option(seller.favorCnt) getOrElse 0)
-    gen.writeNumberField("rating", Option(seller.rating) getOrElse 0.0d)
+    gen.writeNumberField("favorCnt", seller.favorCnt)
+    gen.writeNumberField("rating", seller.rating)
 
     gen.writeFieldName("cover")
     val cover = seller.cover

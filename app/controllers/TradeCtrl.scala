@@ -194,8 +194,18 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
           key -> filterValue
         }): _*)
         action match {
-          case "cancel" => OrderAPI.setCancel(orderId, data) map (_ => HanseResult.ok())
-          case "refund" => OrderAPI.setRefundApplied(orderId, data) map (_ => HanseResult.ok())
+          case "cancel" => OrderAPI.setCancel(orderId, data) map (x => {
+            x.getInsertedCount match {
+              case i if i > 0 => HanseResult.ok()
+              case _ => HanseResult.notFound(Some(s"No pending order which id is $orderId"))
+            }
+          })
+          case "refund" => OrderAPI.setRefundApplied(orderId, data) map (x => {
+            x.getInsertedCount match {
+              case i if i > 0 => HanseResult.ok()
+              case _ => HanseResult.notFound(Some(s"No paid or committed order which id is $orderId"))
+            }
+          })
           case _ => Future(HanseResult.unprocessable())
         }
       }
