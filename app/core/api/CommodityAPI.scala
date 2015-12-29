@@ -19,8 +19,6 @@ import scala.concurrent.Future
  */
 object CommodityAPI {
 
-  val COMMODITY_CATEGORY_ALL = "全部"
-
   /**
    * 根据商品Id取得商品信息
    * @param cmyId
@@ -156,7 +154,7 @@ object CommodityAPI {
       query.field("seller.sellerId").equal(sellerId.get)
     if (localityId.nonEmpty)
       query.field("locality.id").equal(new ObjectId(localityId.get))
-    if (coType.nonEmpty && !coType.get.equals("") && !coType.get.equals(COMMODITY_CATEGORY_ALL))
+    if (coType.nonEmpty && !coType.get.equals(""))
       query.field("category").hasThisOne(coType.get)
     val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
     query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
