@@ -102,7 +102,6 @@ class SellerSerializer extends JsonSerializer[Seller] {
     val cover = seller.cover
     if (cover != null) {
       val retCover = serializers.findValueSerializer(classOf[ImageItem], null)
-      //else serializers.findNullValueSerializer(null)
       retCover.serialize(cover, gen, serializers)
     } else {
       gen.writeStartObject()

@@ -38,9 +38,13 @@ class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
 
     gen.writeFieldName("cover")
     val cover = commodity.cover
-    val retCover = if (cover != null) serializers.findValueSerializer(classOf[ImageItem], null)
-    else serializers.findNullValueSerializer(null)
-    retCover.serialize(cover, gen, serializers)
+    if (cover != null) {
+      val retCover = serializers.findValueSerializer(classOf[ImageItem], null)
+      retCover.serialize(cover, gen, serializers)
+    } else {
+      gen.writeStartObject()
+      gen.writeEndObject()
+    }
 
     // images
     gen.writeFieldName("images")

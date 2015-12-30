@@ -221,7 +221,10 @@ object OrderAPI {
   def getOrderList(userId: Long, status: Option[String], start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Order]] = {
     Future {
       val query = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).order("-id").offset(start).limit(count) //生成时间逆序
-      if (status.nonEmpty) query.field("status").equal(status.get)
+      if (status.nonEmpty) {
+        val queryList = status.get.split(",").toSeq
+        query.field("status").in(queryList)
+      }
       query.asList()
     }
   }
