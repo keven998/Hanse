@@ -34,9 +34,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def createOrder() = Action.async(
     request => {
-      val ip = request.remoteAddress
-      // TODO 为何使用Header中的UserId? 如果没有正确提供UserId, 这里会抛出异常
-      val userId = request.headers.get("UserId").getOrElse("").toLong
+      val userId = request.headers get "UserId" getOrElse ("") toLong
       val ret = for {
         body <- request.body.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
