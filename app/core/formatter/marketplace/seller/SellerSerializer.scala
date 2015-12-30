@@ -1,10 +1,10 @@
 package core.formatter.marketplace.seller
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
+import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.marketplace.seller.Seller
-import com.lvxingpai.model.misc.{ImageItem, RichText}
+import com.lvxingpai.model.misc.{ ImageItem, RichText }
 
 import scala.collection.JavaConversions._
 
@@ -93,16 +93,20 @@ class SellerSerializer extends JsonSerializer[Seller] {
     //    }
     //    gen.writeEndArray()
 
-    gen.writeStringField("address", seller.address)
+    gen.writeStringField("address", Some(seller.address) getOrElse "")
 
     gen.writeNumberField("favorCnt", seller.favorCnt)
     gen.writeNumberField("rating", seller.rating)
 
     gen.writeFieldName("cover")
     val cover = seller.cover
-    val retCover = if (cover != null) serializers.findValueSerializer(classOf[ImageItem], null)
-    else serializers.findNullValueSerializer(null)
-    retCover.serialize(cover, gen, serializers)
+    if (cover != null) {
+      val retCover = serializers.findValueSerializer(classOf[ImageItem], null)
+      retCover.serialize(cover, gen, serializers)
+    } else {
+      gen.writeStartObject()
+      gen.writeEndObject()
+    }
 
     gen.writeFieldName("images")
     gen.writeStartArray()

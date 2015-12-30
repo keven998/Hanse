@@ -6,6 +6,7 @@ import java.util.Date
 import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
 import com.lvxingpai.model.marketplace.product.Commodity
+import core.exception.ResourceNotFoundException
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
@@ -18,8 +19,6 @@ import scala.concurrent.Future
  * Created by pengyt on 2015/11/4.
  */
 object CommodityAPI {
-
-  val COMMODITY_CATEGORY_ALL = "全部"
 
   /**
    * 根据商品Id取得商品信息
@@ -74,6 +73,8 @@ object CommodityAPI {
     for {
       commodityOpt <- CommodityAPI.getCommodityById(commodityId, commoditySeq)
     } yield {
+      if (commodityOpt.isEmpty)
+        throw ResourceNotFoundException("商品不存在或已下架")
       for {
         commodity <- commodityOpt
         plan <- commodity.plans.toSeq find (_.planId == planId) // 找到plan
@@ -151,12 +152,12 @@ object CommodityAPI {
    */
   def getCommodities(sellerId: Option[Long], localityId: Option[String], coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity])
-      .retrievedFields(true, Seq("commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "seller", "locality"): _*)
+      .retrievedFields(true, Seq("commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "locality"): _*)
     if (sellerId.nonEmpty)
       query.field("seller.sellerId").equal(sellerId.get)
     if (localityId.nonEmpty)
       query.field("locality.id").equal(new ObjectId(localityId.get))
-    if (coType.nonEmpty && !coType.get.equals("") && !coType.get.equals(COMMODITY_CATEGORY_ALL))
+    if (coType.nonEmpty && !coType.get.equals(""))
       query.field("category").hasThisOne(coType.get)
     val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
     query.field("status").equal("pub").order(orderStr).offset(start).limit(count)

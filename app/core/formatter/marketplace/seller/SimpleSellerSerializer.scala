@@ -37,9 +37,14 @@ class SimpleSellerSerializer extends JsonSerializer[Seller] {
 
     gen.writeFieldName("cover")
     val cover = seller.cover
-    val retCover = if (cover != null) serializers.findValueSerializer(classOf[ImageItem], null)
-    else serializers.findNullValueSerializer(null)
-    retCover.serialize(cover, gen, serializers)
+    if (cover != null) {
+      val retCover = serializers.findValueSerializer(classOf[ImageItem], null)
+      //else serializers.findNullValueSerializer(null)
+      retCover.serialize(cover, gen, serializers)
+    } else {
+      gen.writeStartObject()
+      gen.writeEndObject()
+    }
 
     gen.writeEndObject()
   }

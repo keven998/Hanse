@@ -16,7 +16,7 @@ GET           /columns                                                 @controll
 GET           /columns/commodities                                     @controllers.MiscCtrl.getCommoditiesByTopic(topicType: String)
 
 #首页推荐商品列表
-GET           /recommend                                               @controllers.MiscCtrl.getRecommendCommodities()
+GET           /marketplace/commodities/recommendations                 @controllers.MiscCtrl.getRecommendCommodities()
 
 #----------商品接口----------
 # 商品详情
