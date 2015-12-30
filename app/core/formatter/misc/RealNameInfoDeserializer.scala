@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.{ JsonFactory, JsonParser }
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.{ DeserializationContext, JsonDeserializer, JsonNode }
-import com.lvxingpai.model.account.{ Gender, IdProof, RealNameInfo }
+import com.lvxingpai.model.account.{ IdProof, RealNameInfo }
 import com.lvxingpai.model.misc.PhoneNumber
 import org.joda.time.DateTime
 
@@ -21,7 +21,7 @@ class RealNameInfoDeserializer extends JsonDeserializer[RealNameInfo] {
     val gender = if (node.has("gender")) {
       node.get("gender") match {
         case _: NullNode => null
-        case item => if (item.asText().equals(Gender.Male.toString)) Gender.Male.toString else Gender.Female.toString
+        case item => if (item.asText().equals("m") || item.asText().equals("f")) item.asText() else null
       }
     } else null
 

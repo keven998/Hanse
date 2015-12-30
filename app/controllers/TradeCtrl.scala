@@ -5,9 +5,9 @@ import javax.inject._
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
-import com.lvxingpai.model.misc.PhoneNumber
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
-import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter }
+import core.exception.ResourceNotFoundException
+import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
 import org.joda.time.format.DateTimeFormat
@@ -28,20 +28,6 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
 
   val dateFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
-  case class ContactTemp(surname: String, givenName: String, phone: PhoneNumber, email: String) {
-    def toContact = {
-      val contact = new RealNameInfo
-      val tel = new PhoneNumber
-      contact.surname = surname
-      contact.givenName = givenName
-      tel.dialCode = phone.dialCode
-      tel.number = phone.number
-      contact.tel = tel
-      contact.email = email
-      contact
-    }
-  }
-
   /**
    * 创建订单
    * @return 返回订单信息
@@ -58,26 +44,24 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         rendezvousTime <- (body \ "rendezvousTime").asOpt[Long]
         quantity <- (body \ "quantity").asOpt[Int]
         travellers <- (body \ "travellers").asOpt[Array[String]]
-        phone <- (body \ "contactPhone").asOpt[PhoneNumberTemp] // TODO 为何需要PhoneNumberTemp?
-        email <- (body \ "contactEmail").asOpt[String] orElse Option("")
-        surname <- (body \ "contactSurname").asOpt[String]
-        givenName <- (body \ "contactGivenName").asOpt[String]
         comment <- (body \ "comment").asOpt[String] orElse Option("")
       } yield {
         val date = new Date(rendezvousTime)
-        val contact = ContactTemp(surname, givenName, phone, email)
+        val contact = TravellersFormatter.instance.parse[RealNameInfo]((body \ "contact").asInstanceOf[JsDefined].value.toString())
         for {
-          // TODO controller中不应该包含业务逻辑
-          //commodity <- CommodityAPI.getCommoditySnapsById(commodityId, planId, price, date)
           tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
-          order <- CommodityAPI.createOrder(commodityId, planId, date, userId, tls.getOrElse(Seq()), contact.toContact, quantity, comment)
+          order <- CommodityAPI.createOrder(commodityId, planId, date, userId, tls.getOrElse(Seq()), contact, quantity, comment)
         } yield {
           val node = OrderFormatter.instance.formatJsonNode(order)
           HanseResult(data = Some(node))
         }
-      }.fallbackTo(Future {
+      } recover {
+        case e: ResourceNotFoundException =>
+          // 出现任何失败的情况
+          HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+      } fallbackTo Future {
         HanseResult.unprocessableWithMsg(Some("下单失败。"))
-      })
+      }
       ret.getOrElse(Future {
         HanseResult.unprocessable()
       })
