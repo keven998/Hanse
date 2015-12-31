@@ -31,7 +31,8 @@ GET           /marketplace/commodities/categories                      @controll
 #----------商户接口----------
 #商户详情
 GET           /marketplace/sellers/$id<\d+>                            @controllers.SellerCtrl.getSeller(id:Long)
-
+#申请开店
+POST          /marketplace/sellers/application                         @controllers.SellerCtrl.becomeSeller()
 
 #----------订单接口----------
 #修改订单状态
@@ -76,4 +77,5 @@ POST          /marketplace/orders/payment-webhook/alipay               @controll
 
 #申请退款
 POST          /marketplace/orders/$id<\d+>/refund                      @controllers.PaymentCtrl.refund(id:Long)
+
 
