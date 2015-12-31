@@ -17,6 +17,7 @@ class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
     gen.writeStartObject()
     gen.writeNumberField("commodityId", Option(commodity.commodityId) getOrElse 0L)
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
+    gen.writeNumberField("version", commodity.version)
 
     // 商家
     gen.writeFieldName("seller")

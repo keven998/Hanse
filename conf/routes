@@ -20,7 +20,7 @@ GET           /marketplace/commodities/recommendations                 @controll
 
 #----------商品接口----------
 # 商品详情
-GET           /marketplace/commodities/$id<\d+>                        @controllers.CommodityCtrl.getCommodityDetail(id: Long)
+GET           /marketplace/commodities/$id<\d+>                        @controllers.CommodityCtrl.getCommodityDetail(id: Long,version: Option[Long] ?= None)
 
 #商品列表
 GET           /marketplace/commodities                                 @controllers.CommodityCtrl.getCommodities(seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None, sortBy: String?="salesVolume", sort: String?="desc", start: Int?=0, count: Int?=10)

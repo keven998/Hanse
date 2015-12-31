@@ -19,10 +19,10 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
 
   implicit val ds = datastore.map.get("k2").get
 
-  def getCommodityDetail(commodityId: Long) = Action.async(
+  def getCommodityDetail(commodityId: Long, version: Option[Long]) = Action.async(
     request => {
       for {
-        commodity <- CommodityAPI.getCommodityById(commodityId)
+        commodity <- CommodityAPI.getCommodityById(commodityId, version)
       } yield {
         val node = CommodityFormatter.instance.formatJsonNode(commodity)
         HanseResult(data = Some(node))
