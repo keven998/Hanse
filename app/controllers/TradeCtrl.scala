@@ -34,7 +34,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def createOrder() = Action.async(
     request => {
-      val userId = request.headers get "UserId" getOrElse ("") toLong
+      val userId = (request.headers get "UserId" getOrElse "").toLong
       val ret = for {
         body <- request.body.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]

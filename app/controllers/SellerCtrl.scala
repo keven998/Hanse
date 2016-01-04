@@ -42,6 +42,10 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
     }
   )
 
+  /**
+   * 申请成为商家
+   * @return
+   */
   def becomeSeller() = Action.async(
     request => {
       val ret = for {
@@ -49,8 +53,9 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
         userId <- (body \ "userId").asOpt[Long]
         memo <- (body \ "memo").asOpt[String] orElse Some(StringUtils.EMPTY)
         email <- (body \ "email").asOpt[String] orElse Some(StringUtils.EMPTY)
-        tel <- (body \ "tel").asOpt[PhoneNumberTemp]
+        tel <- (body \ "tel").asOpt[PhoneNumberTemp] // TODO 弃用PhoneNumberTemp之类的辅助类
       } yield {
+        // TODO 用户申请成为商家的时候,可以发送相应的邮件给BD部门
         Future(HanseResult.ok())
       }
       ret.getOrElse(Future {
