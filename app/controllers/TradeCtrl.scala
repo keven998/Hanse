@@ -57,8 +57,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         case e: ResourceNotFoundException =>
           // 出现任何失败的情况
           HanseResult.unprocessable(errorMsg = Some(e.getMessage))
-      } fallbackTo Future {
-        HanseResult.unprocessableWithMsg(Some("下单失败。"))
+        case _ => HanseResult.unprocessableWithMsg(Some("下单失败。"))
       }
       ret.getOrElse(Future {
         HanseResult.unprocessable()
