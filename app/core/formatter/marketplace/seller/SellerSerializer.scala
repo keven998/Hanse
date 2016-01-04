@@ -20,7 +20,6 @@ class SellerSerializer extends JsonSerializer[Seller] {
       gen.writeEndObject()
       return
     }
-
     gen.writeStringField("id", seller.id.toString)
 
     gen.writeNumberField("sellerId", seller.sellerId)
@@ -32,6 +31,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
     else serializers.findNullValueSerializer(null)
     retDesc.serialize(desc, gen, serializers)
 
+    // 服务语言
     gen.writeFieldName("lang")
     gen.writeStartArray()
     Option(seller.lang) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
@@ -43,7 +43,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
     Option(seller.qualifications) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
     gen.writeEndArray()
 
-    // 服务区域，可以是国家，也可以是目的地
+    // 服务标签
     gen.writeFieldName("services")
     gen.writeStartArray()
     Option(seller.services) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
@@ -56,7 +56,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
     Option(seller.serviceZones) map (_.toSeq) getOrElse Seq() foreach (retServiceZones.serialize(_, gen, serializers))
     gen.writeEndArray()
 
-    gen.writeStringField("address", Some(seller.address) getOrElse "")
+    gen.writeStringField("address", Option(seller.address) getOrElse "")
 
     gen.writeNumberField("favorCnt", seller.favorCnt)
     gen.writeNumberField("rating", seller.rating)

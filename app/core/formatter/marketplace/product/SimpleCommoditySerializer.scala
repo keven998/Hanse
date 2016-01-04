@@ -22,7 +22,8 @@ class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
     gen.writeNumberField("marketPrice", Utils.getActualPrice(commodity.marketPrice))
     gen.writeNumberField("price", Utils.getActualPrice(commodity.price))
-    gen.writeNumberField("salesVolume", Option(commodity.salesVolume) getOrElse 0)
+    gen.writeNumberField("salesVolume", commodity.salesVolume)
+    gen.writeNumberField("rating", commodity.rating)
 
     gen.writeFieldName("seller")
     val userInfo = commodity.seller

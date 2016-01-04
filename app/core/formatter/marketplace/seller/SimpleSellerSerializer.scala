@@ -17,6 +17,7 @@ class SimpleSellerSerializer extends JsonSerializer[Seller] {
     gen.writeStartObject()
     gen.writeNumberField("sellerId", seller.sellerId)
     gen.writeStringField("name", Option(seller.name) getOrElse "")
+    gen.writeNumberField("rating", seller.rating)
 
     gen.writeFieldName("user")
     val userInfo = seller.userInfo
@@ -24,16 +25,23 @@ class SimpleSellerSerializer extends JsonSerializer[Seller] {
     else serializers.findNullValueSerializer(null)
     retUserInfo.serialize(userInfo, gen, serializers)
 
+    // 服务语言
+    gen.writeFieldName("lang")
+    gen.writeStartArray()
+    Option(seller.lang) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
+    gen.writeEndArray()
+
     // 商户资质
     gen.writeFieldName("qualifications")
     gen.writeStartArray()
-    if (seller.qualifications != null) {
-      for (l: String <- seller.qualifications)
-        gen.writeString(l)
-    }
+    Option(seller.qualifications) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
     gen.writeEndArray()
 
-    gen.writeNumberField("rating", Option(seller.rating) getOrElse 0.0d)
+    // 服务标签
+    gen.writeFieldName("services")
+    gen.writeStartArray()
+    Option(seller.services) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
+    gen.writeEndArray()
 
     gen.writeFieldName("cover")
     val cover = seller.cover

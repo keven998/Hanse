@@ -19,10 +19,10 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeStartObject()
     if (commodity.id != null)
       gen.writeStringField("id", commodity.id.toString)
-    gen.writeNumberField("commodityId", Option(commodity.commodityId) getOrElse 0L)
+    gen.writeNumberField("commodityId", commodity.commodityId)
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
-    gen.writeNumberField("rating", Option(commodity.rating) getOrElse 0.0d)
-    gen.writeNumberField("salesVolume", Option(commodity.salesVolume) getOrElse 0)
+    gen.writeNumberField("rating", commodity.rating)
+    gen.writeNumberField("salesVolume", commodity.salesVolume)
     gen.writeNumberField("marketPrice", Utils.getActualPrice(commodity.marketPrice))
     gen.writeNumberField("price", Utils.getActualPrice(commodity.price))
 

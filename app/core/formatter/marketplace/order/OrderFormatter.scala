@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.{ IdProof, RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Country
-import com.lvxingpai.model.marketplace.order.Order
+import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
 import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityPlan }
 import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
@@ -37,7 +37,7 @@ class OrderFormatter extends BaseFormatter {
     module.addSerializer(classOf[RealNameInfo], new RealNameInfoSerializer)
     module.addSerializer(classOf[IdProof], new IdProofSerializer)
     module.addSerializer(classOf[Country], new SimpleCountrySerializer)
-    //    module.addSerializer(classOf[Prepay], new PrepaySerializer)
+    module.addSerializer(classOf[OrderActivity], new OrderActivitySerializer)
     mapper.registerModule(module)
     mapper
   }
