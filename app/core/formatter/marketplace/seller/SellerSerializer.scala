@@ -15,6 +15,12 @@ class SellerSerializer extends JsonSerializer[Seller] {
 
   override def serialize(seller: Seller, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
+
+    if (seller == null) {
+      gen.writeEndObject()
+      return
+    }
+
     gen.writeStringField("id", seller.id.toString)
 
     gen.writeNumberField("sellerId", seller.sellerId)
@@ -26,72 +32,29 @@ class SellerSerializer extends JsonSerializer[Seller] {
     else serializers.findNullValueSerializer(null)
     retDesc.serialize(desc, gen, serializers)
 
-    //    gen.writeFieldName("user")
-    //    val userInfo = seller.userInfo
-    //    val retUserInfo = if (userInfo != null) serializers.findValueSerializer(classOf[UserInfo], null)
-    //    else serializers.findNullValueSerializer(null)
-    //    retUserInfo.serialize(userInfo, gen, serializers)
-
     gen.writeFieldName("lang")
     gen.writeStartArray()
-    if (seller.lang != null) {
-      for (l: String <- seller.lang)
-        gen.writeString(l)
-    }
+    Option(seller.lang) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
     gen.writeEndArray()
 
     // 商户资质
     gen.writeFieldName("qualifications")
     gen.writeStartArray()
-    if (seller.qualifications != null) {
-      for (l: String <- seller.qualifications)
-        gen.writeString(l)
-    }
+    Option(seller.qualifications) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
     gen.writeEndArray()
 
     // 服务区域，可以是国家，也可以是目的地
     gen.writeFieldName("services")
     gen.writeStartArray()
-    if (seller.services != null) {
-      for (l: String <- seller.services)
-        gen.writeString(l)
-    }
+    Option(seller.services) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
     gen.writeEndArray()
 
     // 服务区域，可以是国家，也可以是目的地
     gen.writeFieldName("serviceZones")
     gen.writeStartArray()
-    val serviceZones = seller.serviceZones
-    if (serviceZones != null && !serviceZones.isEmpty) {
-      val retServiceZones = serializers.findValueSerializer(classOf[GeoEntity], null)
-      for (serviceZone <- serviceZones) {
-        retServiceZones.serialize(serviceZone, gen, serializers)
-      }
-    }
+    val retServiceZones = serializers.findValueSerializer(classOf[GeoEntity], null)
+    Option(seller.serviceZones) map (_.toSeq) getOrElse Seq() foreach (retServiceZones.serialize(_, gen, serializers))
     gen.writeEndArray()
-
-    //    gen.writeFieldName("bankAccounts")
-    //    gen.writeStartArray()
-    //    val bankAccounts = seller.bankAccounts
-    //    if (bankAccounts != null && !bankAccounts.isEmpty) {
-    //      val retBankAccounts = serializers.findValueSerializer(classOf[BankAccount], null)
-    //      for (bankAccount <- bankAccounts) {
-    //        retBankAccounts.serialize(bankAccount, gen, serializers)
-    //      }
-    //    }
-    //    gen.writeEndArray()
-    //
-
-    //    gen.writeFieldName("phone")
-    //    gen.writeStartArray()
-    //    val phone = seller.phone
-    //    if (phone != null && !phone.isEmpty) {
-    //      val retPhone = serializers.findValueSerializer(classOf[PhoneNumber], null)
-    //      for (p <- phone) {
-    //        retPhone.serialize(p, gen, serializers)
-    //      }
-    //    }
-    //    gen.writeEndArray()
 
     gen.writeStringField("address", Some(seller.address) getOrElse "")
 
@@ -99,32 +62,14 @@ class SellerSerializer extends JsonSerializer[Seller] {
     gen.writeNumberField("rating", seller.rating)
 
     gen.writeFieldName("cover")
-    val cover = seller.cover
-    if (cover != null) {
-      val retCover = serializers.findValueSerializer(classOf[ImageItem], null)
-      retCover.serialize(cover, gen, serializers)
-    } else {
-      gen.writeStartObject()
-      gen.writeEndObject()
-    }
+    val retCover = serializers.findValueSerializer(classOf[ImageItem], null)
+    retCover.serialize(seller.cover, gen, serializers)
 
     gen.writeFieldName("images")
     gen.writeStartArray()
-
-    if (seller.images != null) {
-      val retImg = serializers.findValueSerializer(classOf[ImageItem], null)
-      for (i <- seller.images)
-        retImg.serialize(i, gen, serializers)
-    }
+    val retImg = serializers.findValueSerializer(classOf[ImageItem], null)
+    Option(seller.images) map (_.toSeq) getOrElse Seq() foreach (retImg.serialize(_, gen, serializers))
     gen.writeEndArray()
-
-    //    gen.writeFieldName("email")
-    //    gen.writeStartArray()
-    //    if (seller.email != null) {
-    //      for (e <- seller.email)
-    //        gen.writeString(e)
-    //    }
-    //    gen.writeEndArray()
 
     gen.writeEndObject()
   }

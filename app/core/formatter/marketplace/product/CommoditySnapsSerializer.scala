@@ -17,14 +17,13 @@ class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
     gen.writeStartObject()
     gen.writeNumberField("commodityId", Option(commodity.commodityId) getOrElse 0L)
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
+    gen.writeNumberField("version", commodity.version)
 
     // 商家
     gen.writeFieldName("seller")
     val seller = commodity.seller
-    if (seller != null) {
-      val retSeller = serializers.findValueSerializer(classOf[Seller], null)
-      retSeller.serialize(seller, gen, serializers)
-    }
+    val retSeller = serializers.findValueSerializer(classOf[Seller], null)
+    retSeller.serialize(seller, gen, serializers)
 
     gen.writeFieldName("plans")
     gen.writeStartArray()
@@ -37,14 +36,8 @@ class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
     gen.writeEndArray()
 
     gen.writeFieldName("cover")
-    val cover = commodity.cover
-    if (cover != null) {
-      val retCover = serializers.findValueSerializer(classOf[ImageItem], null)
-      retCover.serialize(cover, gen, serializers)
-    } else {
-      gen.writeStartObject()
-      gen.writeEndObject()
-    }
+    val retCover = serializers.findValueSerializer(classOf[ImageItem], null)
+    retCover.serialize(commodity.cover, gen, serializers)
 
     // images
     gen.writeFieldName("images")
@@ -56,22 +49,6 @@ class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
       ret.serialize(images.get(0), gen, serializers)
     }
     gen.writeEndArray()
-
-    //    gen.writeFieldName("category")
-    //    gen.writeStartArray()
-    //    val categories = commodity.category
-    //    if (categories != null) {
-    //      for (category <- categories)
-    //        gen.writeString(category)
-    //    }
-    //    gen.writeEndArray()
-
-    //    gen.writeFieldName("desc")
-    //    val desc = commodity.desc
-    //    if (desc != null) {
-    //      val retDesc = serializers.findValueSerializer(classOf[RichText], null)
-    //      retDesc.serialize(desc, gen, serializers)
-    //    }
 
     gen.writeEndObject()
   }

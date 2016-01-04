@@ -11,14 +11,15 @@ class ImageItemSerializer extends JsonSerializer[ImageItem] {
 
   override def serialize(imageItem: ImageItem, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
-
-    if (imageItem.url != null)
-      gen.writeStringField("url", imageItem.url)
-    else {
-      val vKey = imageItem.key
-      val vBucket = imageItem.bucket
-      val fullUrl = if (vBucket != null) s"http://$vBucket.qiniudn.com/$vKey" else s"http://images.taozilvxing.com/$vKey"
-      gen.writeStringField("url", fullUrl)
+    if (imageItem != null) {
+      if (imageItem.url != null)
+        gen.writeStringField("url", imageItem.url)
+      else {
+        val vKey = imageItem.key
+        val vBucket = imageItem.bucket
+        val fullUrl = if (vBucket != null) s"http://$vBucket.qiniudn.com/$vKey" else s"http://images.taozilvxing.com/$vKey"
+        gen.writeStringField("url", fullUrl)
+      }
     }
     gen.writeEndObject()
   }

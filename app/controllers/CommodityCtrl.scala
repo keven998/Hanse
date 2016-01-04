@@ -19,10 +19,10 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
 
   implicit val ds = datastore.map.get("k2").get
 
-  def getCommodityDetail(commodityId: Long) = Action.async(
+  def getCommodityDetail(commodityId: Long, version: Option[Long]) = Action.async(
     request => {
       for {
-        commodity <- CommodityAPI.getCommodityById(commodityId)
+        commodity <- CommodityAPI.getCommodityById(commodityId, version)
       } yield {
         val node = CommodityFormatter.instance.formatJsonNode(commodity)
         HanseResult(data = Some(node))
@@ -46,8 +46,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
       for {
         commodities <- CommodityAPI.getCommodityCategories(locId)
       } yield {
-        val base = Seq("全部")
-        val cas = if (commodities == null) base else base ++ commodities.flatMap(_.category.asScala.toSeq).distinct
+        val cas = if (commodities == null) Seq() else commodities.flatMap(_.category.asScala.toSeq).distinct
         val node = CommodityCategoryFormatter.instance.formatJsonNode(cas)
         HanseResult(data = Some(node))
       }

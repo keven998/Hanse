@@ -20,7 +20,7 @@ GET           /marketplace/commodities/recommendations                 @controll
 
 #----------商品接口----------
 # 商品详情
-GET           /marketplace/commodities/$id<\d+>                        @controllers.CommodityCtrl.getCommodityDetail(id: Long)
+GET           /marketplace/commodities/$id<\d+>                        @controllers.CommodityCtrl.getCommodityDetail(id: Long,version: Option[Long] ?= None)
 
 #商品列表
 GET           /marketplace/commodities                                 @controllers.CommodityCtrl.getCommodities(seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None, sortBy: String?="salesVolume", sort: String?="desc", start: Int?=0, count: Int?=10)
@@ -31,7 +31,8 @@ GET           /marketplace/commodities/categories                      @controll
 #----------商户接口----------
 #商户详情
 GET           /marketplace/sellers/$id<\d+>                            @controllers.SellerCtrl.getSeller(id:Long)
-
+#申请开店
+POST          /marketplace/sellers/application                         @controllers.SellerCtrl.becomeSeller()
 
 #----------订单接口----------
 #修改订单状态
@@ -76,4 +77,5 @@ POST          /marketplace/orders/payment-webhook/alipay               @controll
 
 #申请退款
 POST          /marketplace/orders/$id<\d+>/refund                      @controllers.PaymentCtrl.refund(id:Long)
+
 

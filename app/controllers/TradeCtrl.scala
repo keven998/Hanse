@@ -34,7 +34,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def createOrder() = Action.async(
     request => {
-      val userId = request.headers get "UserId" getOrElse ("") toLong
+      val userId = (request.headers get "UserId" getOrElse "").toLong
       val ret = for {
         body <- request.body.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
@@ -57,8 +57,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         case e: ResourceNotFoundException =>
           // 出现任何失败的情况
           HanseResult.unprocessable(errorMsg = Some(e.getMessage))
-      } fallbackTo Future {
-        HanseResult.unprocessableWithMsg(Some("下单失败。"))
+        case _ => HanseResult.unprocessableWithMsg(Some("下单失败。"))
       }
       ret.getOrElse(Future {
         HanseResult.unprocessable()
