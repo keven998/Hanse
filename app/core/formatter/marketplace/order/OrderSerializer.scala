@@ -3,7 +3,7 @@ package core.formatter.marketplace.order
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.account.RealNameInfo
-import com.lvxingpai.model.marketplace.order.Order
+import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import com.lvxingpai.model.marketplace.product.Commodity
 import core.misc.Utils
 
@@ -74,6 +74,12 @@ class OrderSerializer extends JsonSerializer[Order] {
     //    }
     gen.writeStringField("comment", Option(order.comment) getOrElse "")
     gen.writeStringField("status", Option(order.status) getOrElse "")
+
+    gen.writeFieldName("activities")
+    gen.writeStartArray()
+    val orderAct = serializers.findValueSerializer(classOf[OrderActivity], null)
+    Option(order.activities) map (_.toSeq) getOrElse Seq() foreach (orderAct.serialize(_, gen, serializers))
+    gen.writeEndArray()
 
     //  val fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     //    gen.writeStringField("rendezvousTime", if (order.rendezvousTime != null) fmt.format(order.rendezvousTime) else "")

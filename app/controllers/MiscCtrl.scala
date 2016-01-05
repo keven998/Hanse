@@ -1,22 +1,22 @@
 package controllers
 
-import javax.inject.{ Inject, Named }
+import javax.inject.{Inject, Named}
 
-import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.lvxingpai.inject.morphia.MorphiaMap
 import core.api.MiscAPI
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnFormatter
 import core.misc.HanseResult
 import play.api.Configuration
-import play.api.mvc.{ Action, Controller }
+import play.api.mvc.{Action, Controller}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Created by pengyt on 2015/11/13.
  */
-class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
+class MiscCtrl @Inject()(@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
 
   implicit lazy val ds = datastore.map.get("k2").get
 
@@ -30,12 +30,12 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
       val columnMapper = new ColumnFormatter().objectMapper
       val columnTypes = Seq("slide", "special")
       for {
-        columnsMap <- MiscAPI.getColumns(columnTypes) //"slide")
+        columnsMap <- MiscAPI.getColumns(columnTypes)
       } yield {
         columnTypes map (columnType => {
           val node = new ObjectMapper().createObjectNode()
           node.put("columnType", columnType)
-          node.set("columns", columnMapper.valueToTree[JsonNode](columnsMap(columnType)))
+          node.set("columns", columnMapper.valueToTree[JsonNode](columnsMap(columnType).sortBy(_.rank)))
           arrayNode.add(node)
         })
         HanseResult(data = Some(arrayNode))

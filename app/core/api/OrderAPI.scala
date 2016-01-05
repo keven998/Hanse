@@ -82,6 +82,7 @@ object OrderAPI {
     val act = new OrderActivity
     act.action = "pay"
     act.timestamp = DateTime.now().toDate
+    act.prevStatus = OrderStatus.Pending
 
     // 设置payment状态
     val paymentQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
@@ -116,6 +117,7 @@ object OrderAPI {
     act.action = "cancel"
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
+    act.prevStatus = OrderStatus.Pending
     Future {
       // 预支付订单，可关闭
       val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(OrderStatus.Pending)
@@ -139,6 +141,7 @@ object OrderAPI {
     act.action = "refund"
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
+    act.prevStatus = OrderStatus.Paid
     Future {
       val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
       // 已支付或已发货的订单，可申请退款

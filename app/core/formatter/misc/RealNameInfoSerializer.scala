@@ -20,6 +20,7 @@ class RealNameInfoSerializer extends JsonSerializer[RealNameInfo] {
     gen.writeStringField("givenName", Option(person.givenName) getOrElse "")
     gen.writeStringField("gender", Option(person.gender) getOrElse "")
     gen.writeStringField("email", Option(person.email) getOrElse "")
+    // TODO birthday是否应该是表示日期的字符串?
     gen.writeNumberField("birthday", if (person.birthday != null) person.birthday.getTime else 0)
 
     gen.writeFieldName("tel")

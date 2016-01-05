@@ -19,10 +19,10 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeStartObject()
     if (commodity.id != null)
       gen.writeStringField("id", commodity.id.toString)
-    gen.writeNumberField("commodityId", Option(commodity.commodityId) getOrElse 0L)
+    gen.writeNumberField("commodityId", commodity.commodityId)
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
-    gen.writeNumberField("rating", Option(commodity.rating) getOrElse 0.0d)
-    gen.writeNumberField("salesVolume", Option(commodity.salesVolume) getOrElse 0)
+    gen.writeNumberField("rating", commodity.rating)
+    gen.writeNumberField("salesVolume", commodity.salesVolume)
     gen.writeNumberField("marketPrice", Utils.getActualPrice(commodity.marketPrice))
     gen.writeNumberField("price", Utils.getActualPrice(commodity.price))
 
@@ -126,6 +126,16 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
         ret.serialize(t, gen, serializers)
     }
     gen.writeEndArray()
+
+    val cId = commodity.commodityId
+    // 商品详情
+    gen.writeStringField("descUrl", s"http://h5.taozilvxing.com/poi/item.php?pid=$cId&field=desc")
+    // 提示详情
+    gen.writeStringField("noticeUrl", s"http://h5.taozilvxing.com/poi/item.php?pid=$cId&field=notice")
+    // 预订流程
+    gen.writeStringField("refundPolicyUrl", s"http://h5.taozilvxing.com/poi/item.php?pid=$cId&field=refundPolicy")
+    // 交通信息
+    gen.writeStringField("trafficInfoUrl", s"http://h5.taozilvxing.com/poi/item.php?pid=$cId&field=trafficInfo")
 
     gen.writeEndObject()
   }

@@ -46,8 +46,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
       for {
         commodities <- CommodityAPI.getCommodityCategories(locId)
       } yield {
-        val base = Seq("全部")
-        val cas = if (commodities == null) base else base ++ commodities.flatMap(_.category.asScala.toSeq).distinct
+        val cas = if (commodities == null) Seq() else commodities.flatMap(_.category.asScala.toSeq).distinct
         val node = CommodityCategoryFormatter.instance.formatJsonNode(cas)
         HanseResult(data = Some(node))
       }
