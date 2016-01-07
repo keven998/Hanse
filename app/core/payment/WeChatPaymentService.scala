@@ -9,7 +9,6 @@ import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity, Prepay }
 import core.api.OrderAPI
 import core.exception.GeneralPaymentException
 import core.misc.Utils
-import core.model.trade.order.OrderStatus
 import core.payment.PaymentService.Provider
 import org.mongodb.morphia.Datastore
 import play.api.Play.current
@@ -266,7 +265,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice,
         "type" -> "accept", "memo" -> s"refund NO.$refundNo")
       act.data = actData.asJava
-      OrderAPI.updateOrderStatus(order.orderId, OrderStatus.Refunded, act)(datastore) map (_ =>
+      OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
         order)
     })
   }

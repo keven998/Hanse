@@ -1,7 +1,6 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
-import core.model.trade.order.OrderStatus
 import core.payment.{ AlipayService, PaymentService, WeChatPaymentService }
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
@@ -82,7 +81,7 @@ object OrderAPI {
     val act = new OrderActivity
     act.action = "pay"
     act.timestamp = DateTime.now().toDate
-    act.prevStatus = OrderStatus.Pending
+    act.prevStatus = Order.Status.Pending.toString
 
     // 设置payment状态
     val paymentQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
@@ -117,11 +116,12 @@ object OrderAPI {
     act.action = "cancel"
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
-    act.prevStatus = OrderStatus.Pending
+    act.prevStatus = Order.Status.Pending.toString
     Future {
       // 预支付订单，可关闭
-      val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(OrderStatus.Pending)
-      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", OrderStatus.Canceled).add("activities", act)
+      val query = ds.createQuery(classOf[Order]) field "orderId" equal orderId field "status" equal
+        Order.Status.Pending.toString
+      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.Canceled.toString).add("activities", act)
       val ret = ds.update(query, updateOps)
       ret
     }
@@ -141,12 +141,13 @@ object OrderAPI {
     act.action = "refund"
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
-    act.prevStatus = OrderStatus.Paid
+    act.prevStatus = Order.Status.Paid.toString
     Future {
       val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
       // 已支付或已发货的订单，可申请退款
-      query.or(query.criteria("status").equal(OrderStatus.Paid), query.criteria("status").equal(OrderStatus.Committed))
-      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", OrderStatus.RefundApplied).add("activities", act)
+      query.or(query criteria "status" equal Order.Status.Paid.toString, query criteria "status" equal
+        Order.Status.Committed.toString)
+      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.RefundApplied.toString).add("activities", act)
       ds.update(query, updateOps)
     }
   }
@@ -205,10 +206,10 @@ object OrderAPI {
    * @param orderId 订单号
    * @param status 订单状态
    */
-  def updateOrderStatus(orderId: Long, status: String, act: OrderActivity)(implicit ds: Datastore): Future[UpdateResults] = {
+  def updateOrderStatus(orderId: Long, status: Order.Status.Value, act: OrderActivity)(implicit ds: Datastore): Future[UpdateResults] = {
     Future {
       val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
-      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", status).add("activities", act)
+      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", status.toString).add("activities", act)
       ds.update(query, updateOps)
     }
   }
