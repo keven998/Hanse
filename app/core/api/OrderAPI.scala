@@ -138,7 +138,7 @@ object OrderAPI {
   def setRefundApplied(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
     // 设置activity
     val act = new OrderActivity
-    act.action = "refund"
+    act.action = "refundApprove"
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
     act.prevStatus = Order.Status.Paid.toString

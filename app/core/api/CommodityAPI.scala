@@ -7,6 +7,7 @@ import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
 import com.lvxingpai.model.marketplace.product.{ CommoditySnapshot, Commodity }
 import core.exception.ResourceNotFoundException
+import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
@@ -78,6 +79,7 @@ object CommodityAPI {
         order.travellers = travellers
         val act = new OrderActivity
         act.action = "create"
+        act.prevStatus = StringUtils.EMPTY
         act.timestamp = now
         act.data = Map[String, Any]("userId" -> consumerId)
         order.activities = util.Arrays.asList(act)
