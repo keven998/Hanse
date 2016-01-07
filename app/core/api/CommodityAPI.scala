@@ -79,7 +79,6 @@ object CommodityAPI {
         val act = new OrderActivity
         act.action = "create"
         act.timestamp = now
-        act.prevStatus = ""
         act.data = Map[String, Any]("userId" -> consumerId)
         order.activities = util.Arrays.asList(act)
         ds.save[Order](order)

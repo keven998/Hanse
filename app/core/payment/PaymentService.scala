@@ -6,7 +6,6 @@ import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.api.OrderAPI
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
-import core.model.trade.order.OrderStatus
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
@@ -108,7 +107,7 @@ trait PaymentService {
       val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
 
       // 只有申请退款的订单才能退款
-      if (!order.status.equals(OrderStatus.RefundApplied))
+      if (!(order.status equals Order.Status.RefundApplied.toString))
         throw OrderStatusException(s"Not refund Applied order id: $orderId")
       val payment = Option(order.paymentInfo)
 
