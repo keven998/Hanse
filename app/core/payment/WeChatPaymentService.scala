@@ -1,11 +1,11 @@
 package core.payment
 
 import java.net.URL
-import java.util.{Date, UUID}
+import java.util.{ Date, UUID }
 import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
-import com.lvxingpai.model.marketplace.order.{Order, OrderActivity, Prepay}
+import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity, Prepay }
 import core.api.OrderAPI
 import core.exception.GeneralPaymentException
 import core.misc.Utils
@@ -14,7 +14,7 @@ import org.mongodb.morphia.Datastore
 import play.api.Play.current
 import play.api.inject.BindingKey
 import play.api.libs.ws.WS
-import play.api.{Configuration, Play}
+import play.api.{ Configuration, Play }
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,7 +25,7 @@ import scala.concurrent.Future
  *
  * Created by zephyre on 12/17/15.
  */
-class WeChatPaymentService @Inject()(private val morphiaMap: MorphiaMap) extends PaymentService {
+class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extends PaymentService {
 
   override lazy val provider: Provider.Value = Provider.WeChat
 
