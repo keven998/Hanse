@@ -7,6 +7,7 @@ import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
 import com.lvxingpai.model.marketplace.product.{ CommoditySnapshot, Commodity }
 import core.exception.ResourceNotFoundException
+import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
@@ -40,7 +41,7 @@ object CommodityAPI {
 
   def createOrder(commodityId: Long, planId: String, rendezvous: Date, consumerId: Long,
     travellers: Seq[RealNameInfo], contact: RealNameInfo, quantity: Int, comment: String)(implicit ds: Datastore): Future[Option[Order]] = {
-    val commoditySeq = Seq("commodityId", "title", "desc", "price", "plans", "seller", "category", "cover", "images", "version")
+    val commoditySeq = Seq("_id", "commodityId", "title", "desc", "price", "plans", "seller", "category", "cover", "images", "version")
     for {
       commodityOpt <- CommodityAPI.getCommodityById(commodityId, version = None, commoditySeq)
     } yield {
@@ -56,6 +57,10 @@ object CommodityAPI {
           (rendezvous after start) && (rendezvous before end)
         })
       } yield {
+        // 设置选定的价格
+        plan.pricing = Seq(pricing)
+        // 设置选定的套餐
+        commodity.plans = Seq(plan)
         val order = new Order
         val now = DateTime.now().toDate
         order.id = new ObjectId
@@ -78,11 +83,22 @@ object CommodityAPI {
         order.travellers = travellers
         val act = new OrderActivity
         act.action = "create"
+        act.prevStatus = StringUtils.EMPTY
         act.timestamp = now
         act.data = Map[String, Any]("userId" -> consumerId)
         order.activities = util.Arrays.asList(act)
         ds.save[Order](order)
         order
+      }
+    }
+  }
+
+  def getCommoditiesByObjectIdList(ids: Seq[ObjectId], fields: Seq[String])(implicit ds: Datastore): Future[Option[Seq[Commodity]]] = {
+    Future {
+      if (ids.isEmpty)
+        None
+      else {
+        Option(ds.createQuery(classOf[Commodity]).field("id").in(seqAsJavaList(ids)).retrievedFields(true, fields: _*).asList())
       }
     }
   }
@@ -123,7 +139,7 @@ object CommodityAPI {
    */
   def getCommodities(sellerId: Option[Long], localityId: Option[String], coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity])
-      .retrievedFields(true, Seq("commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "locality"): _*)
+      .retrievedFields(true, Seq("_id", "commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "locality"): _*)
     if (sellerId.nonEmpty)
       query.field("seller.sellerId").equal(sellerId.get)
     if (localityId.nonEmpty)
@@ -132,7 +148,6 @@ object CommodityAPI {
       query.field("category").hasThisOne(coType.get)
     val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
     query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
-
     Future {
       query.asList()
     }

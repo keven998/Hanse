@@ -1,7 +1,9 @@
 package core.api
 
+import com.lvxingpai.model.account.Favorite
 import com.lvxingpai.model.marketplace.product.Commodity
-import core.model.misc.{ RecommendCategory, TopicCommodity, Column }
+import core.model.misc.{ Column, RecommendCategory, TopicCommodity }
+import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
@@ -30,7 +32,6 @@ object MiscAPI {
    */
   def getCommoditiesByTopic(topicType: String)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[TopicCommodity]).field("topicType").equal(topicType)
-
     if (query != null || query.isEmpty) {
       CommodityAPI.getCommoditiesByIdList(query.get.commodities)
     } else
@@ -86,5 +87,36 @@ object MiscAPI {
     Future {
       query.get().categories.toSeq
     }
+  }
+
+  def addFavorite(userId: Long, fType: String, id: String)(implicit ds: Datastore): Future[Unit] = {
+    Future {
+      val query = ds.createQuery(classOf[Favorite]).field("userId").equal(userId)
+      val field = getFavoriteFields(fType)
+      val ops = ds.createUpdateOperations(classOf[Favorite]).add(field, new ObjectId(id))
+      ds.update(query, ops, true)
+    }
+  }
+
+  def delFavorite(userId: Long, fType: String, id: String)(implicit ds: Datastore): Future[Unit] = {
+    Future {
+      val query = ds.createQuery(classOf[Favorite]).field("userId").equal(userId)
+      val field = getFavoriteFields(fType)
+      val ops = ds.createUpdateOperations(classOf[Favorite]).removeAll(field, new ObjectId(id))
+      ds.update(query, ops)
+    }
+  }
+
+  def getFavorite(userId: Long, fType: String)(implicit ds: Datastore): Future[Favorite] = {
+    Future {
+      val field = getFavoriteFields(fType)
+      val query = ds.createQuery(classOf[Favorite]).field("userId").equal(userId)
+        .retrievedFields(true, Seq("userId", field): _*)
+      query.get()
+    }
+  }
+
+  def getFavoriteFields(fType: String) = fType match {
+    case "commodity" => "commodities"
   }
 }

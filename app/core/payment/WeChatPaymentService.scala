@@ -21,6 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
+ * 微信支付服务
+ *
  * Created by zephyre on 12/17/15.
  */
 class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extends PaymentService {
@@ -31,7 +33,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
 
   /**
    * 计算签名
-   * @param data
+   * @param data 参数
    * @return
    */
   private def genSign(data: Map[String, String]): String = {
@@ -186,7 +188,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
 
   /**
    * 处理支付渠道服务器发来的异步调用
-   * @param params
+   * @param params 参数
    * @return
    */
   override def handleCallback(params: Map[String, Any]): Future[Any] = {
@@ -260,11 +262,13 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       }
       // 描述订单退款流水
       val act = new OrderActivity()
-      act.action = "refund"
+      act.action = "refundApprove"
       act.timestamp = new Date()
       val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice,
         "type" -> "accept", "memo" -> s"refund NO.$refundNo")
       act.data = actData.asJava
+      // 一定是已申请退款的订单，前面已经做了判断
+      act.prevStatus = Order.Status.RefundApplied.toString
       OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
         order)
     })
@@ -272,7 +276,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
 
   /**
    * 查询退款
-   * @param params
+   * @param params 参数
    * @return
    */
   override def refundQuery(params: Map[String, Any]): Future[Any] = ???
