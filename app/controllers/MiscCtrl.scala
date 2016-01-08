@@ -4,14 +4,16 @@ import javax.inject.{ Inject, Named }
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.api.MiscAPI
+import core.api.{ CommodityAPI, MiscAPI }
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnFormatter
 import core.misc.HanseResult
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
 
+import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by pengyt on 2015/11/13.
@@ -80,6 +82,49 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
           arrayNode.add(node)
         })
         HanseResult(data = Some(arrayNode))
+      }
+    }
+  )
+
+  def getFavorite(userId: Long, itemType: String) = Action.async(
+    request => {
+      val node = new ObjectMapper().createObjectNode()
+      val commodityFields = Seq("id", "commodityId", "price", "marketPrice", "title", "cover")
+      for {
+        fas <- MiscAPI.getFavorite(userId, itemType)
+        commodities <- CommodityAPI.getCommoditiesByObjectIdList(fas.commodities, commodityFields)
+      } yield {
+        node.set("commodities", SimpleCommodityFormatter.instance.formatJsonNode(commodities getOrElse Seq()))
+        HanseResult(data = Some(node))
+      }
+    }
+  )
+
+  def addFavorite(userId: Long) = Action.async(
+    request => {
+      val ret = for {
+        body <- request.body.asJson
+        itemId <- (body \ "itemId").asOpt[String]
+        itemType <- (body \ "itemType").asOpt[String]
+      } yield {
+        for {
+          tls <- MiscAPI.addFavorite(userId, itemType, itemId)
+        } yield {
+          HanseResult.ok()
+        }
+      }
+      ret.getOrElse(Future {
+        HanseResult.unprocessable()
+      })
+    }
+  )
+
+  def delFavorite(userId: Long, itemType: String, itemId: String) = Action.async(
+    request => {
+      for {
+        tls <- MiscAPI.delFavorite(userId, itemType, itemId)
+      } yield {
+        HanseResult.ok()
       }
     }
   )

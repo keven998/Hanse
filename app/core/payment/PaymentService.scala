@@ -106,7 +106,7 @@ trait PaymentService {
     OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "paymentInfo", "status"))(datastore) flatMap (opt => {
       val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
 
-      // 只有申请退款的订单才能退款
+      // 商家主动退款时，只有申请退款的订单才能退款
       if (!(order.status equals Order.Status.RefundApplied.toString))
         throw OrderStatusException(s"Not refund Applied order id: $orderId")
       val payment = Option(order.paymentInfo)
