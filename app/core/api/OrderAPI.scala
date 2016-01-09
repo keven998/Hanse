@@ -79,7 +79,7 @@ object OrderAPI {
     val providerName = provider.toString
     // 设置activity
     val act = new OrderActivity
-    act.action = "pay"
+    act.action = OrderActivity.Action.pay.toString
     act.timestamp = DateTime.now().toDate
     act.prevStatus = Order.Status.Pending.toString
 
@@ -113,7 +113,7 @@ object OrderAPI {
   def setCancel(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
     // 设置activity
     val act = new OrderActivity
-    act.action = "cancel"
+    act.action = OrderActivity.Action.cancel.toString
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
     act.prevStatus = Order.Status.Pending.toString
@@ -138,7 +138,7 @@ object OrderAPI {
   def setRefundApplied(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
     // 设置activity
     val act = new OrderActivity
-    act.action = "refundApply"
+    act.action = OrderActivity.Action.refundApply.toString
     act.timestamp = DateTime.now().toDate
     act.data = data.asJava
     act.prevStatus = Order.Status.Paid.toString
@@ -150,6 +150,32 @@ object OrderAPI {
       val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.RefundApplied.toString).add("activities", act)
       ds.update(query, updateOps)
     }
+  }
+
+  def setExpire(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
+    Future {
+      Option(ds.find(classOf[Order], "orderId", orderId).retrievedFields(true, Seq(): _*)).get
+    } map (order => {
+      // 设置activity
+      val act = new OrderActivity
+      act.action = OrderActivity.Action.expire.toString
+      act.timestamp = DateTime.now().toDate
+      act.data = data.asJava
+      act.prevStatus = order.get().status
+
+      act.prevStatus match {
+        case p if p == Order.Status.Pending.toString =>
+          val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(Order.Status.Pending)
+          val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.RefundApplied.toString).add("activities", act)
+          ds.update(query, updateOps)
+        // TODO 加退款
+        case s if s == Order.Status.Paid.toString | s == Order.Status.RefundApplied.toString =>
+          val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
+          query.or(query criteria "status" equal Order.Status.Paid.toString, query criteria "status" equal Order.Status.RefundApplied.toString)
+          val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.RefundApplied.toString).add("activities", act)
+          ds.update(query, updateOps)
+      }
+    })
   }
 
   /**

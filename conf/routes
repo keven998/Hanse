@@ -75,7 +75,7 @@ POST          /marketplace/orders/payment-webhook/wechat               @controll
 #支付宝回调
 POST          /marketplace/orders/payment-webhook/alipay               @controllers.PaymentCtrl.alipayCallback()
 
-#申请退款
+#退款
 POST          /marketplace/orders/$id<\d+>/refund                      @controllers.PaymentCtrl.refund(id:Long)
 
 #----------收藏接口----------

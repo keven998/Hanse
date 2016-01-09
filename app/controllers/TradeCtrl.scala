@@ -5,6 +5,7 @@ import javax.inject._
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.marketplace.order.OrderActivity
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
@@ -187,7 +188,12 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
               case _ => HanseResult.notFound(Some(s"No paid or committed order which id is $orderId"))
             }
           })
-          case _ => Future(HanseResult.unprocessable())
+          case e if e == OrderActivity.Action.expire.toString => OrderAPI.setRefundApplied(orderId, data) map (x => {
+            x.getInsertedCount match {
+              case i if i > 0 => HanseResult.ok()
+              case _ => HanseResult.notFound(Some(s"No paid or committed order which id is $orderId"))
+            }
+          })
         }
       }
       ret.getOrElse(Future {

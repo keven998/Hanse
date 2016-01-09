@@ -267,8 +267,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice,
         "type" -> "accept", "memo" -> s"refund NO.$refundNo")
       act.data = actData.asJava
-      // 一定是已申请退款的订单，前面已经做了判断
-      act.prevStatus = Order.Status.RefundApplied.toString
+      act.prevStatus = order.status
       OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
         order)
     })
