@@ -162,6 +162,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           case x => Some((x.get * 100).toInt)
         }
         WeChatPaymentService.instance.refund(userId, orderId, value) map (_ => HanseResult.ok()) recover {
+          // 错误码与商家系统对应
           case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
           case e: OrderStatusException => HanseResult.unprocessable(retCode = HanseResult.RetCode.FORBIDDEN, errorMsg = Some(e.getMessage))
           case e: AlipayRefundException => HanseResult.unprocessable(retCode = HanseResult.RetCode.ALIPAY_REFUND, errorMsg = Some(e.getMessage))

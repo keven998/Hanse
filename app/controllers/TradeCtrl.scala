@@ -5,7 +5,7 @@ import javax.inject._
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
-import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
+import com.lvxingpai.model.marketplace.order.OrderActivity
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
@@ -183,36 +183,19 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
             key -> filterValue
           }
         }): _*)
-        action match {
-          case c if c == OrderActivity.Action.cancel.toString => OrderAPI.setCancel(orderId, data) map (x => {
-            x.getInsertedCount match {
-              case i if i > 0 => HanseResult.ok()
-              case _ => HanseResult.notFound(Some(s"No pending order which id is $orderId"))
-            }
-          })
-          case r if r == OrderActivity.Action.refundApply.toString => OrderAPI.setRefundApplied(orderId, data) map (x => {
-            x.getInsertedCount match {
-              case i if i > 0 => HanseResult.ok()
-              case _ => HanseResult.notFound(Some(s"No order that could be refund apply which id is $orderId"))
-            }
-          })
-          case e if e == OrderActivity.Action.expire.toString => OrderAPI.setRefundApplied(orderId, data) map (x => {
-            x.getInsertedCount match {
-              case i if i > 0 => HanseResult.ok()
-              case _ => HanseResult.notFound(Some(s"No order that could be expire which id is $orderId"))
-            }
-          })
-          case f if f == OrderActivity.Action.finish.toString => OrderAPI.setFinish(orderId, data) map (key => {
-            key.getType match {
-              case t if t.isInstanceOf[Order] => HanseResult.ok()
-              case _ => HanseResult.notFound(Some(s"No order that could be finished which id is $orderId"))
-            }
-          }) recover {
-            case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
-          }
+        val rr = action match {
+          case c if c == OrderActivity.Action.cancel.toString => OrderAPI.setCancel(orderId, data)
+          case r if r == OrderActivity.Action.refundApply.toString => OrderAPI.setRefundApplied(orderId, data)
+          case e if e == OrderActivity.Action.expire.toString => OrderAPI.setExpire(orderId, data)
+          case f if f == OrderActivity.Action.finish.toString => OrderAPI.setFinish(orderId, data)
           case _ => Future {
-            HanseResult.notFound(Some("Invalid action."))
+            throw ResourceNotFoundException(s"Invalid action:$action")
           }
+        }
+        rr map (x => {
+          HanseResult.ok()
+        }) recover {
+          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
         }
       }
       ret.getOrElse(Future {
