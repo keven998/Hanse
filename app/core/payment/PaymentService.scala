@@ -5,7 +5,7 @@ import java.util.Date
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.api.OrderAPI
-import core.exception.{ OrderStatusException, ResourceNotFoundException }
+import core.exception.{ AlipayRefundException, OrderStatusException, ResourceNotFoundException }
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
@@ -102,7 +102,7 @@ trait PaymentService {
    * @param refundPrice
    * @return
    */
-  def refund(userId: Long, orderId: Long, refundPrice: Int): Future[Unit] = {
+  def refund(userId: Long, orderId: Long, refundPrice: Option[Int]): Future[Unit] = {
     OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "paymentInfo", "status"))(datastore) flatMap (opt => {
       val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
 
@@ -113,7 +113,7 @@ trait PaymentService {
 
       // 判断退款是否超额
       val totalPrice = order.totalPrice
-      if (refundPrice > totalPrice)
+      if (refundPrice.nonEmpty && refundPrice.get > totalPrice)
         throw ResourceNotFoundException(s"Refund price express. " +
           s"TotalPrice:$totalPrice,RefundPrice:$refundPrice,OrderId:$orderId")
 
@@ -127,7 +127,7 @@ trait PaymentService {
       if (wc != null && wc.paid)
         refundProcess(userId, order, refundPrice)
       else
-        throw ResourceNotFoundException(s"Order not paid by weixin order id: $orderId")
+        throw AlipayRefundException(s"Order not paid by wechat order id: $orderId")
     })
   }
 
@@ -136,7 +136,7 @@ trait PaymentService {
    * @param refundPrice
    * @return
    */
-  def refundProcess(userId: Long, order: Order, refundPrice: Int): Future[Unit]
+  def refundProcess(userId: Long, order: Order, refundPrice: Option[Int]): Future[Unit]
 
   /**
    * 查询退款

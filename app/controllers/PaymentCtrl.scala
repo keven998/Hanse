@@ -4,7 +4,7 @@ import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.exception.{ GeneralPaymentException, ResourceNotFoundException }
+import core.exception.{ AlipayRefundException, GeneralPaymentException, ResourceNotFoundException }
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.payment.PaymentService.Provider
@@ -155,10 +155,15 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       val r = for {
         body <- request.body.asJson
         userId <- request.headers.get("UserId") map (_.toLong)
-        refundFee <- (body \ "refundFee").asOpt[Float]
       } yield {
-        WeChatPaymentService.instance.refund(userId, orderId, (refundFee * 100).toInt) map (_ => HanseResult.ok()) recover {
+        // 如果没设置退款金额，后续处理，按照总价退款
+        val value = (body \ "refundFee").asOpt[Float] match {
+          case None => None
+          case x => Some((x.get * 100).toInt)
+        }
+        WeChatPaymentService.instance.refund(userId, orderId, value) map (_ => HanseResult.ok()) recover {
           case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+          case e: AlipayRefundException => HanseResult.unprocessable(retCode = HanseResult.RetCode.ALIPAY_REFUND, errorMsg = Some(e.getMessage))
         }
       }
       r getOrElse Future(HanseResult.unprocessable())

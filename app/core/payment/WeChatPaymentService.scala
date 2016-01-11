@@ -221,7 +221,10 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    *
    * @return
    */
-  override def refundProcess(userId: Long, order: Order, refundPrice: Int): Future[Unit] = {
+  override def refundProcess(userId: Long, order: Order, refundPriceValue: Option[Int]): Future[Unit] = {
+
+    // 如果没设定退款金额,按照订单总价退款
+    val refundPrice = if (refundPriceValue.isEmpty) order.totalPrice - order.discount else refundPriceValue.get
 
     val content = Map("refund_fee" -> refundPrice.toString, "total_fee" -> order.totalPrice.toString,
       "out_trade_no" -> order.orderId.toString)
