@@ -11,6 +11,7 @@ import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
+import core.service.MQService
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.libs.json._
@@ -55,6 +56,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
             HanseResult.unprocessableWithMsg(Some("下单失败,订单不存在或商品计划选择不正确。"))
           else {
             val node = OrderFormatter.instance.formatJsonNode(order)
+            MQService.sendMessage(node.toString, "viae.event.marketplace.onCreateOrder")
             HanseResult(data = Some(node))
           }
         }
