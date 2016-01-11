@@ -107,7 +107,7 @@ trait PaymentService {
       val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
 
       // 商家可以对已支付的订单主动退款，也可以对申请的订单退款
-      if (!(order.status equals Order.Status.RefundApplied.toString) | !(order.status equals Order.Status.Paid.toString))
+      if (!(order.status equals Order.Status.RefundApplied.toString) && !(order.status equals Order.Status.Paid.toString))
         throw OrderStatusException(s"Not refund applied or paid order id: $orderId")
       val payment = Option(order.paymentInfo)
 

@@ -267,7 +267,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       val act = new OrderActivity()
       act.action = "refundApprove"
       act.timestamp = new Date()
-      val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice,
+      val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.toInt,
         "type" -> "accept", "memo" -> s"refund NO.$refundNo")
       act.data = actData.asJava
       act.prevStatus = order.status

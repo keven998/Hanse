@@ -51,8 +51,12 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
           tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
           order <- CommodityAPI.createOrder(commodityId, planId, date, userId, tls.getOrElse(Seq()), contact, quantity, comment)
         } yield {
-          val node = OrderFormatter.instance.formatJsonNode(order)
-          HanseResult(data = Some(node))
+          if (order.isEmpty)
+            HanseResult.unprocessableWithMsg(Some("下单失败,订单不存在或商品计划选择不正确。"))
+          else {
+            val node = OrderFormatter.instance.formatJsonNode(order)
+            HanseResult(data = Some(node))
+          }
         }
       } recover {
         case e: ResourceNotFoundException =>
@@ -156,24 +160,28 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       } yield {
         val data = Map(data1.fields map (entry => {
           val key = entry._1
-          val value = entry._2 match {
-            case v: JsNumber =>
-              if (v.value.isDecimalDouble)
-                v.value.doubleValue()
-              else if (v.value.isDecimalFloat)
-                v.value.floatValue()
-            case v: JsBoolean =>
-              v.value
-            case v: JsString =>
-              v.value
-            case JsNull =>
-              null
+          if (key == "userId")
+            key -> entry._2.asInstanceOf[JsNumber].value.toInt
+          else {
+            val value = entry._2 match {
+              case v: JsNumber =>
+                if (v.value.isDecimalDouble)
+                  v.value.doubleValue()
+                else if (v.value.isDecimalFloat)
+                  v.value.floatValue()
+              case v: JsBoolean =>
+                v.value
+              case v: JsString =>
+                v.value
+              case JsNull =>
+                null
+            }
+            val filterValue = key match {
+              case "amount" => (value.asInstanceOf[Double] * 100).toInt
+              case _ => value
+            }
+            key -> filterValue
           }
-          val filterValue = key match {
-            case "amount" => (value.asInstanceOf[Double] * 100).toInt
-            case _ => value
-          }
-          key -> filterValue
         }): _*)
         action match {
           case c if c == OrderActivity.Action.cancel.toString => OrderAPI.setCancel(orderId, data) map (x => {
@@ -201,6 +209,9 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
             }
           }) recover {
             case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+          }
+          case _ => Future {
+            HanseResult.notFound(Some("Invalid action."))
           }
         }
       }
