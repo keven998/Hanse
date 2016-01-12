@@ -5,6 +5,7 @@ import javax.inject._
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
+import controllers.security.AuthenticatedAction
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
@@ -13,7 +14,7 @@ import core.misc.Implicits._
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.libs.json._
-import play.api.mvc.{ Action, Controller }
+import play.api.mvc.Controller
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,11 +33,11 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    * 创建订单
    * @return 返回订单信息
    */
-  def createOrder() = Action.async(
+  def createOrder() = AuthenticatedAction.async2(
     request => {
       val userId = (request.headers get "UserId" getOrElse "").toLong
       val ret = for {
-        body <- request.body.asJson
+        body <- request.body.wrapped.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
         planId <- (body \ "planId").asOpt[String]
         rendezvousTime <- (body \ "rendezvousTime").asOpt[Long]
@@ -70,7 +71,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    * @param orderId 订单id
    * @return 订单详情
    */
-  def getOrderInfo(orderId: Long) = Action.async(
+  def getOrderInfo(orderId: Long) = AuthenticatedAction.async2(
     request => {
       val callerId = request.headers get "UserId"
       if (callerId.isEmpty) Future(HanseResult.forbidden())
@@ -97,7 +98,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    * @param orderId
    * @return
    */
-  def getOrderStatus(orderId: Long) = Action.async(
+  def getOrderStatus(orderId: Long) = AuthenticatedAction.async2(
     request => {
       val callerId = request.headers get "UserId"
       if (callerId.isEmpty) {
@@ -125,7 +126,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    * @param status 订单状态
    * @return 订单列表
    */
-  def getOrders(userId: Long, status: Option[String], start: Int, count: Int) = Action.async(
+  def getOrders(userId: Long, status: Option[String], start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       val callerId = request.headers get "UserId"
       for {
@@ -146,10 +147,10 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    *
    * @return
    */
-  def operateOrder(orderId: Long) = Action.async(
+  def operateOrder(orderId: Long) = AuthenticatedAction.async2(
     request => {
       val ret = for {
-        body <- request.body.asJson
+        body <- request.body.wrapped.asJson
         action <- (body \ "action").asOpt[String]
         data1 <- (body \ "data").asOpt[JsObject] orElse Some(JsObject.apply(Seq()))
       } yield {

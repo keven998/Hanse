@@ -3,11 +3,12 @@ package controllers
 import javax.inject.{ Inject, Named }
 
 import com.lvxingpai.inject.morphia.MorphiaMap
+import controllers.security.AuthenticatedAction
 import core.api.CommodityAPI
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import play.api.Configuration
-import play.api.mvc.{ Action, Controller }
+import play.api.mvc.Controller
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,18 +20,24 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
 
   implicit val ds = datastore.map.get("k2").get
 
-  def getCommodityDetail(commodityId: Long, version: Option[Long]) = Action.async(
+  def getCommodityDetail(commodityId: Long, version: Option[Long]) = AuthenticatedAction.async2(
     request => {
       for {
         commodity <- CommodityAPI.getCommodityById(commodityId, version)
       } yield {
-        val node = CommodityFormatter.instance.formatJsonNode(commodity)
-        HanseResult(data = Some(node))
+        if (commodity.nonEmpty) {
+          val node = CommodityFormatter.instance.formatJsonNode(commodity.get)
+          HanseResult(data = Some(node))
+        } else {
+          HanseResult.notFound(Some(s"Cannot find commodity $commodityId"))
+        }
       }
     }
   )
 
-  def getCommodities(sellerId: Option[Long], locId: Option[String], category: Option[String], sortBy: String, sort: String, start: Int, count: Int) = Action.async(
+  def getCommodities(sellerId: Option[Long], locId: Option[String], category: Option[String],
+    sortBy: String, sort: String,
+    start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
         commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
@@ -41,7 +48,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
     }
   )
 
-  def getCommodityCategory(locId: String) = Action.async(
+  def getCommodityCategory(locId: String) = AuthenticatedAction.async2(
     request => {
       for {
         commodities <- CommodityAPI.getCommodityCategories(locId)

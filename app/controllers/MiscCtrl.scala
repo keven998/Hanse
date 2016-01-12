@@ -4,13 +4,14 @@ import javax.inject.{ Inject, Named }
 
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
+import controllers.security.AuthenticatedAction
 import core.api.MiscAPI
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnFormatter
 import core.misc.HanseResult
 import play.api.Configuration
 import play.api.inject.Injector
-import play.api.mvc.{ Action, Controller }
+import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -25,7 +26,7 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
    * 首页专题
    * @return
    */
-  def getColumns = Action.async(
+  def getColumns = AuthenticatedAction.async2(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
       val columnMapper = new ColumnFormatter().objectMapper
@@ -49,7 +50,7 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
    * @param topicType 话题类型
    * @return 商品列表
    */
-  def getCommoditiesByTopic(topicType: String) = Action.async(
+  def getCommoditiesByTopic(topicType: String) = AuthenticatedAction.async2(
     request => {
       val node = new ObjectMapper().createObjectNode()
       for {
@@ -66,7 +67,7 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
    * 查找推荐商品列表
    * @return 商品列表
    */
-  def getRecommendCommodities = Action.async(
+  def getRecommendCommodities = AuthenticatedAction.async2(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
       for {
