@@ -1,9 +1,10 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
+import core.exception.ResourceNotFoundException
 import core.payment.{ AlipayService, PaymentService, WeChatPaymentService }
 import org.joda.time.DateTime
-import org.mongodb.morphia.Datastore
+import org.mongodb.morphia.{ Key, Datastore }
 import org.mongodb.morphia.query.UpdateResults
 
 import scala.collection.JavaConversions._
@@ -79,7 +80,7 @@ object OrderAPI {
     val providerName = provider.toString
     // 设置activity
     val act = new OrderActivity
-    act.action = "pay"
+    act.action = OrderActivity.Action.pay.toString
     act.timestamp = DateTime.now().toDate
     act.prevStatus = Order.Status.Pending.toString
 
@@ -110,21 +111,24 @@ object OrderAPI {
    * @param ds
    * @return
    */
-  def setCancel(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
+  def setCancel(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[Key[Order]] = {
     // 设置activity
-    val act = new OrderActivity
-    act.action = "cancel"
-    act.timestamp = DateTime.now().toDate
-    act.data = data.asJava
-    act.prevStatus = Order.Status.Pending.toString
     Future {
-      // 预支付订单，可关闭
-      val query = ds.createQuery(classOf[Order]) field "orderId" equal orderId field "status" equal
-        Order.Status.Pending.toString
-      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.Canceled.toString).add("activities", act)
-      val ret = ds.update(query, updateOps)
-      ret
-    }
+      Option(ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(Order.Status.Pending).get())
+    } map (orderOpt => {
+      if (orderOpt.isEmpty)
+        throw ResourceNotFoundException(s"Pending order not exists.OrderId:$orderId")
+      val order = orderOpt.get
+      val act = new OrderActivity
+      act.action = OrderActivity.Action.cancel.toString
+      act.timestamp = DateTime.now().toDate
+      act.data = data.asJava
+      act.prevStatus = order.status
+
+      order.activities = order.activities += act
+      order.status = Order.Status.Canceled.toString
+      ds.save[Order](order)
+    })
   }
 
   /**
@@ -135,21 +139,79 @@ object OrderAPI {
    * @param ds
    * @return
    */
-  def setRefundApplied(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[UpdateResults] = {
-    // 设置activity
-    val act = new OrderActivity
-    act.action = "refundApply"
-    act.timestamp = DateTime.now().toDate
-    act.data = data.asJava
-    act.prevStatus = Order.Status.Paid.toString
+  def setRefundApplied(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[Key[Order]] = {
+
     Future {
       val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
       // 已支付或已发货的订单，可申请退款
       query.or(query criteria "status" equal Order.Status.Paid.toString, query criteria "status" equal
         Order.Status.Committed.toString)
-      val updateOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.RefundApplied.toString).add("activities", act)
-      ds.update(query, updateOps)
-    }
+      Option(query.get())
+    } map (orderOpt => {
+      if (orderOpt.isEmpty)
+        throw ResourceNotFoundException(s"Committed or Paid order not exists.OrderId:$orderId")
+      val order = orderOpt.get
+
+      // 设置activity
+      val act = new OrderActivity
+      act.action = OrderActivity.Action.refundApply.toString
+      act.timestamp = DateTime.now().toDate
+      act.data = data.asJava
+      act.prevStatus = order.status
+
+      // Order赋值
+      order.activities = order.activities += act
+      order.status = Order.Status.RefundApplied.toString
+      ds.save[Order](order)
+    })
+  }
+
+  def setExpire(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[Key[Order]] = {
+    Future {
+      Option(ds.find(classOf[Order], "orderId", orderId)).get
+    } map (orderOpt => {
+      if (orderOpt.isEmpty)
+        throw ResourceNotFoundException(s"To be expired order not exists.OrderId:$orderId")
+      val order = orderOpt.get()
+
+      // 设置activity
+      val act = new OrderActivity
+      act.action = OrderActivity.Action.expire.toString
+      act.timestamp = DateTime.now().toDate
+      act.data = data.asJava
+      act.prevStatus = order.status
+
+      // Order赋值
+      order.activities = order.activities += act
+      order.status match {
+        case p if p == Order.Status.Pending.toString => order.status = Order.Status.Canceled.toString
+        case s if s == Order.Status.Paid.toString | s == Order.Status.RefundApplied.toString =>
+          order.status = Order.Status.Refunded.toString
+          WeChatPaymentService.instance.refund(0, orderId, Some(order.totalPrice))
+      }
+      ds.save[Order](order)
+    })
+  }
+
+  def setFinish(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[Key[Order]] = {
+    Future {
+      // 只有商家确认发货的订单（commit状态），才能设为finish
+      Option(ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(Order.Status.Committed)).get
+    } map (orderOpt => {
+      if (orderOpt.isEmpty)
+        throw ResourceNotFoundException(s"Committed order not exists.OrderId:$orderId")
+      val order = orderOpt.get()
+      // 设置activity
+      val act = new OrderActivity
+      act.action = OrderActivity.Action.finish.toString
+      act.timestamp = DateTime.now().toDate
+      act.data = data.asJava
+      act.prevStatus = order.status
+      // Order赋值
+      order.activities = order.activities += act
+      order.status = Order.Status.Finished.toString
+      ds.save[Order](order)
+    })
   }
 
   /**

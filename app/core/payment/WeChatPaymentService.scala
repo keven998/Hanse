@@ -221,7 +221,10 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    *
    * @return
    */
-  override def refundProcess(userId: Long, order: Order, refundPrice: Int): Future[Unit] = {
+  override def refundProcess(userId: Long, order: Order, refundPriceValue: Option[Int]): Future[Unit] = {
+
+    // 如果没设定退款金额,按照订单总价退款
+    val refundPrice = if (refundPriceValue.isEmpty) order.totalPrice - order.discount else refundPriceValue.get
 
     val content = Map("refund_fee" -> refundPrice.toString, "total_fee" -> order.totalPrice.toString,
       "out_trade_no" -> order.orderId.toString)
@@ -262,13 +265,12 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       }
       // 描述订单退款流水
       val act = new OrderActivity()
-      act.action = "refundApprove"
+      act.action = OrderActivity.Action.refundApprove.toString
       act.timestamp = new Date()
-      val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice,
+      val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.toInt,
         "type" -> "accept", "memo" -> s"refund NO.$refundNo")
       act.data = actData.asJava
-      // 一定是已申请退款的订单，前面已经做了判断
-      act.prevStatus = Order.Status.RefundApplied.toString
+      act.prevStatus = order.status
       OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
         order)
     })

@@ -3,6 +3,7 @@ package core.formatter.marketplace.order
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.order.OrderActivity
+import core.misc.Utils
 import scala.collection.JavaConversions._
 
 /**
@@ -22,20 +23,19 @@ class OrderActivitySerializer extends JsonSerializer[OrderActivity] {
 
     gen.writeStringField("prevStatus", Option(act.prevStatus) getOrElse "")
 
-    //    gen.writeFieldName("data")
-    //    val commodity = act.data
-    //    if (commodity != null) {
-    //      val retSeller = serializers.findValueSerializer(classOf[HashMap], null)
-    //      retSeller.serialize(commodity, gen, serializers)
-    //    }
-
     gen.writeFieldName("data")
 
     val data = act.data
     gen.writeStartObject()
     if (data != null) {
       data foreach (entry => {
-        gen.writeStringField(entry._1, entry._2.toString)
+        val key = entry._1
+        val value = entry._2.toString
+        val valueFilter = key match {
+          case "amount" => Utils.getActualPrice(value.toInt).toString
+          case _ => value
+        }
+        gen.writeStringField(entry._1, valueFilter)
       })
     }
     gen.writeEndObject()

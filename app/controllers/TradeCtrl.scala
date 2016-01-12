@@ -6,11 +6,13 @@ import javax.inject._
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
 import controllers.security.AuthenticatedAction
+import com.lvxingpai.model.marketplace.order.OrderActivity
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
+import core.service.MQService
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.libs.json._
@@ -51,8 +53,13 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
           tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
           order <- CommodityAPI.createOrder(commodityId, planId, date, userId, tls.getOrElse(Seq()), contact, quantity, comment)
         } yield {
-          val node = OrderFormatter.instance.formatJsonNode(order)
-          HanseResult(data = Some(node))
+          if (order.isEmpty)
+            HanseResult.unprocessableWithMsg(Some("下单失败,订单不存在或商品计划选择不正确。"))
+          else {
+            val node = OrderFormatter.instance.formatJsonNode(order)
+            MQService.sendMessage(node.toString, "viae.event.marketplace.onCreateOrder")
+            HanseResult(data = Some(node))
+          }
         }
       } recover {
         case e: ResourceNotFoundException =>
@@ -156,39 +163,42 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       } yield {
         val data = Map(data1.fields map (entry => {
           val key = entry._1
-          val value = entry._2 match {
-            case v: JsNumber =>
-              if (v.value.isDecimalDouble)
-                v.value.doubleValue()
-              else if (v.value.isDecimalFloat)
-                v.value.floatValue()
-            case v: JsBoolean =>
-              v.value
-            case v: JsString =>
-              v.value
-            case JsNull =>
-              null
+          if (key == "userId")
+            key -> entry._2.asInstanceOf[JsNumber].value.toInt
+          else {
+            val value = entry._2 match {
+              case v: JsNumber =>
+                if (v.value.isDecimalDouble)
+                  v.value.doubleValue()
+                else if (v.value.isDecimalFloat)
+                  v.value.floatValue()
+              case v: JsBoolean =>
+                v.value
+              case v: JsString =>
+                v.value
+              case JsNull =>
+                null
+            }
+            val filterValue = key match {
+              case "amount" => (value.asInstanceOf[Double] * 100).toInt
+              case _ => value
+            }
+            key -> filterValue
           }
-          val filterValue = key match {
-            case "amount" => (value.asInstanceOf[Double] * 100).toInt
-            case _ => value
-          }
-          key -> filterValue
         }): _*)
-        action match {
-          case "cancel" => OrderAPI.setCancel(orderId, data) map (x => {
-            x.getInsertedCount match {
-              case i if i > 0 => HanseResult.ok()
-              case _ => HanseResult.notFound(Some(s"No pending order which id is $orderId"))
-            }
-          })
-          case "refund" => OrderAPI.setRefundApplied(orderId, data) map (x => {
-            x.getInsertedCount match {
-              case i if i > 0 => HanseResult.ok()
-              case _ => HanseResult.notFound(Some(s"No paid or committed order which id is $orderId"))
-            }
-          })
-          case _ => Future(HanseResult.unprocessable())
+        val rr = action match {
+          case c if c == OrderActivity.Action.cancel.toString => OrderAPI.setCancel(orderId, data)
+          case r if r == OrderActivity.Action.refundApply.toString => OrderAPI.setRefundApplied(orderId, data)
+          case e if e == OrderActivity.Action.expire.toString => OrderAPI.setExpire(orderId, data)
+          case f if f == OrderActivity.Action.finish.toString => OrderAPI.setFinish(orderId, data)
+          case _ => Future {
+            throw ResourceNotFoundException(s"Invalid action:$action")
+          }
+        }
+        rr map (x => {
+          HanseResult.ok()
+        }) recover {
+          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
         }
       }
       ret.getOrElse(Future {

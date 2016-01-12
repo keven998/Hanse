@@ -75,7 +75,13 @@ POST          /marketplace/orders/payment-webhook/wechat               @controll
 #支付宝回调
 POST          /marketplace/orders/payment-webhook/alipay               @controllers.PaymentCtrl.alipayCallback()
 
-#申请退款
+#退款
 POST          /marketplace/orders/$id<\d+>/refund                      @controllers.PaymentCtrl.refund(id:Long)
 
-
+#----------收藏接口----------
+#展示收藏
+GET           /users/$userId<\d+>/favorites                            @controllers.MiscCtrl.getFavorite(userId:Long,itemType:String)
+#添加收藏
+POST          /users/$userId<\d+>/favorites                            @controllers.MiscCtrl.addFavorite(userId:Long)
+#删除收藏
+DELETE        /users/$userId<\d+>/favorites/:itemType/:itemId          @controllers.MiscCtrl.delFavorite(userId:Long,itemType:String,itemId:String)

@@ -8,8 +8,6 @@ import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.ImageItem
 import core.misc.Utils
 
-import scala.collection.JavaConversions._
-
 /**
  * Created by topy on 2015/11/13.
  */
@@ -17,6 +15,7 @@ class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
 
   override def serialize(commodity: Commodity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
+    gen.writeStringField("id", commodity.id.toString)
     gen.writeNumberField("commodityId", commodity.commodityId)
 
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
@@ -37,15 +36,15 @@ class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
     else serializers.findNullValueSerializer(null)
     retLoc.serialize(loc, gen, serializers)
 
-    gen.writeFieldName("images")
-    gen.writeStartArray()
-    val images = commodity.images
-    if (images.nonEmpty) {
-      val ret = serializers.findValueSerializer(classOf[ImageItem], null)
-      for (image <- images)
-        ret.serialize(image, gen, serializers)
-    }
-    gen.writeEndArray()
+    //    gen.writeFieldName("images")
+    //    gen.writeStartArray()
+    //    val images = commodity.images
+    //    if (images.nonEmpty) {
+    //      val ret = serializers.findValueSerializer(classOf[ImageItem], null)
+    //      for (image <- images)
+    //        ret.serialize(image, gen, serializers)
+    //    }
+    //    gen.writeEndArray()
 
     gen.writeFieldName("cover")
     val cover = commodity.cover

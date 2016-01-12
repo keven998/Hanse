@@ -16,6 +16,7 @@ object HanseResult {
     val INVALID_ARGUMENTS = Value(100, "Invalid arguments")
     val FORBIDDEN = Value(403, "Forbidden")
     val NOT_FOUND = Value(404, "Resource not found")
+    val ALIPAY_REFUND = Value(901, "Ali pay refund need manual operation")
     val UNKNOWN = Value(999, "Unknown error")
   }
 
