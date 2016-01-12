@@ -5,11 +5,12 @@ import javax.inject.{ Inject, Named }
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
+import controllers.security.AuthenticatedAction
 import core.api.TravellerAPI
 import core.formatter.marketplace.order.TravellersFormatter
 import core.misc.HanseResult
 import play.api.Configuration
-import play.api.mvc.{ Action, Controller }
+import play.api.mvc.Controller
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -25,11 +26,11 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 添加旅客信息
    * @return
    */
-  def addTraveller(userId: Long) = Action.async(
+  def addTraveller(userId: Long) = AuthenticatedAction.async2(
     request => {
       val node = new ObjectMapper().createObjectNode()
       val result = for {
-        body <- request.body.asJson
+        body <- request.body.wrapped.asJson
       } yield {
         val person = TravellersFormatter.instance.parse[RealNameInfo](body.toString())
         for {
@@ -51,11 +52,11 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 更新旅客信息
    * @return 旅客信息和key
    */
-  def updateTraveller(key: String, userId: Long) = Action.async(
+  def updateTraveller(key: String, userId: Long) = AuthenticatedAction.async2(
     block = request => {
     val node = new ObjectMapper().createObjectNode()
     val result = for {
-      body <- request.body.asJson
+      body <- request.body.wrapped.asJson
     } yield {
       val person = TravellersFormatter.instance.parse[RealNameInfo](body.toString())
       for {
@@ -78,7 +79,7 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 删除旅客信息
    * @return key
    */
-  def deleteTraveller(key: String, userId: Long) = Action.async(
+  def deleteTraveller(key: String, userId: Long) = AuthenticatedAction.async2(
     request => {
       Future {
         TravellerAPI.deleteTraveller(userId, key)
@@ -91,7 +92,7 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 获取旅客信息
    * @return key
    */
-  def getTraveller(key: String, userId: Long) = Action.async(
+  def getTraveller(key: String, userId: Long) = AuthenticatedAction.async2(
     request => {
       val node = new ObjectMapper().createObjectNode()
       for {
@@ -108,7 +109,7 @@ class TravellerCtrl @Inject() (@Named("default") configuration: Configuration, d
    * 获取旅客信息列表
    * @return 旅客信息列表
    */
-  def getTravellerList(userId: Long) = Action.async(
+  def getTravellerList(userId: Long) = AuthenticatedAction.async2(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
       for {

@@ -4,13 +4,14 @@ import javax.inject.{ Inject, Named, Singleton }
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.yunkai.UserInfoProp
+import controllers.security.AuthenticatedAction
 import core.api.SellerAPI
 import core.formatter.marketplace.seller.SellerFormatter
 import core.misc.HanseResult
 import core.misc.Implicits.PhoneNumberTemp
 import org.apache.commons.lang.StringUtils
 import play.api.Configuration
-import play.api.mvc.{ Action, Controller }
+import play.api.mvc.Controller
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,7 +28,7 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
 
   val fields = Seq(UserId, NickName, Avatar, Gender, Signature, Residence, Birthday)
 
-  def getSeller(id: Long) = Action.async(
+  def getSeller(id: Long) = AuthenticatedAction.async2(
     request => {
       val ret = for {
         seller <- SellerAPI.getSeller(id)
@@ -46,10 +47,10 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
    * 申请成为商家
    * @return
    */
-  def becomeSeller() = Action.async(
+  def becomeSeller() = AuthenticatedAction.async2(
     request => {
       val ret = for {
-        body <- request.body.asJson
+        body <- request.body.wrapped.asJson
         userId <- (body \ "userId").asOpt[Long]
         memo <- (body \ "memo").asOpt[String] orElse Some(StringUtils.EMPTY)
         email <- (body \ "email").asOpt[String] orElse Some(StringUtils.EMPTY)

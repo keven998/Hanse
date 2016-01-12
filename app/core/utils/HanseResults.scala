@@ -13,6 +13,8 @@ object HanseResults {
 
     val OK = Value(0)
 
+    val GENERAL_ERROR = Value(-1)
+
     val INVALID_ARGUMENTS = Value(100, "Invalid arguments")
   }
 
@@ -49,4 +51,10 @@ object HanseResults {
   def unprocessable(retCode: RetCode.Value = RetCode.INVALID_ARGUMENTS, data: Option[JsonNode] = None,
     errorMsg: Option[String] = None): Result =
     HanseResults(UNPROCESSABLE_ENTITY, retCode, data, errorMsg)
+
+  def unauthorized(
+    retCode: RetCode.Value = RetCode.GENERAL_ERROR,
+    data: Option[JsonNode] = None,
+    errorMsg: Option[String] = None
+  ): Result = HanseResults(UNAUTHORIZED, retCode, data, errorMsg)
 }

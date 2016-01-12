@@ -4,6 +4,8 @@ import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
+import controllers.security.AuthenticatedAction
+import core.exception.{ GeneralPaymentException, ResourceNotFoundException }
 import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceNotFoundException }
 import core.misc.HanseResult
 import core.misc.Implicits._
@@ -65,7 +67,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
    * @param orderId
    * @return
    */
-  def createPayments(orderId: Long) = Action.async(
+  def createPayments(orderId: Long) = AuthenticatedAction.async2(
     request => {
       // 获得客户端的ip地址. 如果不是有效地ipv4地址, 则使用192.168.1.1
       val ip = {
@@ -75,7 +77,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       }
 
       (for {
-        body <- request.body.asJson
+        body <- request.body.wrapped.asJson
         userId <- request.headers.get("UserId") map (_.toLong)
         provider <- (body \ "provider").asOpt[String]
       } yield {
@@ -150,10 +152,10 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       }
   }
 
-  def refund(orderId: Long) = Action.async(
+  def refund(orderId: Long) = AuthenticatedAction.async2(
     request => {
       val r = for {
-        body <- request.body.asJson
+        body <- request.body.wrapped.asJson
         userId <- request.headers.get("UserId") map (_.toLong)
       } yield {
         // 如果没设置退款金额，按照总价退款
