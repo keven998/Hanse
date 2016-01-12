@@ -4,7 +4,7 @@ import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.exception.{ OrderStatusException, AlipayRefundException, GeneralPaymentException, ResourceNotFoundException }
+import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceNotFoundException }
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.payment.PaymentService.Provider
@@ -156,7 +156,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         body <- request.body.asJson
         userId <- request.headers.get("UserId") map (_.toLong)
       } yield {
-        // 如果没设置退款金额，后续处理，按照总价退款
+        // 如果没设置退款金额，按照总价退款
         val value = (body \ "refundFee").asOpt[Float] match {
           case None => None
           case x => Some((x.get * 100).toInt)
@@ -164,8 +164,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         WeChatPaymentService.instance.refund(userId, orderId, value) map (_ => HanseResult.ok()) recover {
           // 错误码与商家系统对应
           case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
-          case e: OrderStatusException => HanseResult.unprocessable(retCode = HanseResult.RetCode.FORBIDDEN, errorMsg = Some(e.getMessage))
-          case e: AlipayRefundException => HanseResult.unprocessable(retCode = HanseResult.RetCode.ALIPAY_REFUND, errorMsg = Some(e.getMessage))
+          case e: OrderStatusException => HanseResult.notFound(Some(e.getMessage))
         }
       }
       r getOrElse Future(HanseResult.unprocessable())

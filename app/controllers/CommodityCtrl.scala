@@ -2,8 +2,9 @@ package controllers
 
 import javax.inject.{ Inject, Named }
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
-import core.api.CommodityAPI
+import core.api.{ MiscAPI, CommodityAPI }
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import play.api.Configuration
@@ -21,11 +22,17 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
 
   def getCommodityDetail(commodityId: Long, version: Option[Long]) = Action.async(
     request => {
+      val userId = request.headers.get("UserId") map (_.toLong) getOrElse 0L
       for {
         commodity <- CommodityAPI.getCommodityById(commodityId, version)
+        fas <- MiscAPI.getFavorite(userId, "commodity")
       } yield {
-        val node = CommodityFormatter.instance.formatJsonNode(commodity)
-        HanseResult(data = Some(node))
+        if (commodity.nonEmpty) {
+          val node = CommodityFormatter.instance.formatJsonNode(commodity.get).asInstanceOf[ObjectNode]
+          node.put("isFavorite", fas.commodities contains commodity.get.id)
+          HanseResult(data = Some(node))
+        } else
+          HanseResult.notFound(Some(s"Commodity not found. sellId is $commodityId"))
       }
     }
   )

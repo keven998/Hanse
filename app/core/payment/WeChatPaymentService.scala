@@ -265,7 +265,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       }
       // 描述订单退款流水
       val act = new OrderActivity()
-      act.action = "refundApprove"
+      act.action = OrderActivity.Action.refundApprove.toString
       act.timestamp = new Date()
       val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.toInt,
         "type" -> "accept", "memo" -> s"refund NO.$refundNo")

@@ -2,13 +2,14 @@ package core.payment
 
 import java.util.Date
 
-import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
+import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity, Prepay }
 import com.lvxingpai.model.marketplace.trade.PaymentVendor
 import core.api.OrderAPI
-import core.exception.{ AlipayRefundException, OrderStatusException, ResourceNotFoundException }
+import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -126,8 +127,18 @@ trait PaymentService {
       // 判断微信支付信息是否已经支付
       if (wc != null && wc.paid)
         refundProcess(userId, order, refundPrice)
-      else
-        throw AlipayRefundException(s"Order not paid by wechat order id: $orderId")
+      else {
+        // 描述订单退款流水
+        val act = new OrderActivity()
+        act.action = OrderActivity.Action.refundApprove.toString
+        act.timestamp = new Date()
+        val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.get,
+          "type" -> "accept", "memo" -> s"Alipay refund")
+        act.data = actData.asJava
+        act.prevStatus = order.status
+        OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
+          order)
+      }
     })
   }
 
