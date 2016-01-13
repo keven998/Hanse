@@ -114,7 +114,7 @@ object OrderAPI {
   def setCancel(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[Key[Order]] = {
     // 设置activity
     Future {
-      Option(ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(Order.Status.Pending).get())
+      Option(ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(Order.Status.Pending.toString).get())
     } map (orderOpt => {
       if (orderOpt.isEmpty)
         throw ResourceNotFoundException(s"Pending order not exists.OrderId:$orderId")
@@ -196,7 +196,7 @@ object OrderAPI {
   def setFinish(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[Key[Order]] = {
     Future {
       // 只有商家确认发货的订单（commit状态），才能设为finish
-      Option(ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(Order.Status.Committed)).get
+      Option(ds.createQuery(classOf[Order]).field("orderId").equal(orderId).field("status").equal(Order.Status.Committed.toString)).get
     } map (orderOpt => {
       if (orderOpt.isEmpty)
         throw ResourceNotFoundException(s"Committed order not exists.OrderId:$orderId")
