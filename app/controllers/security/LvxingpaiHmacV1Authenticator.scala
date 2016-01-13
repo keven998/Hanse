@@ -46,15 +46,23 @@ class LvxingpaiHmacV1Authenticator extends Authenticator {
 
   /**
    * 将字典转换成url-encoded格式
+   * @param toLowerCase 是否转换为小写来处理
    * @return
    */
-  private def map2Message(input: Map[String, Seq[String]]): String = {
+  private def map2Message(input: Map[String, Seq[String]], toLowerCase: Boolean): String = {
     // key转换为小写
-    Map(input.toSeq map (entry => entry._1.toLowerCase() -> entry._2): _*).toSeq.sortBy(_._1) map (entry => {
-      val key = entry._1
-      val value = entry._2 mkString ""
-      s"$key=${URLEncoder.encode(value, "utf-8")}"
-    }) mkString "&"
+    val seq = if (toLowerCase) {
+      input.toSeq map {
+        case (t1, t2) => t1.toLowerCase() -> t2
+      }
+    } else {
+      input.toSeq
+    }
+    seq.sortBy(_._1) map {
+      case (key, valueSeq) =>
+        val value = valueSeq mkString ""
+        s"$key=${URLEncoder.encode(value, "utf-8")}"
+    } mkString "&"
   }
 
   /**
@@ -78,9 +86,12 @@ class LvxingpaiHmacV1Authenticator extends Authenticator {
       return false
     }
 
-    val queryStringMessage = map2Message(request.queryString)
-    val headerMessage = map2Message(Map(request.headers.toMap.toSeq.map(entry => entry._1.toLowerCase -> entry._2): _*)
-      filterKeys (headerKeys contains _))
+    val queryStringMessage = map2Message(request.queryString, toLowerCase = false)
+    // 将request.headers中, 符合headerKeys的筛选出来
+    val headerSeq = request.headers.toMap.toSeq map {
+      case (t1, t2) => t1.toLowerCase() -> t2
+    } filter (headerKeys contains _._1)
+    val headerMessage = map2Message(Map(headerSeq: _*), toLowerCase = true)
 
     val bodyMessage = request.body match {
       case payload: WrappedPayload[_] =>
