@@ -107,12 +107,19 @@ object MiscAPI {
     }
   }
 
-  def getFavorite(userId: Long, fType: String)(implicit ds: Datastore): Future[Favorite] = {
+  /**
+   * 获得用户的收藏
+   * @param userId
+   * @param fType
+   * @param ds
+   * @return
+   */
+  def getFavorite(userId: Long, fType: String)(implicit ds: Datastore): Future[Option[Favorite]] = {
     Future {
       val field = getFavoriteFields(fType)
       val query = ds.createQuery(classOf[Favorite]).field("userId").equal(userId)
         .retrievedFields(true, Seq("userId", field): _*)
-      query.get()
+      Option(query.get())
     }
   }
 

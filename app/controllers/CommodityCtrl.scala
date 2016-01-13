@@ -5,7 +5,7 @@ import javax.inject.{ Inject, Named }
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
 import controllers.security.AuthenticatedAction
-import core.api.{ MiscAPI, CommodityAPI }
+import core.api.{ CommodityAPI, MiscAPI }
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import play.api.Configuration
@@ -13,6 +13,7 @@ import play.api.mvc.Controller
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by topy on 2015/11/26.
@@ -23,14 +24,17 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
 
   def getCommodityDetail(commodityId: Long, version: Option[Long]) = AuthenticatedAction.async2(
     request => {
-      val userId = request.headers.get("UserId") map (_.toLong) getOrElse 0L
+      val userOpt = request.headers.get("UserId") map (_.toLong)
       for {
         commodity <- CommodityAPI.getCommodityById(commodityId, version)
-        fas <- MiscAPI.getFavorite(userId, "commodity")
+        fas <- userOpt map (userId => MiscAPI.getFavorite(userId, "commodity")) getOrElse Future.successful(None)
       } yield {
         if (commodity.nonEmpty) {
           val node = CommodityFormatter.instance.formatJsonNode(commodity.get).asInstanceOf[ObjectNode]
-          node.put("isFavorite", fas.commodities contains commodity.get.id)
+
+          node.put("isFavorite", fas exists {
+            _.commodities contains commodity.get.id
+          })
           HanseResult(data = Some(node))
         } else
           HanseResult.notFound(Some(s"Commodity not found. sellId is $commodityId"))

@@ -5,7 +5,6 @@ import javax.inject.{ Inject, Named }
 import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
 import controllers.security.AuthenticatedAction
-import core.api.MiscAPI
 import core.api.{ CommodityAPI, MiscAPI }
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnFormatter
@@ -95,7 +94,7 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
       val commodityFields = Seq("id", "commodityId", "price", "marketPrice", "title", "cover")
       for {
         fas <- MiscAPI.getFavorite(userId, itemType)
-        commodities <- CommodityAPI.getCommoditiesByObjectIdList(fas.commodities, commodityFields)
+        commodities <- CommodityAPI.getCommoditiesByObjectIdList(fas map (_.commodities.toSeq) getOrElse Seq(), commodityFields)
       } yield {
         node.set("commodities", SimpleCommodityFormatter.instance.formatJsonNode(commodities getOrElse Seq()))
         HanseResult(data = Some(node))
