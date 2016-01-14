@@ -9,8 +9,7 @@ import core.api.{ CommodityAPI, MiscAPI }
 import core.formatter.marketplace.product.SimpleCommodityFormatter
 import core.formatter.misc.ColumnFormatter
 import core.misc.HanseResult
-import core.service.ViaeGateway
-import play.api.{ Play, Configuration }
+import play.api.Configuration
 import play.api.inject.Injector
 import play.api.mvc._
 
