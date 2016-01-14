@@ -31,7 +31,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
       } yield {
         if (commodity.nonEmpty) {
           val node = CommodityFormatter.instance.formatJsonNode(commodity.get).asInstanceOf[ObjectNode]
-
+          node.put("shareUrl", "http://h5.taozilvxing.com/xq/detail.php?pid=" + commodity.get.commodityId)
           node.put("isFavorite", fas exists {
             _.commodities contains commodity.get.id
           })

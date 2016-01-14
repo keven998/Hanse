@@ -144,7 +144,7 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
    * @param refundPrice
    * @return
    */
-  override def refund(userId: Long, orderId: Long, refundPrice: Option[Int]): Future[Unit] = ???
+  override def refund(userId: Long, orderId: Long, refundPrice: Option[Int], memo: String): Future[Unit] = ???
 
   //  {
   //    // TODO 当前支付宝不支持手机退款
@@ -203,7 +203,7 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
    * @param refundPrice
    * @return
    */
-  override def refundProcess(userId: Long, order: Order, refundPrice: Option[Int]): Future[Unit] = ???
+  override def refundProcess(userId: Long, order: Order, refundPrice: Option[Int], memo: String): Future[Unit] = ???
 }
 
 object AlipayService {

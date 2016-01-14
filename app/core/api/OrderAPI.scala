@@ -187,7 +187,7 @@ object OrderAPI {
         case p if p == Order.Status.Pending.toString => order.status = Order.Status.Canceled.toString
         case s if s == Order.Status.Paid.toString | s == Order.Status.RefundApplied.toString =>
           order.status = Order.Status.Refunded.toString
-          WeChatPaymentService.instance.refund(0, orderId, Some(order.totalPrice))
+          WeChatPaymentService.instance.refund(0, orderId, Some(order.totalPrice), "")
       }
       ds.save[Order](order)
     })

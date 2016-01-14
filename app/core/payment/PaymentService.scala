@@ -103,7 +103,7 @@ trait PaymentService {
    * @param refundPrice
    * @return
    */
-  def refund(userId: Long, orderId: Long, refundPrice: Option[Int]): Future[Unit] = {
+  def refund(userId: Long, orderId: Long, refundPrice: Option[Int], memo: String): Future[Unit] = {
     OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "paymentInfo", "status"))(datastore) flatMap (opt => {
       val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
 
@@ -126,14 +126,13 @@ trait PaymentService {
 
       // 判断微信支付信息是否已经支付
       if (wc != null && wc.paid)
-        refundProcess(userId, order, refundPrice)
+        refundProcess(userId, order, refundPrice, memo)
       else {
         // 描述订单退款流水
         val act = new OrderActivity()
         act.action = OrderActivity.Action.refundApprove.toString
         act.timestamp = new Date()
-        val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.get,
-          "type" -> "accept", "memo" -> s"Alipay refund")
+        val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.get, "memo" -> memo)
         act.data = actData.asJava
         act.prevStatus = order.status
         OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
@@ -147,7 +146,7 @@ trait PaymentService {
    * @param refundPrice
    * @return
    */
-  def refundProcess(userId: Long, order: Order, refundPrice: Option[Int]): Future[Unit]
+  def refundProcess(userId: Long, order: Order, refundPrice: Option[Int], memo: String): Future[Unit]
 
   /**
    * 查询退款

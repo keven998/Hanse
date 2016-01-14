@@ -139,7 +139,7 @@ object CommodityAPI {
    */
   def getCommodities(sellerId: Option[Long], localityId: Option[String], coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity])
-      .retrievedFields(true, Seq("_id", "commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "locality"): _*)
+      .retrievedFields(true, Seq("_id", "commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "locality", "seller"): _*)
     if (sellerId.nonEmpty)
       query.field("seller.sellerId").equal(sellerId.get)
     if (localityId.nonEmpty)

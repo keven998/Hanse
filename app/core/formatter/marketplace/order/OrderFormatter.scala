@@ -6,12 +6,12 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.{ IdProof, RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Country
 import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
-import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityPlan }
+import com.lvxingpai.model.marketplace.product.{ Pricing, Commodity, CommodityPlan }
 import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import core.formatter.BaseFormatter
 import core.formatter.geo.SimpleCountrySerializer
-import core.formatter.marketplace.product.{ CommoditySnapsSerializer, SimpleCommodityPlanSerializer }
+import core.formatter.marketplace.product.{ PricingSerializer, CommoditySnapsSerializer, SimpleCommodityPlanSerializer }
 import core.formatter.marketplace.seller.{ BankAccountSerializer, MiniSellerSerializer }
 import core.formatter.misc._
 import core.formatter.user.UserSerializer
@@ -38,6 +38,7 @@ class OrderFormatter extends BaseFormatter {
     module.addSerializer(classOf[IdProof], new IdProofSerializer)
     module.addSerializer(classOf[Country], new SimpleCountrySerializer)
     module.addSerializer(classOf[OrderActivity], new OrderActivitySerializer)
+    module.addSerializer(classOf[Pricing], new PricingSerializer)
     mapper.registerModule(module)
     mapper
   }

@@ -2,7 +2,9 @@ package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.marketplace.product.CommodityPlan
+import com.lvxingpai.model.marketplace.product.{ Pricing, CommodityPlan }
+
+import scala.collection.JavaConversions._
 
 /**
  * Created by pengyt on 2015/11/4.
@@ -18,16 +20,17 @@ class SimpleCommodityPlanSerializer extends JsonSerializer[CommodityPlan] {
     gen.writeStringField("title", Option(commodityPlan.title) getOrElse "")
     gen.writeStringField("desc", Option(commodityPlan.desc) getOrElse "")
 
-    //    gen.writeFieldName("pricing")
-    //    gen.writeStartArray()
-    //    val pricing = commodityPlan.pricing
-    //    if (pricing != null && !pricing.isEmpty) {
-    //      val retPricing = serializers.findValueSerializer(classOf[Pricing], null)
-    //      for (p <- pricing) {
-    //        retPricing.serialize(p, gen, serializers)
-    //      }
-    //    }
-    //    gen.writeEndArray()
+    gen.writeFieldName("pricing")
+    gen.writeStartArray()
+    val pricing = commodityPlan.pricing
+    if (pricing != null && !pricing.isEmpty) {
+      val retPricing = serializers.findValueSerializer(classOf[Pricing], null)
+      for (p <- pricing) {
+        retPricing.serialize(p, gen, serializers)
+      }
+    }
+    gen.writeEndArray()
+
     //
     //    gen.writeNumberField("marketPrice", Option(commodityPlan.marketPrice) getOrElse 0.0f)
     //

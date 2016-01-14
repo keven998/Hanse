@@ -5,7 +5,6 @@ import javax.inject.{ Inject, Named, Singleton }
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import controllers.security.AuthenticatedAction
-import core.exception.{ GeneralPaymentException, ResourceNotFoundException }
 import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceNotFoundException }
 import core.misc.HanseResult
 import core.misc.Implicits._
@@ -157,13 +156,14 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       val r = for {
         body <- request.body.wrapped.asJson
         userId <- request.headers.get("UserId") map (_.toLong)
+        memo <- (body \ "memo").asOpt[String] orElse Option("")
       } yield {
         // 如果没设置退款金额，按照总价退款
         val value = (body \ "refundFee").asOpt[Float] match {
           case None => None
           case x => Some((x.get * 100).toInt)
         }
-        WeChatPaymentService.instance.refund(userId, orderId, value) map (_ => HanseResult.ok()) recover {
+        WeChatPaymentService.instance.refund(userId, orderId, value, memo) map (_ => HanseResult.ok()) recover {
           // 错误码与商家系统对应
           case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
           case e: OrderStatusException => HanseResult.notFound(Some(e.getMessage))
