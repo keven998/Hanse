@@ -132,5 +132,5 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
     }
   )
 
-  def ping() = Results.Ok("pong")
+  def ping() = Action(Results.Ok("pong"))
 }
