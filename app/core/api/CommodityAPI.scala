@@ -32,10 +32,10 @@ object CommodityAPI {
    */
   def getCommodityById(cmyId: Long, version: Option[Long], fields: Seq[String] = Seq())(implicit ds: Datastore): Future[Option[Commodity]] = {
     val query = version match {
-      case None => ds.createQuery(classOf[Commodity])
+      case None => ds.createQuery(classOf[Commodity]).field("status").equal("pub")
       case _ => ds.createQuery(classOf[CommoditySnapshot]).field("version").equal(version.get)
     }
-    query.field("commodityId").equal(cmyId).field("status").equal("pub")
+    query.field("commodityId").equal(cmyId)
     if (fields.nonEmpty)
       query.retrievedFields(true, fields: _*)
     Future {
