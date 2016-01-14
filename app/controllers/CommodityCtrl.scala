@@ -24,7 +24,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
 
   def getCommodityDetail(commodityId: Long, version: Option[Long]) = AuthenticatedAction.async2(
     request => {
-      val userOpt = request.headers.get("UserId") map (_.toLong)
+      val userOpt = request.headers.get("X-Lvxingpai-Id") map (_.toLong)
       for {
         commodity <- CommodityAPI.getCommodityById(commodityId, version)
         fas <- userOpt map (userId => MiscAPI.getFavorite(userId, "commodity")) getOrElse Future.successful(None)

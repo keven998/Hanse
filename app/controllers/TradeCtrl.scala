@@ -12,7 +12,6 @@ import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
-import core.service.MQService
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.libs.json._
@@ -37,7 +36,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def createOrder() = AuthenticatedAction.async2(
     request => {
-      val userId = (request.headers get "UserId" getOrElse "").toLong
+      val userId = (request.headers get "X-Lvxingpai-Id" getOrElse "").toLong
       val ret = for {
         body <- request.body.wrapped.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
@@ -57,7 +56,6 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
             HanseResult.unprocessableWithMsg(Some("下单失败,订单不存在或商品计划选择不正确。"))
           else {
             val node = OrderFormatter.instance.formatJsonNode(order)
-            MQService.sendMessage(node.toString, "viae.event.marketplace.onCreateOrder")
             HanseResult(data = Some(node))
           }
         }
@@ -80,7 +78,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def getOrderInfo(orderId: Long) = AuthenticatedAction.async2(
     request => {
-      val callerId = request.headers get "UserId"
+      val callerId = request.headers get "X-Lvxingpai-Id"
       if (callerId.isEmpty) Future(HanseResult.forbidden())
       else {
         for {
@@ -107,7 +105,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def getOrderStatus(orderId: Long) = AuthenticatedAction.async2(
     request => {
-      val callerId = request.headers get "UserId"
+      val callerId = request.headers get "X-Lvxingpai-Id"
       if (callerId.isEmpty) {
         Future(HanseResult.forbidden())
       } else {

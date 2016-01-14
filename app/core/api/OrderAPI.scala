@@ -2,10 +2,14 @@ package core.api
 
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import core.exception.ResourceNotFoundException
+import core.formatter.marketplace.order.OrderFormatter
 import core.payment.{ AlipayService, PaymentService, WeChatPaymentService }
+import core.service.ViaeGateway
 import org.joda.time.DateTime
 import org.mongodb.morphia.{ Key, Datastore }
 import org.mongodb.morphia.query.UpdateResults
+import play.api.Play
+import Play.current
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -16,17 +20,6 @@ import scala.concurrent.Future
  * Created by topy on 2015/10/22.
  */
 object OrderAPI {
-
-  /**
-   * 创建订单
-   * @return
-   */
-  def createOrder(order: Order)(implicit ds: Datastore): Future[Order] = {
-    Future {
-      ds.save[Order](order)
-      order
-    }
-  }
 
   /**
    * 如果订单处于未支付的时候, 刷新订单的支付状态
@@ -94,13 +87,25 @@ object OrderAPI {
       s"paymentInfo.$providerName" notEqual null field "status" equal "pending"
     val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", "paid").add("activities", act)
 
-    Future.sequence(Seq(
+    val ret: Future[Seq[UpdateResults]] = Future.sequence(Seq(
       Future {
         ds.update(paymentQuery, paymentOps)
       }, Future {
         ds.update(statusQuery, statusOps)
       }
-    )) map (_ => ())
+    ))
+
+    ret map (_ => {
+      for {
+        order <- getOrder(orderId)
+      } yield {
+        order map (o => {
+          val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+          val orderNode = OrderFormatter.instance.formatJsonNode(order)
+          viae.sendTask("viae.event.marketplace.onPayOrder", kwargs = Some(Map("order" -> orderNode)))
+        })
+      }
+    })
   }
 
   /**
