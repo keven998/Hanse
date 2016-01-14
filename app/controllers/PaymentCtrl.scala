@@ -77,7 +77,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
 
       (for {
         body <- request.body.wrapped.asJson
-        userId <- request.headers.get("UserId") map (_.toLong)
+        userId <- request.headers.get("X-Lvxingpai-Id") map (_.toLong)
         provider <- (body \ "provider").asOpt[String]
       } yield {
         (provider match {
@@ -155,7 +155,7 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
     request => {
       val r = for {
         body <- request.body.wrapped.asJson
-        userId <- request.headers.get("UserId") map (_.toLong)
+        userId <- request.headers.get("X-Lvxingpai-Id") map (_.toLong)
         memo <- (body \ "memo").asOpt[String] orElse Option("")
       } yield {
         // 如果没设置退款金额，按照总价退款

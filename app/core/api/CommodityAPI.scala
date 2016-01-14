@@ -7,10 +7,14 @@ import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
 import com.lvxingpai.model.marketplace.product.{ CommoditySnapshot, Commodity }
 import core.exception.ResourceNotFoundException
+import core.formatter.marketplace.order.OrderFormatter
+import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
+import play.api.Play
+import Play.current
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,7 +46,7 @@ object CommodityAPI {
   def createOrder(commodityId: Long, planId: String, rendezvous: Date, consumerId: Long,
     travellers: Seq[RealNameInfo], contact: RealNameInfo, quantity: Int, comment: String)(implicit ds: Datastore): Future[Option[Order]] = {
     val commoditySeq = Seq("_id", "commodityId", "title", "desc", "price", "plans", "seller", "category", "cover", "images", "version")
-    for {
+    val future = for {
       commodityOpt <- CommodityAPI.getCommodityById(commodityId, version = None, commoditySeq)
     } yield {
       if (commodityOpt.isEmpty)
@@ -88,9 +92,17 @@ object CommodityAPI {
         act.data = Map[String, Any]("userId" -> consumerId)
         order.activities = util.Arrays.asList(act)
         ds.save[Order](order)
+
+        val orderNode = OrderFormatter.instance.formatJsonNode(order)
+
+        val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+        viae.sendTask("viae.event.marketplace.onCreateOrder", kwargs = Some(Map("order" -> orderNode)))
+
         order
       }
     }
+
+    future
   }
 
   def getCommoditiesByObjectIdList(ids: Seq[ObjectId], fields: Seq[String])(implicit ds: Datastore): Future[Option[Seq[Commodity]]] = {

@@ -85,3 +85,5 @@ GET           /users/$userId<\d+>/favorites                            @controll
 POST          /users/$userId<\d+>/favorites                            @controllers.MiscCtrl.addFavorite(userId:Long)
 #删除收藏
 DELETE        /users/$userId<\d+>/favorites/:itemType/:itemId          @controllers.MiscCtrl.delFavorite(userId:Long,itemType:String,itemId:String)
+
+GET           /ping                                                    @controllers.MiscCtrl.ping()
