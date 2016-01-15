@@ -186,8 +186,12 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
 
           viae.sendTask(
             "viae.event.marketplace.onRefundApprove",
-            kwargs = Some(Map("order" -> orderNode, "amount" -> realAmount,
-              "with_application" -> (o.status == "refundApplied")))
+            kwargs = Some(Map(
+              "order" -> orderNode,
+              "amount" -> realAmount,
+              "memo" -> memo,
+              "with_application" -> (o.status == "refundApplied")
+            ))
           )
           HanseResult.ok()
         }
