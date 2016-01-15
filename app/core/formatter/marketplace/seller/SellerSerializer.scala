@@ -46,7 +46,11 @@ class SellerSerializer extends JsonSerializer[Seller] {
     // 服务标签
     gen.writeFieldName("services")
     gen.writeStartArray()
-    Option(seller.services) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
+    Option(seller.services) map (_.toSeq) getOrElse Seq() map (_ match {
+      case "language" => "语言帮助"
+      case "plan" => "行程规划"
+      case "consult" => "当地咨询"
+    }) foreach (gen writeString _)
     gen.writeEndArray()
 
     // 服务区域，可以是国家，也可以是目的地
