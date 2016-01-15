@@ -5,13 +5,17 @@ import javax.inject.{ Inject, Named, Singleton }
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import controllers.security.AuthenticatedAction
+import core.api.OrderAPI
 import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceNotFoundException }
+import core.formatter.marketplace.order.OrderFormatter
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.payment.PaymentService.Provider
 import core.payment.{ AlipayService, WeChatPaymentService }
+import core.service.ViaeGateway
 import play.api.mvc.{ Action, Controller, Result, Results }
-import play.api.{ Configuration, Logger }
+import play.api.{ Play, Configuration, Logger }
+import Play.current
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -163,10 +167,29 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           case None => None
           case x => Some((x.get * 100).toInt)
         }
-        WeChatPaymentService.instance.refund(userId, orderId, value, memo) map (_ => HanseResult.ok()) recover {
-          // 错误码与商家系统对应
-          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
-          case e: OrderStatusException => HanseResult.notFound(Some(e.getMessage))
+
+        // 查看订单当前的状态
+        for {
+          order <- OrderAPI.getOrder(orderId)
+          _ <- WeChatPaymentService.instance.refund(userId, orderId, value, memo) map (_ => HanseResult.ok()) recover {
+            // 错误码与商家系统对应
+            case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+            case e: OrderStatusException => HanseResult.notFound(Some(e.getMessage))
+          }
+        } yield {
+          // 发送任务
+          // TODO 太乱了,以后一定要抽时间改写!!
+          val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+          val o = order.get
+          val realAmount = value getOrElse (o.totalPrice - o.discount)
+          val orderNode = OrderFormatter.instance.formatJsonNode(order)
+
+          viae.sendTask(
+            "viae.event.marketplace.onRefundApprove",
+            kwargs = Some(Map("order" -> orderNode, "amount" -> realAmount,
+              "with_application" -> (o.status == "refundApplied")))
+          )
+          HanseResult.ok()
         }
       }
       r getOrElse Future(HanseResult.unprocessable())
