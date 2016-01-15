@@ -1,10 +1,10 @@
 package core.formatter.marketplace.seller
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
+import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
 import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.marketplace.seller.Seller
-import com.lvxingpai.model.misc.{ ImageItem, RichText }
+import com.lvxingpai.model.misc.{ImageItem, RichText}
 
 import scala.collection.JavaConversions._
 
@@ -34,7 +34,11 @@ class SellerSerializer extends JsonSerializer[Seller] {
     // 服务语言
     gen.writeFieldName("lang")
     gen.writeStartArray()
-    Option(seller.lang) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
+    Option(seller.lang) map (_.toSeq) getOrElse Seq() map {
+      case "zh" => "中文"
+      case "en" => "英文"
+      case "local" => "当地语言"
+    } foreach (gen writeString _)
     gen.writeEndArray()
 
     // 商户资质
@@ -46,11 +50,11 @@ class SellerSerializer extends JsonSerializer[Seller] {
     // 服务标签
     gen.writeFieldName("services")
     gen.writeStartArray()
-    Option(seller.services) map (_.toSeq) getOrElse Seq() map (_ match {
+    Option(seller.services) map (_.toSeq) getOrElse Seq() map {
       case "language" => "语言帮助"
       case "plan" => "行程规划"
       case "consult" => "当地咨询"
-    }) foreach (gen writeString _)
+    } foreach (gen writeString _)
     gen.writeEndArray()
 
     // 服务区域，可以是国家，也可以是目的地

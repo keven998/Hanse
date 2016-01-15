@@ -144,9 +144,9 @@ object OrderAPI {
    * @param ds
    * @return
    */
-  def setRefundApplied(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[Key[Order]] = {
+  def setRefundApplied(orderId: Long, data: Map[String, Any] = Map())(implicit ds: Datastore): Future[Unit] = {
 
-    Future {
+    val ret = Future {
       val query = ds.createQuery(classOf[Order]).field("orderId").equal(orderId)
       // 已支付或已发货的订单，可申请退款
       query.or(query criteria "status" equal Order.Status.Paid.toString, query criteria "status" equal
@@ -168,6 +168,15 @@ object OrderAPI {
       order.activities = order.activities += act
       order.status = Order.Status.RefundApplied.toString
       ds.save[Order](order)
+      order
+    })
+    // 注册退款申请任务
+    ret flatMap (order => {
+      Future {
+        val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+        val orderNode = OrderFormatter.instance.formatJsonNode(order)
+        viae.sendTask("viae.event.marketplace.onRefundApply", kwargs = Some(Map("order" -> orderNode)))
+      }
     })
   }
 
