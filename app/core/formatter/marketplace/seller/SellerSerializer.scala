@@ -2,7 +2,7 @@ package core.formatter.marketplace.seller
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.geo.GeoEntity
+import com.lvxingpai.model.geo.{ Locality, GeoEntity }
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.{ ImageItem, RichText }
 
@@ -61,7 +61,8 @@ class SellerSerializer extends JsonSerializer[Seller] {
     gen.writeFieldName("serviceZones")
     gen.writeStartArray()
     val retServiceZones = serializers.findValueSerializer(classOf[GeoEntity], null)
-    Option(seller.serviceZones) map (_.toSeq) getOrElse Seq() foreach (retServiceZones.serialize(_, gen, serializers))
+    Option(seller.serviceZones) map (_.toSeq) filter (_.isInstanceOf[Locality]) getOrElse Seq() foreach
+      (retServiceZones.serialize(_, gen, serializers))
     gen.writeEndArray()
 
     gen.writeStringField("address", Option(seller.address) getOrElse "")

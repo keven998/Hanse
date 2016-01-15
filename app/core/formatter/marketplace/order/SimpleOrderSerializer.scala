@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.model.marketplace.product.Commodity
 import core.misc.Utils
+import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.{ DateTimeZone, DateTime }
 
 /**
  * Created by pengyt on 2015/11/21.
@@ -44,7 +46,14 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
 
     //    val fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     //    gen.writeStringField("rendezvousTime", if (order.rendezvousTime != null) fmt.format(order.rendezvousTime) else "")
-    gen.writeNumberField("rendezvousTime", if (order.rendezvousTime != null) order.rendezvousTime.getTime else 0)
+
+    val rendezvous = Option(order.rendezvousTime) map (date => {
+      val tzDate = new DateTime(date) toDateTime DateTimeZone.forID("Asia/Shanghai")
+      val fmt = ISODateTimeFormat.date()
+      tzDate.toString(fmt)
+    }) getOrElse ""
+
+    gen.writeStringField("rendezvousTime", rendezvous)
     gen.writeNumberField("createTime", if (order.createTime != null) order.createTime.getTime else 0)
     gen.writeNumberField("updateTime", if (order.updateTime != null) order.updateTime.getTime else 0)
     gen.writeNumberField("expireTime", if (order.expireDate != null) order.expireDate.getTime else 0)
