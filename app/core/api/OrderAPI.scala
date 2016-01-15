@@ -6,10 +6,10 @@ import core.formatter.marketplace.order.OrderFormatter
 import core.payment.{ AlipayService, PaymentService, WeChatPaymentService }
 import core.service.ViaeGateway
 import org.joda.time.DateTime
-import org.mongodb.morphia.{ Key, Datastore }
 import org.mongodb.morphia.query.UpdateResults
+import org.mongodb.morphia.{ Datastore, Key }
 import play.api.Play
-import Play.current
+import play.api.Play.current
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -82,10 +82,11 @@ object OrderAPI {
       s"paymentInfo.$providerName" notEqual null
     val paymentOps = ds.createUpdateOperations(classOf[Order]).set(s"paymentInfo.$providerName.paid", true)
 
-    // 如果订单还处于pending, 则将其设置为paid
+    // 如果订单还处于pending, 则将其设置为paid, 同时更新订单的expireDate
     val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId field
       s"paymentInfo.$providerName" notEqual null field "status" equal "pending"
     val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", "paid").add("activities", act)
+      .set("expireDate", DateTime.now().plusDays(1).toDate)
 
     val ret: Future[Seq[UpdateResults]] = Future.sequence(Seq(
       Future {

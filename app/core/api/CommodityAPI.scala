@@ -111,8 +111,7 @@ object CommodityAPI {
         order.status = "pending"
         order.createTime = now
         order.updateTime = now
-        // TODO 设置订单的失效时间为三天
-        val expireDate = DateTime.now().plusDays(3)
+        val expireDate = DateTime.now().plusHours(2)
         order.expireDate = expireDate.toDate
         order.travellers = travellers
         val act = new OrderActivity
