@@ -1,18 +1,17 @@
 package controllers
 
-import java.util.Date
 import javax.inject._
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
-import controllers.security.AuthenticatedAction
 import com.lvxingpai.model.marketplace.order.OrderActivity
+import controllers.security.AuthenticatedAction
 import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
-import org.joda.time.format.DateTimeFormat
+import org.joda.time.format.{ DateTimeFormat, ISODateTimeFormat }
 import play.api.Configuration
 import play.api.libs.json._
 import play.api.mvc.Controller
@@ -41,12 +40,13 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         body <- request.body.wrapped.asJson
         commodityId <- (body \ "commodityId").asOpt[Long]
         planId <- (body \ "planId").asOpt[String]
-        rendezvousTime <- (body \ "rendezvousTime").asOpt[Long]
+        rendezvousTime <- (body \ "rendezvousTime").asOpt[String]
         quantity <- (body \ "quantity").asOpt[Int]
         travellers <- (body \ "travellers").asOpt[Array[String]]
         comment <- (body \ "comment").asOpt[String] orElse Option("")
       } yield {
-        val date = new Date(rendezvousTime)
+        // 读取预约时间
+        val date = ISODateTimeFormat.date parseLocalDate rendezvousTime
         val contact = TravellersFormatter.instance.parse[RealNameInfo]((body \ "contact").asInstanceOf[JsDefined].value.toString())
         for {
           tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)

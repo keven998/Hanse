@@ -4,21 +4,22 @@ import java.util
 import java.util.Date
 
 import com.lvxingpai.model.account.RealNameInfo
-import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
-import com.lvxingpai.model.marketplace.product.{ CommoditySnapshot, Commodity }
+import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
+import com.lvxingpai.model.marketplace.product.{ Commodity, CommoditySnapshot }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.OrderFormatter
 import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, DateTimeZone, LocalDate }
 import org.mongodb.morphia.Datastore
 import play.api.Play
-import Play.current
+import play.api.Play.current
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.language.postfixOps
 
 /**
  * Created by pengyt on 2015/11/4.
@@ -43,7 +44,32 @@ object CommodityAPI {
     }
   }
 
-  def createOrder(commodityId: Long, planId: String, rendezvous: Date, consumerId: Long,
+  private def ts2LocalDate(range: Seq[Date], zone: DateTimeZone): (LocalDate, LocalDate) = {
+    // 将时间戳类型的数据, 转换成LocalDate类型的Tuple2
+    val s = range.head.getTime
+    val e = range.last.getTime
+    (Seq(0, 1) -> Seq(s, e)).zipped map {
+      case (index, ts) => Option(ts) map (new DateTime(_, zone).toLocalDate) getOrElse (index match {
+        case 0 => new LocalDate(1970, 1, 1)
+        case _ => new LocalDate(2099, 12, 31)
+      })
+    } match {
+      case Seq(start, end) => start -> end
+    }
+  }
+
+  private def isWithinRange(date: LocalDate, range: Seq[Date],
+    zone: DateTimeZone = DateTimeZone.forID("Asia/Shanghai")): Boolean = {
+    // 转换range
+    if (range.length != 2)
+      false
+    else {
+      val (start, end) = ts2LocalDate(range, zone)
+      (date.isAfter(start) || date.isEqual(start)) && (date.isBefore(end) || date.isEqual(end))
+    }
+  }
+
+  def createOrder(commodityId: Long, planId: String, rendezvous: LocalDate, consumerId: Long,
     travellers: Seq[RealNameInfo], contact: RealNameInfo, quantity: Int, comment: String)(implicit ds: Datastore): Future[Option[Order]] = {
     val commoditySeq = Seq("_id", "commodityId", "title", "desc", "price", "plans", "seller", "category", "cover", "images", "version")
     val future = for {
@@ -51,15 +77,19 @@ object CommodityAPI {
     } yield {
       if (commodityOpt.isEmpty)
         throw ResourceNotFoundException("商品不存在或已下架")
+
       for {
         commodity <- commodityOpt
         plan <- commodity.plans.toSeq find (_.planId == planId) // 找到plan
-        pricing <- plan.pricing.toSeq find (pricing => {
-          // 找到价格
-          val start = Option(pricing.timeRange.head) getOrElse new Date(0)
-          val end = Option(pricing.timeRange.last) getOrElse new Date(2099, 1, 1)
-          (rendezvous after start) && (rendezvous before end)
-        })
+        pricing <- { // 查找符合条件的日期区间
+          val zone = DateTimeZone.forID("Asia/Shanghai")
+
+          Option(plan.pricing) flatMap (value => {
+            value find (pricing => {
+              Option(pricing.timeRange) map (_.toSeq) exists (isWithinRange(rendezvous, _, zone))
+            })
+          })
+        }
       } yield {
         // 设置选定的价格
         plan.pricing = Seq(pricing)
@@ -77,7 +107,7 @@ object CommodityAPI {
         // 设定订单价格
         order.totalPrice = quantity * pricing.price
         order.comment = comment
-        order.rendezvousTime = rendezvous
+        order.rendezvousTime = rendezvous.toDate
         order.status = "pending"
         order.createTime = now
         order.updateTime = now

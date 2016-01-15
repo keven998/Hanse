@@ -1,10 +1,10 @@
 package core.formatter.marketplace.seller
 
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
+import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.marketplace.seller.Seller
-import com.lvxingpai.model.misc.{ImageItem, RichText}
+import com.lvxingpai.model.misc.{ ImageItem, RichText }
 
 import scala.collection.JavaConversions._
 
