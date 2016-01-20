@@ -61,7 +61,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
     gen.writeFieldName("serviceZones")
     gen.writeStartArray()
     val retServiceZones = serializers.findValueSerializer(classOf[GeoEntity], null)
-    Option(seller.serviceZones) map (_.toSeq) filter (_.isInstanceOf[Locality]) getOrElse Seq() foreach
+    Option(seller.serviceZones) map (_.toSeq filter (_.isInstanceOf[Locality])) getOrElse Seq() foreach
       (retServiceZones.serialize(_, gen, serializers))
     gen.writeEndArray()
 
