@@ -3,6 +3,7 @@ package core.formatter.marketplace.seller
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.account.UserInfo
+import com.lvxingpai.model.geo.{ Locality, GeoEntity }
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.ImageItem
 
@@ -28,7 +29,11 @@ class SimpleSellerSerializer extends JsonSerializer[Seller] {
     // 服务语言
     gen.writeFieldName("lang")
     gen.writeStartArray()
-    Option(seller.lang) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
+    Option(seller.lang) map (_.toSeq) getOrElse Seq() map {
+      case "zh" => "中文"
+      case "en" => "英文"
+      case "local" => "当地语言"
+    } foreach (gen writeString _)
     gen.writeEndArray()
 
     // 商户资质
@@ -40,7 +45,19 @@ class SimpleSellerSerializer extends JsonSerializer[Seller] {
     // 服务标签
     gen.writeFieldName("services")
     gen.writeStartArray()
-    Option(seller.services) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
+    Option(seller.services) map (_.toSeq) getOrElse Seq() map {
+      case "language" => "语言帮助"
+      case "plan" => "行程规划"
+      case "consult" => "当地咨询"
+    } foreach (gen writeString _)
+    gen.writeEndArray()
+
+    // 服务区域，可以是国家，也可以是目的地
+    gen.writeFieldName("serviceZones")
+    gen.writeStartArray()
+    val retServiceZones = serializers.findValueSerializer(classOf[GeoEntity], null)
+    Option(seller.serviceZones) map (_.toSeq) filter (_.isInstanceOf[Locality]) getOrElse Seq() foreach
+      (retServiceZones.serialize(_, gen, serializers))
     gen.writeEndArray()
 
     gen.writeFieldName("cover")

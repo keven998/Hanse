@@ -5,7 +5,7 @@ import javax.inject.{ Inject, Named }
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
 import controllers.security.AuthenticatedAction
-import core.api.{ CommodityAPI, MiscAPI }
+import core.api.{ SellerAPI, CommodityAPI, MiscAPI }
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import play.api.Configuration
@@ -27,9 +27,11 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
       val userOpt = request.headers.get("X-Lvxingpai-Id") map (_.toLong)
       for {
         commodity <- CommodityAPI.getCommodityById(commodityId, version)
+        seller <- SellerAPI.getSeller(commodity)
         fas <- userOpt map (userId => MiscAPI.getFavorite(userId, "commodity")) getOrElse Future.successful(None)
       } yield {
         if (commodity.nonEmpty) {
+          if (seller.nonEmpty) commodity.get.seller = seller.get
           val node = CommodityFormatter.instance.formatJsonNode(commodity.get).asInstanceOf[ObjectNode]
           node.put("shareUrl", "http://h5.taozilvxing.com/xq/detail.php?pid=" + commodity.get.commodityId)
           node.put("isFavorite", fas exists {

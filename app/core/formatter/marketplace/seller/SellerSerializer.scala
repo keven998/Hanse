@@ -2,9 +2,10 @@ package core.formatter.marketplace.seller
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.geo.{ Locality, GeoEntity }
+import com.lvxingpai.model.geo.{ GeoEntity, Locality }
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.{ ImageItem, RichText }
+import org.apache.commons.lang3.StringUtils
 
 import scala.collection.JavaConversions._
 
@@ -20,7 +21,7 @@ class SellerSerializer extends JsonSerializer[Seller] {
       gen.writeEndObject()
       return
     }
-    gen.writeStringField("id", seller.id.toString)
+    gen.writeStringField("id", (Option(seller.id) getOrElse StringUtils.EMPTY).toString)
 
     gen.writeNumberField("sellerId", seller.sellerId)
     gen.writeStringField("name", seller.name)
