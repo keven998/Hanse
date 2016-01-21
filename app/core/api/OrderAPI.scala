@@ -92,21 +92,21 @@ object OrderAPI {
       Future {
         ds.update(paymentQuery, paymentOps)
       }, Future {
-        ds.update(statusQuery, statusOps)
+        val updateResult = ds.update(statusQuery, statusOps)
+        if (updateResult.getUpdatedCount == 1) {
+          // 真正的从pending到paid, 触发onPayOrder事件
+          getOrder(orderId) flatMap (value => {
+            val order = value.get
+            val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+            val orderNode = OrderFormatter.instance.formatJsonNode(order)
+            viae.sendTask("viae.event.marketplace.onPayOrder", kwargs = Some(Map("order" -> orderNode)))
+          })
+        }
+        updateResult
       }
     ))
 
-    ret map (_ => {
-      for {
-        order <- getOrder(orderId)
-      } yield {
-        order map (o => {
-          val viae = Play.application.injector instanceOf classOf[ViaeGateway]
-          val orderNode = OrderFormatter.instance.formatJsonNode(order)
-          viae.sendTask("viae.event.marketplace.onPayOrder", kwargs = Some(Map("order" -> orderNode)))
-        })
-      }
-    })
+    ret map (_ => ())
   }
 
   /**
