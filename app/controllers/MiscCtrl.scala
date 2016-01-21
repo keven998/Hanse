@@ -91,7 +91,7 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
   def getFavorite(userId: Long, itemType: String) = Action.async(
     request => {
       val node = new ObjectMapper().createObjectNode()
-      val commodityFields = Seq("id", "commodityId", "price", "marketPrice", "title", "cover")
+      val commodityFields = Seq("id", "commodityId", "price", "marketPrice", "title", "cover", "seller", "salesVolume", "rating")
       for {
         fas <- MiscAPI.getFavorite(userId, itemType)
         commodities <- CommodityAPI.getCommoditiesByObjectIdList(fas map (_.commodities.toSeq) getOrElse Seq(), commodityFields)
