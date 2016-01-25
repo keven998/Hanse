@@ -1,10 +1,11 @@
 package controllers.security
 
 import com.lvxingpai.yunkai.UserInfo
+import core.security.UserRole
 import libs.RequestProcessingExtended.RawRequest
 import play.api.Play
 import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.{ ActionBuilder, Request, RequestHeader, Result }
 
 import scala.concurrent.Future
 
@@ -12,11 +13,6 @@ import scala.concurrent.Future
  * Helpers to create secure actions.
  */
 object Security {
-
-  object UserRole extends Enumeration {
-    val Admin = Value("admin")
-    val User = Value("user")
-  }
 
   case class AuthInfo[U](authProvided: Boolean, roles: Set[UserRole.Value], user: Option[U])
 
@@ -161,4 +157,3 @@ object Security {
     }
   }
 }
-
