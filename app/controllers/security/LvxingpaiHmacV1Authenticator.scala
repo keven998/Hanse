@@ -135,12 +135,13 @@ class LvxingpaiHmacV1Authenticator extends Authenticator {
           // 签名是否验证通过
           val verified = verifySignature(request, secretKey, signature)
 
-          AuthInfo[UserInfo](authProvided = true, if (verified) Some(user) else None)
-        }) getOrElse AuthInfo[UserInfo](authProvided = true, None) // 没有找到相应的secret key
+          AuthInfo[UserInfo](authProvided = true, if (verified) Set(Security.UserRole.User) else Set(),
+            if (verified) Some(user) else None)
+        }) getOrElse AuthInfo[UserInfo](authProvided = true, Set(), None) // 没有找到相应的secret key
       })
     }) getOrElse {
       // 没有找到UserId
-      Future(AuthInfo[UserInfo](authProvided = true, None))
+      Future(AuthInfo[UserInfo](authProvided = true, Set(), None))
     }
   }
 
