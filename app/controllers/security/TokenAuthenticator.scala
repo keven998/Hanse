@@ -1,13 +1,15 @@
 package controllers.security
 
 import com.lvxingpai.yunkai.{ NotFoundException, UserInfo }
-import controllers.security.Security.AuthInfo
+import Security.AuthInfo
+import core.security.UserRole
 import play.api.inject.BindingKey
-import play.api.{ Configuration, Play }
 import play.api.mvc.Request
-import scala.collection.JavaConversions._
+import play.api.{ Configuration, Play }
 
+import scala.collection.JavaConversions._
 import scala.concurrent.Future
+import scala.util.{ Failure, Success, Try }
 
 /**
  * Created by zephyre on 1/12/16.
@@ -21,32 +23,53 @@ class TokenAuthenticator extends Authenticator {
     import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
     import core.misc.Implicits.TwitterConverter._
     import play.api.Play.current
-    import com.twitter.util
+    import scala.concurrent.ExecutionContext.Implicits.global
 
     val yunkai = Play.application.injector instanceOf classOf[YunkaiClient]
 
     // 登录失败时, 返回的AuthInfo
-    val unauth = AuthInfo[UserInfo](authProvided = true, None)
+    val unauth = AuthInfo[UserInfo](authProvided = true, Set(), None)
 
     (for {
-      userId <- request.headers get "X-Lvxingpai-Id" map (_.toLong)
-      verified <- {
+      tokens <- {
         // 获得token列表
         val confKey = BindingKey(classOf[Configuration]) qualifiedWith "default"
         val conf = Play.application.injector instanceOf confKey
-        val tokens = conf getStringList "security.auth.tokens" map (_.toSeq) getOrElse Seq()
-        Some(tokens contains authMessage)
+        conf getConfig "security.auth.tokens" orElse Some(Configuration.empty)
       }
     } yield {
-      if (verified) {
-        val future = yunkai.getUserById(userId) map (user => {
-          AuthInfo(authProvided = true, Some(user))
-        }) rescue {
-          case _: NotFoundException => util.Future(unauth)
+      val roles = scala.collection.mutable.Set[UserRole.Value]()
+      // security.auth.tokens下面的每一个subkey, 都定义了一个role. 如果用户提供了相应的token, 表示获得这个role的权限
+      tokens.subKeys foreach (subKey => {
+        val tokenEntries = tokens getStringList subKey map (_.toSeq) getOrElse Seq()
+        if (tokenEntries contains authMessage) {
+          // 尝试赋予相应的role
+          Try(UserRole withName subKey) match {
+            case Success(v) => roles += v
+            case Failure(_) =>
+          }
         }
-        twitterToScalaFuture(future)
-      } else {
+      })
+
+      // 在使用Token的情况下, 必须有roles
+      if (roles.isEmpty) {
         Future.successful(unauth)
+      } else {
+        for {
+          userInfo <- {
+            request.headers get "X-Lvxingpai-Id" map (v => {
+              yunkai.getUserById(v.toLong) map Option.apply recover {
+                case _: NotFoundException => None
+              }
+            }) getOrElse Future.successful(None)
+          }
+        } yield {
+          // 如果查到了user信息, 需要获得user权限
+          if (userInfo.nonEmpty)
+            roles += UserRole.User
+
+          AuthInfo(authProvided = true, roles.toSet, userInfo)
+        }
       }
     }) getOrElse Future.successful(unauth)
   }
