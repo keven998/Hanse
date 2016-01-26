@@ -68,6 +68,8 @@ object Implicits {
     }
   }
 
+  implicit def resultJava2Scala(result: play.mvc.Result): play.api.mvc.Result = result.toScala
+
   object TwitterConverter {
     implicit def scalaToTwitterTry[T](t: Try[T]): twitter.Try[T] = t match {
       case Success(r) => twitter.Return(r)
