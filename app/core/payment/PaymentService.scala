@@ -2,14 +2,12 @@ package core.payment
 
 import java.util.Date
 
-import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity, Prepay }
-import com.lvxingpai.model.marketplace.trade.PaymentVendor
+import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
 import core.api.OrderAPI
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -104,49 +102,60 @@ trait PaymentService {
    * @return
    */
   def refund(userId: Long, orderId: Long, refundPrice: Option[Int], memo: String): Future[Unit] = {
-    OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "paymentInfo", "status"))(datastore) flatMap (opt => {
-      val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
-
-      // 商家可以对已支付的订单主动退款，也可以对申请的订单退款
-      if (!(order.status equals Order.Status.RefundApplied.toString) && !(order.status equals Order.Status.Paid.toString))
-        throw OrderStatusException(s"Not refund applied or paid order id: $orderId")
-      val payment = Option(order.paymentInfo)
-
-      // 判断退款是否超额
-      val totalPrice = order.totalPrice
-      if (refundPrice.nonEmpty && refundPrice.get > totalPrice)
-        throw ResourceNotFoundException(s"Refund price express. " +
-          s"TotalPrice:$totalPrice,RefundPrice:$refundPrice,OrderId:$orderId")
-
-      // 判断是否有支付信息
-      if (payment.isEmpty)
-        throw ResourceNotFoundException(s"Order not paid order id: $orderId")
-
-      val wc = payment.get.get(PaymentVendor.Wechat)
-
-      // 判断微信支付信息是否已经支付
-      if (wc != null && wc.paid)
-        refundProcess(userId, order, refundPrice, memo)
-      else {
-        // 描述订单退款流水
-        val act = new OrderActivity()
-        act.action = OrderActivity.Action.refundApprove.toString
-        act.timestamp = new Date()
-        val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.get, "memo" -> memo)
-        act.data = actData.asJava
-        act.prevStatus = order.status
-        OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
-          order)
-      }
-    })
+    //    import Order.Status._
+    //
+    //    for {
+    //      order <- OrderAPI.fetchOrder(orderId)(datastore)
+    //      _ <- {
+    //        assert(Seq(Paid, RefundApplied) contains (Order.Status withName order.status))
+    //        assert(userId == order.commodity.seller.sellerId)
+    //        val amount = refundPrice getOrElse (order.totalPrice - order.discount)
+    //        if (amount > order.totalPrice)
+    //          throw new IllegalArgumentException(s"Refund amount excesses the order's total price. ")
+    //
+    //        refundProcess(order, amount) map (_ => {
+    //
+    //        })
+    //      }
+    //    } OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "paymentInfo", "status"))(datastore) flatMap (opt => {
+    //      val order = opt.getOrElse(throw ResourceNotFoundException(s"Invalid order id: $orderId"))
+    //
+    //      // 商家可以对已支付的订单主动退款，也可以对申请的订单退款
+    //      if (!(order.status equals Order.Status.RefundApplied.toString) && !(order.status equals Order.Status.Paid.toString))
+    //        throw OrderStatusException(s"Not refund applied or paid order id: $orderId")
+    //
+    //      // 判断退款是否超额
+    //      val totalPrice = order.totalPrice
+    //      if (refundPrice.nonEmpty && refundPrice.get > totalPrice)
+    //        throw ResourceNotFoundException(s"Refund price express. " +
+    //          s"TotalPrice:$totalPrice,RefundPrice:$refundPrice,OrderId:$orderId")
+    //
+    //      // 判断是否有支付信息
+    //      val payment = Option(order.paymentInfo) map (_.asScala.toMap) getOrElse {
+    //        throw ResourceNotFoundException(s"Order not paid order id: $orderId")
+    //      }
+    //
+    //      refundProcess(userId, order, refundPrice, memo) map (_ => {
+    //        // 成功了, 修改OrderActivities
+    //        // 描述订单退款流水
+    //        val act = new OrderActivity()
+    //        act.action = OrderActivity.Action.refundApprove.toString
+    //        act.timestamp = new Date()
+    //        val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.get, "memo" -> memo)
+    //        act.data = actData.asJava
+    //        act.prevStatus = order.status
+    //        OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
+    //          order)
+    //      })
+    //    })
+    null
   }
 
   /**
-   * 退款操作
-   * @param refundPrice
+   * 执行和渠道相关的, 具体的退款操作
    * @return
    */
-  def refundProcess(userId: Long, order: Order, refundPrice: Option[Int], memo: String): Future[Unit]
+  def refundProcess(order: Order, amount: Int): Future[Unit]
 
   /**
    * 查询退款
