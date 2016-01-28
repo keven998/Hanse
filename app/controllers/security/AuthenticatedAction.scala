@@ -1,7 +1,7 @@
 package controllers.security
 
 import com.lvxingpai.yunkai.UserInfo
-import controllers.security.Security.{ AuthenticatedBuilder, AuthenticatedRequest }
+import Security.{ AuthenticatedBuilder, AuthenticatedRequest }
 import core.utils.HanseResults
 import libs.RequestProcessingExtended
 import libs.RequestProcessingExtended.WrappedPayload

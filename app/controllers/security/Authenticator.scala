@@ -1,7 +1,7 @@
 package controllers.security
 
 import com.lvxingpai.yunkai.UserInfo
-import controllers.security.Security.AuthInfo
+import Security.AuthInfo
 import play.api.mvc.Request
 
 import scala.concurrent.Future
