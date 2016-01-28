@@ -4,18 +4,15 @@ import javax.inject.{ Inject, Named }
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
-import com.lvxingpai.yunkai.UserInfoProp
 import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
 import controllers.security.AuthenticatedAction
 import core.api.{ CommodityAPI, MiscAPI, SellerAPI }
-import core.formatter.marketplace.product.{ CommodityCommentFormatter, CommodityCategoryFormatter, CommodityFormatter, SimpleCommodityFormatter }
+import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
-import core.misc.Implicits.TwitterConverter._
+import play.api.Configuration
 import play.api.mvc.Controller
-import play.api.{ Configuration, Play }
 
 import scala.collection.JavaConverters._
-import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -73,23 +70,24 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
     }
   )
 
+  /**
+   * 针对商品发表评论
+   *
+   * @param commodityId
+   * @return
+   */
   def addComment(commodityId: Long) = AuthenticatedAction.async2(
     request => {
-      val yunkai = Play.application.injector instanceOf classOf[YunkaiClient]
       (for {
         body <- request.body.wrapped.asJson
-        userId <- request.headers.get("X-Lvxingpai-Id") map (_.toLong)
         contents <- (body \ "contents").asOpt[String]
         rating <- Option((body \ "rating").asOpt[Double])
       } yield {
-        import com.lvxingpai.yunkai.UserInfo
-
-        val future: Future[UserInfo] = yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar)))
-        for {
-          userInfo <- future
-          commodities <- CommodityAPI.addComments(commodityId, userInfo, contents, rating, None)
-        } yield {
-          HanseResult.ok()
+        request.auth.user map (user => {
+          CommodityAPI.addComments(commodityId, user, contents, rating, None) map (_ => HanseResult.ok())
+        }) getOrElse {
+          // 需要登录
+          Future.successful(HanseResult.forbidden(errorMsg = Some("Posting comments requires authentication")))
         }
       }) getOrElse Future {
         HanseResult.unprocessable()
