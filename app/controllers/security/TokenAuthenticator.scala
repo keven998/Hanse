@@ -1,6 +1,6 @@
 package controllers.security
 
-import com.lvxingpai.yunkai.{ NotFoundException, UserInfo }
+import com.lvxingpai.yunkai.{ UserInfoProp, NotFoundException, UserInfo }
 import Security.AuthInfo
 import core.security.UserRole
 import play.api.inject.BindingKey
@@ -58,7 +58,7 @@ class TokenAuthenticator extends Authenticator {
         for {
           userInfo <- {
             request.headers get "X-Lvxingpai-Id" map (v => {
-              yunkai.getUserById(v.toLong) map Option.apply recover {
+              yunkai.getUserById(v.toLong, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar))) map Option.apply recover {
                 case _: NotFoundException => None
               }
             }) getOrElse Future.successful(None)

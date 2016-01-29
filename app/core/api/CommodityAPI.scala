@@ -3,9 +3,9 @@ package core.api
 import java.util
 import java.util.Date
 
-import com.lvxingpai.model.account.{ UserInfo, RealNameInfo }
+import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
-import com.lvxingpai.model.marketplace.product.{ CommodityComment, Commodity, CommoditySnapshot }
+import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityComment, CommoditySnapshot }
 import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.ResourceNotFoundException
@@ -224,10 +224,17 @@ object CommodityAPI {
     }
   }
 
-  def getComments(commodityId: Long)(implicit ds: Datastore): Future[Option[Seq[CommodityComment]]] = {
+  def hasBought(commodityId: Long, userId: Long)(implicit ds: Datastore): Future[Boolean] = {
     Future {
-      val query = ds.createQuery(classOf[CommodityComment]).field("commodityId").equal(commodityId).order("-createTime")
-      Option(query.asList())
+      val order = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).field("commodity.commodityId").equal(commodityId).asList()
+      (Option(order) nonEmpty) && (order flatMap (_.activities) map (_.prevStatus) contains (Order.Status.Paid.toString))
+    }
+  }
+
+  def getComments(commodityId: Long, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[CommodityComment]] = {
+    Future {
+      val comments = ds.createQuery(classOf[CommodityComment]).field("commodityId").equal(commodityId).offset(start).limit(count).order("-createTime").asList()
+      Option(comments) map (_.toSeq) getOrElse Seq()
     }
   }
 }

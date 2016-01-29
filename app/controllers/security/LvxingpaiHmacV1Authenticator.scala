@@ -5,7 +5,7 @@ import java.util.Locale
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-import com.lvxingpai.yunkai.{ NotFoundException, UserInfo }
+import com.lvxingpai.yunkai.{ UserInfoProp, NotFoundException, UserInfo }
 import com.twitter.util
 import com.twitter.util.Base64StringEncoder
 import Security.AuthInfo
@@ -34,7 +34,7 @@ class LvxingpaiHmacV1Authenticator extends Authenticator {
     val yunkai = Play.application.injector instanceOf classOf[YunkaiClient]
 
     val future = (for {
-      userInfo <- yunkai.getUserById(userId)
+      userInfo <- yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar)))
       secretKey <- yunkai.getUserSecretKey(userId)
     } yield {
       Some((userInfo, secretKey))

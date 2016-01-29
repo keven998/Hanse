@@ -84,7 +84,12 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         rating <- Option((body \ "rating").asOpt[Double])
       } yield {
         request.auth.user map (user => {
-          CommodityAPI.addComments(commodityId, user, contents, rating, None) map (_ => HanseResult.ok())
+          CommodityAPI.hasBought(commodityId, user.userId) flatMap (x => if (!x) Future {
+            HanseResult.forbidden()
+          }
+          else {
+            CommodityAPI.addComments(commodityId, user, contents, rating, None) map (_ => HanseResult.ok())
+          })
         }) getOrElse {
           // 需要登录
           Future.successful(HanseResult.forbidden(errorMsg = Some("Posting comments requires authentication")))
@@ -95,13 +100,13 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
     }
   )
 
-  def getComment(commodityId: Long) = AuthenticatedAction.async2(
+  def getComment(commodityId: Long, start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
-        commodities <- CommodityAPI.getComments(commodityId)
+        commodities <- CommodityAPI.getComments(commodityId, start, count)
       } yield {
         if (commodities.nonEmpty) {
-          val node = CommodityCommentFormatter.instance.formatJsonNode(commodities.get)
+          val node = CommodityCommentFormatter.instance.formatJsonNode(commodities)
           HanseResult(data = Some(node))
         } else
           HanseResult.notFound()
