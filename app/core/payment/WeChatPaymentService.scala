@@ -5,18 +5,18 @@ import java.util.{ Date, UUID }
 import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
-import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity, Prepay }
-import core.api.OrderAPI
+import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
+import core.api.{ StatedOrder, OrderAPI }
 import core.exception.GeneralPaymentException
 import core.misc.Utils
 import core.payment.PaymentService.Provider
+import core.service.ViaeGateway
 import org.mongodb.morphia.Datastore
 import play.api.Play.current
 import play.api.inject.BindingKey
 import play.api.libs.ws.WS
 import play.api.{ Configuration, Play }
 
-import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -25,7 +25,7 @@ import scala.concurrent.Future
  *
  * Created by zephyre on 12/17/15.
  */
-class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extends PaymentService {
+class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap, implicit private val viaeGateway: ViaeGateway) extends PaymentService {
 
   override lazy val provider: Provider.Value = Provider.WeChat
 
@@ -193,6 +193,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    */
   override def handleCallback(params: Map[String, Any]): Future[Any] = {
     val data = params mapValues { case ss: Any => ss.toString }
+    implicit val ds = datastore
     try {
       if (!WeChatPaymentService.verifyWeChatPay(data, data("sign"))) {
         Future {
@@ -207,7 +208,12 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
           case _: NumberFormatException => throw GeneralPaymentException(s"Invalid out_trade_no: $tradeNumber")
         }
 
-        OrderAPI.setPaid(orderId, provider)(datastore) map (_ => WeChatPaymentService.wechatCallBackOK)
+        for {
+          order <- OrderAPI.fetchOrder(orderId)
+          _ <- StatedOrder(order).pay(order.consumerId, PaymentService.Provider.WeChat)
+        } yield {
+          WeChatPaymentService.wechatCallBackOK
+        }
       }
     } catch {
       case e: GeneralPaymentException => Future {
@@ -221,12 +227,8 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
    *
    * @return
    */
-  override def refundProcess(userId: Long, order: Order, refundPriceValue: Option[Int], memo: String): Future[Unit] = {
-
-    // 如果没设定退款金额,按照订单总价退款
-    val refundPrice = if (refundPriceValue.isEmpty) order.totalPrice - order.discount else refundPriceValue.get
-
-    val content = Map("refund_fee" -> refundPrice.toString, "total_fee" -> order.totalPrice.toString,
+  override def refundProcess(order: Order, amount: Int): Future[Unit] = {
+    val content = Map("refund_fee" -> amount.toString, "total_fee" -> order.totalPrice.toString,
       "out_trade_no" -> order.orderId.toString)
 
     val url = WeChatPaymentService.refundOrderUrlUrl
@@ -249,7 +251,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
       .withRequestTimeout(30000)
       .post(body.toString())
 
-    wsFuture flatMap (ws => {
+    wsFuture map (ws => {
       val body = scala.xml.XML loadString new String(ws.bodyAsBytes, "UTF8")
       // 退款单号
       val returnCode = (body \ "return_code").text
@@ -263,15 +265,6 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap) extend
         throw new RuntimeException(s"Error in creating WeChat prepay. return_msg=$returnMsg / " +
           s"err_code=$errorCode / err_code_des=$errorMsg")
       }
-      // 描述订单退款流水
-      val act = new OrderActivity()
-      act.action = OrderActivity.Action.refundApprove.toString
-      act.timestamp = new Date()
-      val actData: Map[String, Any] = Map("userId" -> userId, "amount" -> refundPrice.toInt, "memo" -> memo)
-      act.data = actData.asJava
-      act.prevStatus = order.status
-      OrderAPI.updateOrderStatus(order.orderId, Order.Status.Refunded, act)(datastore) map (_ =>
-        order)
     })
   }
 

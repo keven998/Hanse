@@ -1,21 +1,20 @@
 package controllers
 
+import java.util.ConcurrentModificationException
 import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import controllers.security.AuthenticatedAction
-import core.api.OrderAPI
-import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceNotFoundException }
-import core.formatter.marketplace.order.OrderFormatter
+import core.api.{ OrderAPI, StatedOrder }
+import core.exception.{ OrderStatusException, GeneralPaymentException, ResourceNotFoundException }
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.payment.PaymentService.Provider
 import core.payment.{ AlipayService, WeChatPaymentService }
 import core.service.ViaeGateway
 import play.api.mvc.{ Action, Controller, Result, Results }
-import play.api.{ Play, Configuration, Logger }
-import Play.current
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,7 +22,8 @@ import scala.language.postfixOps
 import scala.xml.Elem
 
 @Singleton
-class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
+class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap,
+    implicit val viaeGateway: ViaeGateway) extends Controller {
 
   implicit lazy val ds = datastore.map.get("k2").get
 
@@ -106,16 +106,20 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
       val ret = for {
         body <- request.body.asXml
       } yield {
+        val paymentData: Map[String, String] = body.head.child map { x => x.label.toString -> x.text.toString } filter
+          (c => c._1 != "#PCDATA") toMap
 
-        val prePay: Map[String, String] = body.head.child map { x => x.label.toString -> x.text.toString } filter (c => c._1 != "#PCDATA") toMap
-
-        WeChatPaymentService.instance.handleCallback(prePay) map (contents => Ok(contents.asInstanceOf[Elem])) recover {
-          case e: GeneralPaymentException =>
-            // 出现任何失败的情况
-            HanseResult.unprocessable(errorMsg = Some(e.getMessage))
-          case e: ResourceNotFoundException =>
-            HanseResult.notFound(Some(e.getMessage))
-        }
+        WeChatPaymentService.instance.handleCallback(paymentData) map
+          (contents => Ok(contents.asInstanceOf[Elem])) recover {
+            case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
+              // 订单状态有误, 或者存在并发修改的情况
+              HanseResult.conflict(Some(e.getMessage))
+            case e: ResourceNotFoundException =>
+              HanseResult.notFound(Some(e.getMessage))
+            case e: GeneralPaymentException =>
+              // 出现任何失败的情况
+              HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+          }
       }
       ret getOrElse Future {
         Ok(WeChatPaymentService.wechatCallBackError)
@@ -144,11 +148,14 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
         AlipayService.instance.handleCallback(formData) map (contents => {
           Results.Ok(contents.toString)
         }) recover {
+          case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
+            // 订单状态有误, 或者存在并发修改的情况
+            HanseResult.conflict(Some(e.getMessage))
+          case e: ResourceNotFoundException =>
+            HanseResult.notFound(Some(e.getMessage))
           case e: GeneralPaymentException =>
             // 出现任何失败的情况
             HanseResult.unprocessable(errorMsg = Some(e.getMessage))
-          case e: ResourceNotFoundException =>
-            HanseResult.notFound(Some(e.getMessage))
         }
       }) getOrElse Future {
         HanseResult.unprocessable()
@@ -168,32 +175,22 @@ class PaymentCtrl @Inject() (@Named("default") configuration: Configuration, dat
           case x => Some((x.get * 100).toInt)
         }
 
-        // 查看订单当前的状态
-        for {
-          order <- OrderAPI.getOrder(orderId)
-          _ <- WeChatPaymentService.instance.refund(userId, orderId, value, memo) map (_ => HanseResult.ok()) recover {
-            // 错误码与商家系统对应
-            case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
-            case e: OrderStatusException => HanseResult.notFound(Some(e.getMessage))
+        (for {
+          order <- OrderAPI.fetchOrder(orderId)
+          _ <- {
+            val tmp = Map("memo" -> memo)
+            val data = if (value.nonEmpty)
+              tmp + ("amount" -> value.get)
+            else
+              tmp
+            StatedOrder(order).refundApprove(userId, Some(data))
           }
         } yield {
-          // 发送任务
-          // TODO 太乱了,以后一定要抽时间改写!!
-          val viae = Play.application.injector instanceOf classOf[ViaeGateway]
-          val o = order.get
-          val realAmount = value getOrElse (o.totalPrice - o.discount)
-          val orderNode = OrderFormatter.instance.formatJsonNode(order)
-
-          viae.sendTask(
-            "viae.event.marketplace.onRefundApprove",
-            kwargs = Some(Map(
-              "order" -> orderNode,
-              "amount" -> realAmount,
-              "memo" -> memo,
-              "with_application" -> (o.status == "refundApplied")
-            ))
-          )
           HanseResult.ok()
+        }) recover {
+          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+          case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
+            HanseResult.conflict(Some(e.getMessage))
         }
       }
       r getOrElse Future(HanseResult.unprocessable())
