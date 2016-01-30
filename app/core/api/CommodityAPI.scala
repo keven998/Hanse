@@ -8,7 +8,7 @@ import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityComment, CommoditySnapshot }
 import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
-import core.exception.ResourceNotFoundException
+import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
 import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
@@ -197,44 +197,82 @@ object CommodityAPI {
     }
   }
 
-  def addComments(commodityId: Long, user: YunkaiUser, contents: String, rating: Option[Double], img: Option[List[ImageItem]])(implicit ds: Datastore): Future[CommodityComment] = {
-    Future {
-      val comment = new CommodityComment()
-      comment.id = new ObjectId()
-      comment.commodityId = commodityId
-      comment.contents = contents
+  /**
+   * 针对某件商品发表评论
+   *
+   * @param commodityId 商品ID
+   * @param user 用户信息
+   * @param contents 评论内容
+   * @param rating 对商品的评分
+   * @param img 评论商品的时候, 可以上传一些照片
+   * @return
+   */
+  def postComment(commodityId: Long, user: YunkaiUser, contents: String, rating: Option[Float],
+    img: Option[Seq[ImageItem]])(implicit ds: Datastore): Future[CommodityComment] = {
+    // 必须购买才能评论
+    for {
+      bought <- hasBought(commodityId, user.userId)
+    } yield {
+      if (bought) {
+        val comment = new CommodityComment()
+        comment.id = new ObjectId()
+        comment.commodityId = commodityId
+        comment.contents = contents
 
-      val userInfo = new UserInfo
-      userInfo.nickname = user.nickName
-      val avaterIt = new ImageItem
-      avaterIt.url = user.avatar getOrElse ""
-      userInfo.avatar = avaterIt
-      userInfo.userId = user.userId
-      comment.user = userInfo
+        val userInfo = new UserInfo
+        userInfo.nickname = user.nickName
+        user.avatar foreach (avatar => {
+          if (avatar.nonEmpty && (avatar startsWith "http")) {
+            val item = new ImageItem
+            item.url = avatar
+            userInfo.avatar = item
+          }
+        })
+        userInfo.userId = user.userId
+        comment.user = userInfo
 
-      if (rating.nonEmpty)
-        comment.rating = rating.get
-      if (img.nonEmpty)
-        comment.images = img.get
-      val now = DateTime.now().toDate
-      comment.createTime = now
-      comment.updateTime = now
-      ds.save[CommodityComment](comment)
-      comment
+        rating foreach (comment.rating = _)
+        img foreach (comment.images = _)
+        val now = DateTime.now().toDate
+        comment.createTime = now
+        comment.updateTime = now
+
+        ds.save[CommodityComment](comment)
+        comment
+      } else {
+        // 如果没有购买商品, 则没有资格评论
+        throw OrderStatusException(s"User ${user.userId} have not bought commodity $commodityId yet, " +
+          s"cannot post comments.")
+      }
     }
   }
 
+  /**
+   * 判断一个用户是否购买了某件商品
+   *
+   * @param commodityId 商品列表
+   * @param userId 用户ID
+   * @return
+   */
   def hasBought(commodityId: Long, userId: Long)(implicit ds: Datastore): Future[Boolean] = {
     Future {
-      val order = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).field("commodity.commodityId").equal(commodityId).asList()
-      (Option(order) nonEmpty) && (order flatMap (_.activities) map (_.prevStatus) contains (Order.Status.Paid.toString))
+      val order = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).field("commodity.commodityId")
+        .equal(commodityId).asList().toSeq
+      order.nonEmpty && (order flatMap (_.activities) map (_.prevStatus) contains Order.Status.Paid.toString)
     }
   }
 
+  /**
+   * 获得某个商品的评论列表
+   * @param commodityId 商品ID
+   * @param start 分页
+   * @param count 分页
+   * @return
+   */
   def getComments(commodityId: Long, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[CommodityComment]] = {
     Future {
-      val comments = ds.createQuery(classOf[CommodityComment]).field("commodityId").equal(commodityId).offset(start).limit(count).order("-createTime").asList()
-      Option(comments) map (_.toSeq) getOrElse Seq()
+      ds.createQuery(classOf[CommodityComment]).field("commodityId").equal(commodityId).offset(start).limit(count)
+        .order("-createTime").asList().toSeq
     }
   }
 }

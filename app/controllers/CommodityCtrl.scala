@@ -7,6 +7,7 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
 import controllers.security.AuthenticatedAction
 import core.api.{ CommodityAPI, MiscAPI, SellerAPI }
+import core.exception.OrderStatusException
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import play.api.Configuration
@@ -81,15 +82,12 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
       (for {
         body <- request.body.wrapped.asJson
         contents <- (body \ "contents").asOpt[String]
-        rating <- Option((body \ "rating").asOpt[Double])
+        rating <- Option((body \ "rating").asOpt[Float])
       } yield {
         request.auth.user map (user => {
-          CommodityAPI.hasBought(commodityId, user.userId) flatMap (x => if (!x) Future {
-            HanseResult.forbidden()
+          CommodityAPI.postComment(commodityId, user, contents, rating, None) map (_ => HanseResult.ok()) recover {
+            case e: OrderStatusException => HanseResult.forbidden(errorMsg = Some(e.getMessage))
           }
-          else {
-            CommodityAPI.addComments(commodityId, user, contents, rating, None) map (_ => HanseResult.ok())
-          })
         }) getOrElse {
           // 需要登录
           Future.successful(HanseResult.forbidden(errorMsg = Some("Posting comments requires authentication")))
@@ -105,11 +103,8 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
       for {
         commodities <- CommodityAPI.getComments(commodityId, start, count)
       } yield {
-        if (commodities.nonEmpty) {
-          val node = CommodityCommentFormatter.instance.formatJsonNode(commodities)
-          HanseResult(data = Some(node))
-        } else
-          HanseResult.notFound()
+        val node = CommodityCommentFormatter.instance.formatJsonNode(commodities)
+        HanseResult(data = Some(node))
       }
     }
   )
