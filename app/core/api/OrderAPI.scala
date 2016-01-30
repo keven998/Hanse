@@ -92,21 +92,21 @@ object OrderAPI {
       Future {
         ds.update(paymentQuery, paymentOps)
       }, Future {
-        ds.update(statusQuery, statusOps)
+        val updateResult = ds.update(statusQuery, statusOps)
+        if (updateResult.getUpdatedCount == 1) {
+          // 真正的从pending到paid, 触发onPayOrder事件
+          getOrder(orderId) flatMap (value => {
+            val order = value.get
+            val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+            val orderNode = OrderFormatter.instance.formatJsonNode(order)
+            viae.sendTask("viae.event.marketplace.onPayOrder", kwargs = Some(Map("order" -> orderNode)))
+          })
+        }
+        updateResult
       }
     ))
 
-    ret map (_ => {
-      for {
-        order <- getOrder(orderId)
-      } yield {
-        order map (o => {
-          val viae = Play.application.injector instanceOf classOf[ViaeGateway]
-          val orderNode = OrderFormatter.instance.formatJsonNode(order)
-          viae.sendTask("viae.event.marketplace.onPayOrder", kwargs = Some(Map("order" -> orderNode)))
-        })
-      }
-    })
+    ret map (_ => ())
   }
 
   /**
@@ -176,7 +176,12 @@ object OrderAPI {
       Future {
         val viae = Play.application.injector instanceOf classOf[ViaeGateway]
         val orderNode = OrderFormatter.instance.formatJsonNode(order)
-        viae.sendTask("viae.event.marketplace.onRefundApply", kwargs = Some(Map("order" -> orderNode)))
+        // 申请退款的理由和备注
+        val reason = data.getOrElse("reason", "")
+        val memo = data.getOrElse("memo", "")
+        viae.sendTask("viae.event.marketplace.onRefundApply", kwargs = Some(Map(
+          "order" -> orderNode, "reason" -> reason.toString.trim(), "memo" -> memo.toString.trim()
+        )))
       }
     })
   }

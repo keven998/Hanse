@@ -3,9 +3,11 @@ package core.api
 import java.util
 import java.util.Date
 
-import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
-import com.lvxingpai.model.marketplace.product.{ Commodity, CommoditySnapshot }
+import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityComment, CommoditySnapshot }
+import com.lvxingpai.model.misc.ImageItem
+import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.OrderFormatter
 import core.service.ViaeGateway
@@ -81,7 +83,8 @@ object CommodityAPI {
       for {
         commodity <- commodityOpt
         plan <- commodity.plans.toSeq find (_.planId == planId) // 找到plan
-        pricing <- { // 查找符合条件的日期区间
+        pricing <- {
+          // 查找符合条件的日期区间
           val zone = DateTimeZone.forID("Asia/Shanghai")
 
           Option(plan.pricing) flatMap (value => {
@@ -191,6 +194,47 @@ object CommodityAPI {
     query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
     Future {
       query.asList()
+    }
+  }
+
+  def addComments(commodityId: Long, user: YunkaiUser, contents: String, rating: Option[Double], img: Option[List[ImageItem]])(implicit ds: Datastore): Future[CommodityComment] = {
+    Future {
+      val comment = new CommodityComment()
+      comment.id = new ObjectId()
+      comment.commodityId = commodityId
+      comment.contents = contents
+
+      val userInfo = new UserInfo
+      userInfo.nickname = user.nickName
+      val avaterIt = new ImageItem
+      avaterIt.url = user.avatar getOrElse ""
+      userInfo.avatar = avaterIt
+      userInfo.userId = user.userId
+      comment.user = userInfo
+
+      if (rating.nonEmpty)
+        comment.rating = rating.get
+      if (img.nonEmpty)
+        comment.images = img.get
+      val now = DateTime.now().toDate
+      comment.createTime = now
+      comment.updateTime = now
+      ds.save[CommodityComment](comment)
+      comment
+    }
+  }
+
+  def hasBought(commodityId: Long, userId: Long)(implicit ds: Datastore): Future[Boolean] = {
+    Future {
+      val order = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).field("commodity.commodityId").equal(commodityId).asList()
+      (Option(order) nonEmpty) && (order flatMap (_.activities) map (_.prevStatus) contains (Order.Status.Paid.toString))
+    }
+  }
+
+  def getComments(commodityId: Long, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[CommodityComment]] = {
+    Future {
+      val comments = ds.createQuery(classOf[CommodityComment]).field("commodityId").equal(commodityId).offset(start).limit(count).order("-createTime").asList()
+      Option(comments) map (_.toSeq) getOrElse Seq()
     }
   }
 }

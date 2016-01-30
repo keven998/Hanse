@@ -28,9 +28,16 @@ GET           /marketplace/commodities                                 @controll
 #商品分类列表
 GET           /marketplace/commodities/categories                      @controllers.CommodityCtrl.getCommodityCategory(locality:String)
 
+#评论商品
+POST          /marketplace/commodities/$id<\d+>/comments               @controllers.CommodityCtrl.addComment(id:Long)
+
+#展示商品评论
+GET           /marketplace/commodities/$id<\d+>/comments               @controllers.CommodityCtrl.getComment(id:Long,start: Int?=0, count: Int?=10)
+
 #----------商户接口----------
 #商户详情
 GET           /marketplace/sellers/$id<\d+>                            @controllers.SellerCtrl.getSeller(id:Long)
+
 #申请开店
 POST          /marketplace/sellers/application                         @controllers.SellerCtrl.becomeSeller()
 

@@ -4,9 +4,10 @@ import javax.inject.{ Inject, Named }
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
+import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
 import controllers.security.AuthenticatedAction
-import core.api.{ SellerAPI, CommodityAPI, MiscAPI }
-import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityFormatter, SimpleCommodityFormatter }
+import core.api.{ CommodityAPI, MiscAPI, SellerAPI }
+import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import play.api.Configuration
 import play.api.mvc.Controller
@@ -65,6 +66,50 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         val cas = if (commodities == null) Seq() else commodities.flatMap(_.category.asScala.toSeq).distinct
         val node = CommodityCategoryFormatter.instance.formatJsonNode(cas)
         HanseResult(data = Some(node))
+      }
+    }
+  )
+
+  /**
+   * 针对商品发表评论
+   *
+   * @param commodityId
+   * @return
+   */
+  def addComment(commodityId: Long) = AuthenticatedAction.async2(
+    request => {
+      (for {
+        body <- request.body.wrapped.asJson
+        contents <- (body \ "contents").asOpt[String]
+        rating <- Option((body \ "rating").asOpt[Double])
+      } yield {
+        request.auth.user map (user => {
+          CommodityAPI.hasBought(commodityId, user.userId) flatMap (x => if (!x) Future {
+            HanseResult.forbidden()
+          }
+          else {
+            CommodityAPI.addComments(commodityId, user, contents, rating, None) map (_ => HanseResult.ok())
+          })
+        }) getOrElse {
+          // 需要登录
+          Future.successful(HanseResult.forbidden(errorMsg = Some("Posting comments requires authentication")))
+        }
+      }) getOrElse Future {
+        HanseResult.unprocessable()
+      }
+    }
+  )
+
+  def getComment(commodityId: Long, start: Int, count: Int) = AuthenticatedAction.async2(
+    request => {
+      for {
+        commodities <- CommodityAPI.getComments(commodityId, start, count)
+      } yield {
+        if (commodities.nonEmpty) {
+          val node = CommodityCommentFormatter.instance.formatJsonNode(commodities)
+          HanseResult(data = Some(node))
+        } else
+          HanseResult.notFound()
       }
     }
   )

@@ -1,10 +1,11 @@
 package controllers.security
 
 import com.lvxingpai.yunkai.UserInfo
+import core.security.UserRole
 import libs.RequestProcessingExtended.RawRequest
 import play.api.Play
 import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.{ ActionBuilder, Request, RequestHeader, Result }
 
 import scala.concurrent.Future
 
@@ -13,7 +14,7 @@ import scala.concurrent.Future
  */
 object Security {
 
-  case class AuthInfo[U](authProvided: Boolean, user: Option[U])
+  case class AuthInfo[U](authProvided: Boolean, roles: Set[UserRole.Value], user: Option[U])
 
   /**
    * An authenticated request
@@ -76,7 +77,7 @@ object Security {
 
       authinfo(request) flatMap (auth => {
         if (auth.authProvided) {
-          if (auth.user.nonEmpty) {
+          if (auth.roles.nonEmpty) {
             block(new AuthenticatedRequest(auth, request, null))
           } else {
             Future.successful(onUnauthorized(request))
@@ -148,12 +149,11 @@ object Security {
           case _ => new Authenticator {
             // 未知的auth scheme, 返回401
             override def authenticate[A](request: Request[A], authMessage: String) =
-              Future.successful(AuthInfo[UserInfo](authProvided = true, None))
+              Future.successful(AuthInfo[UserInfo](authProvided = true, Set(), None))
           }
         }
         authenticator.authenticate(request, authMessage)
-      }) getOrElse Future.successful(AuthInfo[UserInfo](authProvided = false, None)) // 没有提供auth信息, 视为未登录
+      }) getOrElse Future.successful(AuthInfo[UserInfo](authProvided = false, Set(), None)) // 没有提供auth信息, 视为未登录
     }
   }
 }
-
