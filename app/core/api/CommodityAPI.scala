@@ -198,6 +198,21 @@ object CommodityAPI {
   }
 
   /**
+   * 使用搜索引擎, 搜索商品
+   * @return
+   */
+  def searchCommodities(q: Option[String])(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    val es = Play.application.injector instanceOf classOf[SearchEngine]
+    es.overallCommodities(q) flatMap (clist => {
+      val idList = clist map (_.commodityId)
+      if (idList.nonEmpty)
+        getCommoditiesByIdList(idList)
+      else
+        Future.successful(Seq())
+    })
+  }
+
+  /**
    * 针对某件商品发表评论
    *
    * @param commodityId 商品ID
