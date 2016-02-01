@@ -10,6 +10,7 @@ import core.api.{ CommodityAPI, MiscAPI, SellerAPI }
 import core.exception.OrderStatusException
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
+import core.misc.Implicits._
 import play.api.Configuration
 import play.api.mvc.Controller
 
@@ -31,11 +32,13 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         commodity <- CommodityAPI.getCommodityById(commodityId, version)
         seller <- SellerAPI.getSeller(commodity)
         fas <- userOpt map (userId => MiscAPI.getFavorite(userId, "commodity")) getOrElse Future.successful(None)
+        commodities <- CommodityAPI.getComments(commodityId, 0, 1)
       } yield {
         if (commodity.nonEmpty) {
           if (seller.nonEmpty) commodity.get.seller = seller.get
           val node = CommodityFormatter.instance.formatJsonNode(commodity.get).asInstanceOf[ObjectNode]
           node.put("shareUrl", "http://h5.taozilvxing.com/xq/detail.php?pid=" + commodity.get.commodityId)
+          node.put("comments", CommodityCommentFormatter.instance.formatJsonNode(commodities))
           node.put("isFavorite", fas exists {
             _.commodities contains commodity.get.id
           })
@@ -82,10 +85,13 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
       (for {
         body <- request.body.wrapped.asJson
         contents <- (body \ "contents").asOpt[String]
+        orderId <- Option((body \ "orderId").asOpt[Long])
+        anonymous <- (body \ "anonymous").asOpt[Boolean] orElse Option(false)
         rating <- Option((body \ "rating").asOpt[Float])
+        images <- (body \ "images").asOpt[Array[ImageItemTemp]] orElse None
       } yield {
         request.auth.user map (user => {
-          CommodityAPI.postComment(commodityId, user, contents, rating, None) map (_ => HanseResult.ok()) recover {
+          CommodityAPI.postComment(commodityId, user, contents, rating, Option(images.toSeq), orderId, anonymous) map (_ => HanseResult.ok()) recover {
             case e: OrderStatusException => HanseResult.forbidden(errorMsg = Some(e.getMessage))
           }
         }) getOrElse {
