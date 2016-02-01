@@ -1,14 +1,14 @@
 package controllers
 
-import javax.inject.{ Inject, Named }
+import javax.inject.{Inject, Named}
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
-import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
+import com.lvxingpai.yunkai.Userservice.{FinagledClient => YunkaiClient}
 import controllers.security.AuthenticatedAction
-import core.api.{ CommodityAPI, MiscAPI, SellerAPI }
+import core.api.{CommodityAPI, MiscAPI, SellerAPI}
 import core.exception.OrderStatusException
-import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
+import core.formatter.marketplace.product.{CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter}
 import core.misc.HanseResult
 import core.misc.Implicits._
 import play.api.Configuration
@@ -21,7 +21,7 @@ import scala.concurrent.Future
 /**
  * Created by topy on 2015/11/26.
  */
-class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
+class CommodityCtrl @Inject()(@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
 
   implicit val ds = datastore.map.get("k2").get
 
@@ -38,7 +38,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
           if (seller.nonEmpty) commodity.get.seller = seller.get
           val node = CommodityFormatter.instance.formatJsonNode(commodity.get).asInstanceOf[ObjectNode]
           node.put("shareUrl", "http://h5.taozilvxing.com/xq/detail.php?pid=" + commodity.get.commodityId)
-          node.put("comments", CommodityCommentFormatter.instance.formatJsonNode(commodities))
+          node.set("comments", CommodityCommentFormatter.instance.formatJsonNode(commodities))
           node.put("isFavorite", fas exists {
             _.commodities contains commodity.get.id
           })
@@ -61,11 +61,11 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @return
    */
   def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String],
-    sortBy: String, sort: String,
-    start: Int, count: Int) = AuthenticatedAction.async2(
+                     sortBy: String, sort: String,
+                     start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
-        //        commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
+      //        commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
         commodities <- CommodityAPI.searchCommodities(query)
       } yield {
         val node = SimpleCommodityFormatter.instance.formatJsonNode(commodities)
@@ -100,17 +100,17 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         orderId <- Option((body \ "orderId").asOpt[Long])
         anonymous <- (body \ "anonymous").asOpt[Boolean] orElse Option(false)
         rating <- Option((body \ "rating").asOpt[Float])
-        images <- (body \ "images").asOpt[Array[ImageItemTemp]] orElse None
+        images <- Option((body \ "images").asOpt[Array[ImageItemTemp]])
       } yield {
-        request.auth.user map (user => {
-          CommodityAPI.postComment(commodityId, user, contents, rating, Option(images.toSeq), orderId, anonymous) map (_ => HanseResult.ok()) recover {
-            case e: OrderStatusException => HanseResult.forbidden(errorMsg = Some(e.getMessage))
+          request.auth.user map (user => {
+            CommodityAPI.postComment(commodityId, user, contents, rating, images, orderId, anonymous) map (_ => HanseResult.ok()) recover {
+              case e: OrderStatusException => HanseResult.forbidden(errorMsg = Some(e.getMessage))
+            }
+          }) getOrElse {
+            // 需要登录
+            Future.successful(HanseResult.forbidden(errorMsg = Some("Posting comments requires authentication")))
           }
-        }) getOrElse {
-          // 需要登录
-          Future.successful(HanseResult.forbidden(errorMsg = Some("Posting comments requires authentication")))
-        }
-      }) getOrElse Future {
+        }) getOrElse Future {
         HanseResult.unprocessable()
       }
     }

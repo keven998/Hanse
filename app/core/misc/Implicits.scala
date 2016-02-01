@@ -58,12 +58,15 @@ object Implicits {
 
   implicit val imageItemReads = Json.reads[ImageItemTemp]
 
-  implicit def imageItemTemp2Model(pt: Seq[ImageItemTemp]): Seq[ImageItem] = {
-    pt.map(x => {
-      val i = new ImageItem
-      i.url = x.url
-      i
-    })
+  implicit def imageItemTemp2Model(pt: Option[Array[ImageItemTemp]]): Option[Seq[ImageItem]] = {
+    if (pt.nonEmpty) {
+      val ret = pt.get.map(x => {
+        val i = new ImageItem
+        i.url = x.url
+        i
+      })
+      Option(ret)
+    } else None
   }
 
   implicit def NodeSeq2String(body: NodeSeq): String = {
