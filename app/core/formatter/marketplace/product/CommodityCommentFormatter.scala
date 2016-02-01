@@ -42,12 +42,23 @@ class CommodityCommentFormatter extends BaseFormatter {
 
       gen.writeFieldName("user")
       val userInfo = c.user
-      if (Option(userInfo).nonEmpty)
+      if (Option(userInfo).nonEmpty && !c.anonymous)
         serializers.findValueSerializer(classOf[UserInfo], null).serialize(userInfo, gen, serializers)
       else {
         gen.writeStartObject()
         gen.writeEndObject()
       }
+
+      // images
+      gen.writeFieldName("images")
+      gen.writeStartArray()
+      val images = c.images
+      if (images != null) {
+        val ret = serializers.findValueSerializer(classOf[ImageItem], null)
+        for (image <- images)
+          ret.serialize(image, gen, serializers)
+      }
+      gen.writeEndArray()
 
       gen.writeFieldName("reply")
       val reply = c.reply

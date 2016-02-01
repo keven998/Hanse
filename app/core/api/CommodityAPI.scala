@@ -223,10 +223,10 @@ object CommodityAPI {
    * @return
    */
   def postComment(commodityId: Long, user: YunkaiUser, contents: String, rating: Option[Float],
-    img: Option[Seq[ImageItem]])(implicit ds: Datastore): Future[CommodityComment] = {
+    img: Option[Seq[ImageItem]], orderId: Option[Long], anonymous: Boolean)(implicit ds: Datastore): Future[CommodityComment] = {
     // 必须购买才能评论
     for {
-      bought <- hasBought(commodityId, user.userId)
+      bought <- hasBought(orderId, user.userId)
     } yield {
       if (bought) {
         val comment = new CommodityComment()
@@ -251,7 +251,9 @@ object CommodityAPI {
         val now = DateTime.now().toDate
         comment.createTime = now
         comment.updateTime = now
-
+        comment.anonymous = anonymous
+        if (orderId.nonEmpty)
+          comment.orderId = orderId.get
         ds.save[CommodityComment](comment)
         comment
       } else {
@@ -265,15 +267,18 @@ object CommodityAPI {
   /**
    * 判断一个用户是否购买了某件商品
    *
-   * @param commodityId 商品列表
+   * @param orderId 订单ID
    * @param userId 用户ID
    * @return
    */
-  def hasBought(commodityId: Long, userId: Long)(implicit ds: Datastore): Future[Boolean] = {
+  def hasBought(orderId: Option[Long], userId: Long)(implicit ds: Datastore): Future[Boolean] = {
     Future {
-      val order = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).field("commodity.commodityId")
-        .equal(commodityId).asList().toSeq
-      order.nonEmpty && (order flatMap (_.activities) map (_.prevStatus) contains Order.Status.Paid.toString)
+      if (orderId.isEmpty)
+        false
+      else {
+        val order = ds.createQuery(classOf[Order]).field("orderId").equal(orderId.get).field("consumerId").equal(userId).get
+        (Option(order) nonEmpty) && (order.status equals "toReview")
+      }
     }
   }
 
@@ -286,8 +291,8 @@ object CommodityAPI {
    */
   def getComments(commodityId: Long, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[CommodityComment]] = {
     Future {
-      ds.createQuery(classOf[CommodityComment]).field("commodityId").equal(commodityId).offset(start).limit(count)
-        .order("-createTime").asList().toSeq
+      val query = ds.createQuery(classOf[CommodityComment]).field("commodityId").equal(commodityId).offset(start).limit(count).order("-createTime")
+      query.asList()
     }
   }
 }
