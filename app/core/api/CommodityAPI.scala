@@ -223,9 +223,9 @@ object CommodityAPI {
    * @return
    */
   def postComment(commodityId: Long, user: YunkaiUser, contents: String, rating: Option[Float],
-    img: Option[Seq[ImageItem]], orderId: Option[Long], anonymous: Boolean)(implicit ds: Datastore): Future[CommodityComment] = {
+    img: Option[Seq[ImageItem]], orderId: Option[Long], anonymous: Boolean)(implicit ds: Datastore): Future[Unit] = {
     // 必须购买才能评论
-    for {
+    (for {
       bought <- hasBought(orderId, user.userId)
     } yield {
       if (bought) {
@@ -261,7 +261,12 @@ object CommodityAPI {
         throw OrderStatusException(s"User ${user.userId} have not bought commodity $commodityId yet, " +
           s"cannot post comments.")
       }
-    }
+    }) map (_ => {
+      // 刷新订单状态为已评价
+      val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId.get
+      val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", "reviewed")
+      ds.update(statusQuery, statusOps)
+    })
   }
 
   /**
