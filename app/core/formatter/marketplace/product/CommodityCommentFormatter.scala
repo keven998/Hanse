@@ -44,6 +44,7 @@ class CommodityCommentFormatter extends BaseFormatter {
       gen.writeStringField("id", Option(c.id.toString) getOrElse "")
       gen.writeStringField("contents", Option(c.contents) getOrElse "")
       gen.writeNumberField("rating", c.rating)
+      gen.writeBooleanField("anonymous", c.anonymous)
 
       gen.writeFieldName("user")
       val userInfo = c.user
@@ -152,20 +153,7 @@ class CommodityCommentFormatter extends BaseFormatter {
       gen.writeStartObject()
       if (commodityPlan.planId != null)
         gen.writeStringField("planId", commodityPlan.planId)
-
       gen.writeStringField("title", Option(commodityPlan.title) getOrElse "")
-      gen.writeStringField("desc", Option(commodityPlan.desc) getOrElse "")
-
-      gen.writeFieldName("pricing")
-      gen.writeStartArray()
-      val pricing = commodityPlan.pricing
-      if (pricing != null && !pricing.isEmpty) {
-        val retPricing = serializers.findValueSerializer(classOf[Pricing], null)
-        for (p <- pricing) {
-          retPricing.serialize(p, gen, serializers)
-        }
-      }
-      gen.writeEndArray()
 
       gen.writeEndArray()
       gen.writeEndObject()
