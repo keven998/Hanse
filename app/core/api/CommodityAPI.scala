@@ -226,12 +226,12 @@ object CommodityAPI {
     img: Option[Seq[ImageItem]], orderId: Option[Long], anonymous: Boolean)(implicit ds: Datastore): Future[Unit] = {
     // 必须购买才能评论
     (for {
-      bought <- hasBought(orderId, user.userId)
+      order <- getBoughtOrder(orderId, user.userId)
     } yield {
-      if (bought) {
+      if (order.nonEmpty) {
         val comment = new CommodityComment()
         comment.id = new ObjectId()
-        comment.commodityId = commodityId
+        comment.order = order.get
         comment.contents = contents
 
         val userInfo = new UserInfo
@@ -252,8 +252,6 @@ object CommodityAPI {
         comment.createTime = now
         comment.updateTime = now
         comment.anonymous = anonymous
-        if (orderId.nonEmpty)
-          comment.orderId = orderId.get
         ds.save[CommodityComment](comment)
         comment
       } else {
@@ -264,7 +262,7 @@ object CommodityAPI {
     }) map (_ => {
       // 刷新订单状态为已评价
       val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId.get
-      val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", "reviewed")
+      val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.Reviewed.toString)
       ds.update(statusQuery, statusOps)
     })
   }
@@ -276,14 +274,15 @@ object CommodityAPI {
    * @param userId 用户ID
    * @return
    */
-  def hasBought(orderId: Option[Long], userId: Long)(implicit ds: Datastore): Future[Boolean] = {
+  def getBoughtOrder(orderId: Option[Long], userId: Long)(implicit ds: Datastore): Future[Option[Order]] = {
     Future {
-      if (orderId.isEmpty)
-        false
-      else {
-        val order = ds.createQuery(classOf[Order]).field("orderId").equal(orderId.get).field("consumerId").equal(userId).get
-        (Option(order) nonEmpty) && (order.status equals "toReview")
-      }
+      if (orderId.nonEmpty)
+        Option(ds.createQuery(classOf[Order])
+          .field("orderId").equal(orderId.get)
+          .field("consumerId").equal(userId)
+          .field("status").equal(Order.Status.ToReview.toString)
+          .retrievedFields(true, Seq("orderId", "commodity", "status"): _*).get)
+      else None
     }
   }
 
@@ -296,8 +295,14 @@ object CommodityAPI {
    */
   def getComments(commodityId: Long, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[CommodityComment]] = {
     Future {
-      val query = ds.createQuery(classOf[CommodityComment]).field("commodityId").equal(commodityId).offset(start).limit(count).order("-createTime")
+      val query = ds.createQuery(classOf[CommodityComment]).field("order.commodity.commodityId").equal(commodityId).offset(start).limit(count).order("-createTime")
       query.asList()
+    }
+  }
+
+  def getCommentsCnt(commodityId: Long)(implicit ds: Datastore): Future[Long] = {
+    Future {
+      ds.createQuery(classOf[CommodityComment]).field("order.commodity.commodityId").equal(commodityId).countAll()
     }
   }
 }

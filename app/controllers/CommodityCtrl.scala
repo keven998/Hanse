@@ -33,12 +33,14 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         seller <- SellerAPI.getSeller(commodity)
         fas <- userOpt map (userId => MiscAPI.getFavorite(userId, "commodity")) getOrElse Future.successful(None)
         commodities <- CommodityAPI.getComments(commodityId, 0, 1)
+        commentsCnt <- CommodityAPI.getCommentsCnt(commodityId)
       } yield {
         if (commodity.nonEmpty) {
           if (seller.nonEmpty) commodity.get.seller = seller.get
           val node = CommodityFormatter.instance.formatJsonNode(commodity.get).asInstanceOf[ObjectNode]
           node.put("shareUrl", "http://h5.taozilvxing.com/xq/detail.php?pid=" + commodity.get.commodityId)
           node.set("comments", CommodityCommentFormatter.instance.formatJsonNode(commodities))
+          node.put("commentCnt", commentsCnt)
           node.put("isFavorite", fas exists {
             _.commodities contains commodity.get.id
           })
