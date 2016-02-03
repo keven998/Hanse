@@ -105,7 +105,7 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap, implicit priv
 
           for {
             order <- OrderAPI.fetchOrder(orderId)
-            _ <- StatedOrder(order).pay(order.consumerId, PaymentService.Provider.WeChat)
+            _ <- StatedOrder(order).pay(order.consumerId, PaymentService.Provider.Alipay)
           } yield {
             "success"
           }
