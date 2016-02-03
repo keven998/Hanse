@@ -170,7 +170,7 @@ object OrderAPI {
         query.field("status").in(queryList)
       }
       // 按照生成时间逆序排列且分页，为避免-createTime时的bug
-      query.asList().reverse.subList(start, start + count)
+      query.asList().reverse.slice(start, start + count)
     }
   }
 }
