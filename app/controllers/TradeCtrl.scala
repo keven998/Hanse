@@ -7,11 +7,10 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.OrderActivity
 import controllers.security.AuthenticatedAction
-import core.api.{ StatedOrder, CommodityAPI, OrderAPI, TravellerAPI }
+import core.api.{ CommodityAPI, OrderAPI, StatedOrder, TravellerAPI }
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
 import core.misc.HanseResult
-import core.misc.Implicits._
 import core.service.ViaeGateway
 import org.joda.time.format.{ DateTimeFormat, ISODateTimeFormat }
 import play.api.Configuration
@@ -89,7 +88,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         } yield {
           opt map (order => {
             val order = opt.get
-            if (callerId.get == order.consumerId.toString) {
+            // 只有买家和卖家双方可以看到订单内容
+            if (callerId.get == order.consumerId.toString || callerId.get == order.commodity.seller.sellerId.toString) {
               val node = OrderFormatter.instance.formatJsonNode(order)
               HanseResult(data = Some(node))
             } else {
