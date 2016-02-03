@@ -1,14 +1,14 @@
 package controllers
 
-import javax.inject.{ Inject, Named }
+import javax.inject.{Inject, Named}
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
-import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
+import com.lvxingpai.yunkai.Userservice.{FinagledClient => YunkaiClient}
 import controllers.security.AuthenticatedAction
-import core.api.{ CommodityAPI, MiscAPI, SellerAPI }
+import core.api.{CommodityAPI, MiscAPI, SellerAPI}
 import core.exception.OrderStatusException
-import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
+import core.formatter.marketplace.product.{CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter}
 import core.misc.HanseResult
 import core.misc.Implicits._
 import play.api.Configuration
@@ -63,12 +63,11 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @return
    */
   def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String],
-    sortBy: String, sort: String,
-    start: Int, count: Int) = AuthenticatedAction.async2(
+    sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
-        //        commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
-        commodities <- CommodityAPI.searchCommodities(query)
+        commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
+        //commodities <- CommodityAPI.searchCommodities(query)
       } yield {
         val node = SimpleCommodityFormatter.instance.formatJsonNode(commodities)
         HanseResult(data = Some(node))
