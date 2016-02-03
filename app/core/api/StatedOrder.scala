@@ -361,9 +361,10 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
   def cancel(operator: Long, data: Option[Map[String, Any]]): Future[StatedOrder] = {
     // 处理data
     val newData = data map (m => {
-      val keys = Seq("memo", "reason")
+      val keys = Seq("memo", "reason", "userId")
       m filterKeys (keys contains _) map {
         case (k, v: String) => k -> v // memo和reason都是String
+        case (k, v: Long) => k -> v // userId是String
         case (k, _) => k -> ""
       }
     })
