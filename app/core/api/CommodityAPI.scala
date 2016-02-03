@@ -3,10 +3,12 @@ package core.api
 import java.util
 import java.util.Date
 
-import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
-import com.lvxingpai.model.marketplace.product.{ Commodity, CommoditySnapshot }
-import core.exception.ResourceNotFoundException
+import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityComment, CommoditySnapshot }
+import com.lvxingpai.model.misc.ImageItem
+import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
+import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
 import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
@@ -81,7 +83,8 @@ object CommodityAPI {
       for {
         commodity <- commodityOpt
         plan <- commodity.plans.toSeq find (_.planId == planId) // 找到plan
-        pricing <- { // 查找符合条件的日期区间
+        pricing <- {
+          // 查找符合条件的日期区间
           val zone = DateTimeZone.forID("Asia/Shanghai")
 
           Option(plan.pricing) flatMap (value => {
@@ -191,6 +194,116 @@ object CommodityAPI {
     query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
     Future {
       query.asList()
+    }
+  }
+
+  /**
+   * 使用搜索引擎, 搜索商品
+   * @return
+   */
+  def searchCommodities(q: Option[String])(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    val es = Play.application.injector instanceOf classOf[SearchEngine]
+    es.overallCommodities(q) flatMap (clist => {
+      val idList = clist map (_.commodityId)
+      if (idList.nonEmpty)
+        getCommoditiesByIdList(idList)
+      else
+        Future.successful(Seq())
+    })
+  }
+
+  /**
+   * 针对某件商品发表评论
+   *
+   * @param commodityId 商品ID
+   * @param user 用户信息
+   * @param contents 评论内容
+   * @param rating 对商品的评分
+   * @param img 评论商品的时候, 可以上传一些照片
+   * @return
+   */
+  def postComment(commodityId: Long, user: YunkaiUser, contents: String, rating: Option[Float],
+    img: Option[Seq[ImageItem]], orderId: Option[Long], anonymous: Boolean)(implicit ds: Datastore): Future[Unit] = {
+    // 必须购买才能评论
+    (for {
+      order <- getBoughtOrder(orderId, user.userId)
+    } yield {
+      if (order.nonEmpty) {
+        val comment = new CommodityComment()
+        comment.id = new ObjectId()
+        comment.order = order.get
+        comment.contents = contents
+
+        val userInfo = new UserInfo
+        userInfo.nickname = user.nickName
+        user.avatar foreach (avatar => {
+          if (avatar.nonEmpty && (avatar startsWith "http")) {
+            val item = new ImageItem
+            item.url = avatar
+            userInfo.avatar = item
+          }
+        })
+        userInfo.userId = user.userId
+        comment.user = userInfo
+
+        rating foreach (comment.rating = _)
+        img foreach (comment.images = _)
+        val now = DateTime.now().toDate
+        comment.createTime = now
+        comment.updateTime = now
+        comment.anonymous = anonymous
+        ds.save[CommodityComment](comment)
+        comment
+      } else {
+        // 如果没有购买商品, 则没有资格评论
+        throw OrderStatusException(s"User ${user.userId} have not bought commodity $commodityId yet, " +
+          s"cannot post comments.")
+      }
+    }) map (_ => {
+      // 刷新订单状态为已评价
+      val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId.get
+      val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.Reviewed.toString)
+      ds.update(statusQuery, statusOps)
+    })
+  }
+
+  /**
+   * 判断一个用户是否购买了某件商品
+   *
+   * @param orderId 订单ID
+   * @param userId 用户ID
+   * @return
+   */
+  def getBoughtOrder(orderId: Option[Long], userId: Long)(implicit ds: Datastore): Future[Option[Order]] = {
+    Future {
+      if (orderId.nonEmpty)
+        Option(ds.createQuery(classOf[Order])
+          .field("orderId").equal(orderId.get)
+          .field("consumerId").equal(userId)
+          .field("status").equal(Order.Status.ToReview.toString)
+          .retrievedFields(true, Seq("orderId", "commodity", "status"): _*).get)
+      else None
+    }
+  }
+
+  /**
+   * 获得某个商品的评论列表
+   * @param commodityId 商品ID
+   * @param start 分页
+   * @param count 分页
+   * @return
+   */
+  def getComments(commodityId: Long, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[CommodityComment]] = {
+    Future {
+      val query = ds.createQuery(classOf[CommodityComment]).field("order.commodity.commodityId").equal(commodityId).order("createTime")
+      // 按照生成时间逆序排列且分页，为避免-createTime时的bug
+      query.asList().reverse.subList(start, start + count)
+    }
+  }
+
+  def getCommentsCnt(commodityId: Long)(implicit ds: Datastore): Future[Long] = {
+    Future {
+      ds.createQuery(classOf[CommodityComment]).field("order.commodity.commodityId").equal(commodityId).countAll()
     }
   }
 }

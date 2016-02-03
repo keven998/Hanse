@@ -1,6 +1,6 @@
 package core.misc
 
-import com.lvxingpai.model.misc.PhoneNumber
+import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber }
 import com.twitter.{ util => twitter }
 import org.mongodb.morphia.annotations.Entity
 import play.api.libs.json.Json
@@ -45,6 +45,28 @@ object Implicits {
     ret.dialCode = pt.dialCode
     ret.number = pt.number
     ret
+  }
+
+  @Entity(noClassnameStored = true)
+  case class ImageItemTemp(url: String) {
+    def toImageItem = {
+      val ret = new ImageItem
+      ret.url = url
+      ret
+    }
+  }
+
+  implicit val imageItemReads = Json.reads[ImageItemTemp]
+
+  implicit def imageItemTemp2Model(pt: Option[Array[ImageItemTemp]]): Option[Seq[ImageItem]] = {
+    if (pt.nonEmpty) {
+      val ret = pt.get.map(x => {
+        val i = new ImageItem
+        i.url = x.url
+        i
+      })
+      Option(ret)
+    } else None
   }
 
   implicit def NodeSeq2String(body: NodeSeq): String = {
