@@ -17,7 +17,7 @@ class ImageItemSerializer extends JsonSerializer[ImageItem] {
       else {
         val vKey = imageItem.key
         val vBucket = imageItem.bucket
-        val fullUrl = if (vBucket != null) s"http://$vBucket.qiniudn.com/$vKey" else s"http://images.taozilvxing.com/$vKey"
+        val fullUrl = if (vBucket != null) s"http://$vBucket.qiniudn.com/$vKey" else s"http://images.lvxingpai.com/$vKey"
         gen.writeStringField("url", fullUrl)
       }
     }

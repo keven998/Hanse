@@ -38,7 +38,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         if (commodity.nonEmpty) {
           if (seller.nonEmpty) commodity.get.seller = seller.get
           val node = CommodityFormatter.instance.formatJsonNode(commodity.get).asInstanceOf[ObjectNode]
-          node.put("shareUrl", "http://h5.taozilvxing.com/xq/detail.php?pid=" + commodity.get.commodityId)
+          node.put("shareUrl", "http://h5.lvxingpai.com/xq/detail.php?pid=" + commodity.get.commodityId)
           node.set("comments", CommodityCommentFormatter.instance.formatJsonNode(commodities))
           node.put("commentCnt", commentsCnt)
           node.put("isFavorite", fas exists {
