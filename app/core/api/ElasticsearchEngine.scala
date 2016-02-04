@@ -10,9 +10,9 @@ import scala.concurrent.Future
 /**
  * Created by zephyre on 1/30/16.
  */
-class ElasticsearchEngine(uri: String) extends SearchEngine {
+class ElasticsearchEngine(settings: ElasticsearchEngine.Settings) extends SearchEngine {
 
-  lazy val client = ElasticClient.transport(uri)
+  lazy val client = ElasticClient.transport(settings.uri)
 
   implicit object CommodityHitAs extends HitAs[Commodity] {
     def asImageItem(source: Map[String, Any]): Option[ImageItem] = {
@@ -40,7 +40,7 @@ class ElasticsearchEngine(uri: String) extends SearchEngine {
    */
   override def overallCommodities(q: Option[String] = None): Future[Seq[Commodity]] = {
     val s = {
-      val head = search in "marketplace" / "commodity"
+      val head = search in settings.index / "commodity"
       if (q.nonEmpty) {
         head query {
           matchQuery("title", q.get)
@@ -53,4 +53,13 @@ class ElasticsearchEngine(uri: String) extends SearchEngine {
 
     client.execute(s) map (_.as[Commodity])
   }
+}
+
+object ElasticsearchEngine {
+
+  /**
+   * @param uri elasticsearch的uri
+   * @param index index的名称
+   */
+  case class Settings(uri: String, index: String)
 }

@@ -19,12 +19,11 @@ class EngineProvider extends Provider[SearchEngine] {
   @Inject private var injector: Injector = _
 
   lazy val get: SearchEngine = {
-    val confKey = BindingKey(classOf[Configuration]) qualifiedWith "etcdService"
-    val services = injector instanceOf confKey
+    val config = injector instanceOf (BindingKey(classOf[Configuration]) qualifiedWith "default")
 
-    val es = services getConfig "services.elasticsearch" getOrElse Configuration.empty
+    // Elasticsearch服务器的地址: [ {host: "xxx", port: 2379} ]
+    val es = config getConfig "services.elasticsearch" getOrElse Configuration.empty
     val subKeys = es.subKeys.toSeq
-    // 服务器地址设置:  [ {host: "xxx", port: 2379} ]
     val addresses = subKeys map (serverKey => {
       for {
         host <- es getString s"$serverKey.host"
@@ -34,6 +33,10 @@ class EngineProvider extends Provider[SearchEngine] {
       }
     }) filter (_.nonEmpty) map (_.get)
     val uri = s"elasticsearch://${addresses mkString ","}"
-    new ElasticsearchEngine(uri)
+
+    // Elasticsearch的index信息
+    val indexName = (config getString "hanse.elasticsearch.index").get
+
+    new ElasticsearchEngine(ElasticsearchEngine.Settings(uri, indexName))
   }
 }
