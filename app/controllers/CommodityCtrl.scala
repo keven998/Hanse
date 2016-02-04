@@ -67,8 +67,9 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
     start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
-        //        commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
-        commodities <- CommodityAPI.searchCommodities(query)
+        // TODO 暂时去掉搜索功能
+        commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
+        //commodities <- Future.successful(Seq()) // CommodityAPI.searchCommodities(query)
       } yield {
         val node = SimpleCommodityFormatter.instance.formatJsonNode(commodities)
         HanseResult(data = Some(node))

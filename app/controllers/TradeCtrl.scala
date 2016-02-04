@@ -1,16 +1,17 @@
 package controllers
 
+import java.util.ConcurrentModificationException
 import javax.inject._
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.OrderActivity
 import controllers.security.AuthenticatedAction
-import core.api.{ CommodityAPI, OrderAPI, TravellerAPI }
-import core.exception.ResourceNotFoundException
+import core.api.{ CommodityAPI, OrderAPI, StatedOrder, TravellerAPI }
+import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
 import core.misc.HanseResult
-import core.misc.Implicits._
+import core.service.ViaeGateway
 import org.joda.time.format.{ DateTimeFormat, ISODateTimeFormat }
 import play.api.Configuration
 import play.api.libs.json._
@@ -18,12 +19,14 @@ import play.api.mvc.Controller
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Try
 
 /**
  * Created by topy on 2015/10/22.
  */
 @Singleton
-class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap) extends Controller {
+class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap,
+    implicit val viaeGateway: ViaeGateway) extends Controller {
 
   implicit lazy val ds = datastore.map.get("k2").get
 
@@ -85,7 +88,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         } yield {
           opt map (order => {
             val order = opt.get
-            if (callerId.get == order.consumerId.toString) {
+            // 只有买家和卖家双方可以看到订单内容
+            if (callerId.get == order.consumerId.toString || callerId.get == order.commodity.seller.sellerId.toString) {
               val node = OrderFormatter.instance.formatJsonNode(order)
               HanseResult(data = Some(node))
             } else {
@@ -147,55 +151,65 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
   )
 
   /**
+   * 处理operateOrder接口中接收到的data数据
+   * @param data
+   */
+  private def procOperateOrderData(data: JsObject): Map[String, Any] = {
+    val kvSeq = data.fields map {
+      case ("amount", v: JsNumber) if v.value.isDecimalFloat => ("amount", (v.value.floatValue() * 100).toInt)
+      case ("userId", v: JsNumber) if v.value.isValidLong => ("userId", v.value.longValue())
+      case (k, v: JsNumber) if v.value.isValidInt => (k, v.value.intValue())
+      case (k, v: JsNumber) if v.value.isValidLong => (k, v.value.longValue())
+      case (k, v: JsNumber) if v.value.isDecimalFloat => (k, v.value.floatValue())
+      case (k, v: JsNumber) if v.value.isDecimalDouble => (k, v.value.doubleValue())
+      case (k, v: JsBoolean) => (k, v.value)
+      case (k, v: JsString) => (k, v.value)
+      case (k, JsNull) => (k, null)
+      case (k, _) => (k, JsNull) // 这一类数据稍后会被清除
+    } filterNot {
+      case (k, v) => v == JsNull
+    }
+    Map(kvSeq: _*)
+  }
+
+  /**
    * 操作订单
    *
    * @return
    */
   def operateOrder(orderId: Long) = AuthenticatedAction.async2(
     request => {
+      import OrderActivity.Action
+
       val ret = for {
         body <- request.body.wrapped.asJson
-        action <- (body \ "action").asOpt[String]
-        data1 <- (body \ "data").asOpt[JsObject] orElse Some(JsObject.apply(Seq()))
+        action <- (body \ "action").asOpt[String] flatMap (v => {
+          Try(Some(Action withName v)) getOrElse None
+        })
+        data <- (body \ "data").asOpt[JsObject] orElse Some(JsObject(Seq())) map procOperateOrderData
       } yield {
-        val data = Map(data1.fields map (entry => {
-          val key = entry._1
-          if (key == "userId")
-            key -> entry._2.asInstanceOf[JsNumber].value.toInt
-          else {
-            val value = entry._2 match {
-              case v: JsNumber =>
-                if (v.value.isDecimalDouble)
-                  v.value.doubleValue()
-                else if (v.value.isDecimalFloat)
-                  v.value.floatValue()
-              case v: JsBoolean =>
-                v.value
-              case v: JsString =>
-                v.value
-              case JsNull =>
-                null
+        val future = for {
+          order <- OrderAPI.fetchOrder(orderId)
+          _ <- {
+            val statedOrder = StatedOrder(order)
+
+            action match {
+              case a @ (Action.cancel | Action.refundApply | Action.expire | Action.finish) =>
+                statedOrder.applyAction(a, request.auth.roles, request.auth.user, Some(data))
             }
-            val filterValue = key match {
-              case "amount" => (value.asInstanceOf[Double] * 100).toInt
-              case _ => value
-            }
-            key -> filterValue
           }
-        }): _*)
-        val rr = action match {
-          case c if c == OrderActivity.Action.cancel.toString => OrderAPI.setCancel(orderId, data)
-          case r if r == OrderActivity.Action.refundApply.toString => OrderAPI.setRefundApplied(orderId, data)
-          case e if e == OrderActivity.Action.expire.toString => OrderAPI.setExpire(orderId, data)
-          case f if f == OrderActivity.Action.finish.toString => OrderAPI.setFinish(orderId, data)
-          case _ => Future {
-            throw ResourceNotFoundException(s"Invalid action:$action")
-          }
-        }
-        rr map (x => {
+        } yield {
           HanseResult.ok()
-        }) recover {
+        }
+
+        // 有几种异常情况需要处理:
+        // * 订单不存在
+        // * 订单状态有误
+        future recover {
           case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+          case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
+            HanseResult.conflict(Some(e.getMessage))
+          case _: MatchError => HanseResult.unprocessableWithMsg(Some(s"Invalid action: $action"))
         }
       }
       ret.getOrElse(Future {

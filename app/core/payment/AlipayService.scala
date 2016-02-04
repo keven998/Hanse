@@ -6,10 +6,12 @@ import javax.inject.Inject
 
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.{ Order, Prepay }
-import core.api.OrderAPI
-import core.exception.{ GeneralPaymentException, ResourceNotFoundException }
+import core.api.{ OrderAPI, StatedOrder }
+import core.exception.GeneralPaymentException
+import core.formatter.marketplace.order.OrderFormatter
 import core.misc.Utils
 import core.payment.PaymentService.Provider
+import core.service.ViaeGateway
 import org.mongodb.morphia.Datastore
 import play.api.Play.current
 import play.api.inject.BindingKey
@@ -23,7 +25,7 @@ import scala.concurrent.Future
  *
  * Created by zephyre on 12/16/15.
  */
-class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends PaymentService {
+class AlipayService @Inject() (private val morphiaMap: MorphiaMap, implicit private val viaeGateway: ViaeGateway) extends PaymentService {
 
   override lazy val datastore: Datastore = morphiaMap.map("k2")
 
@@ -80,7 +82,7 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
       case s: String => s
     }
 
-    val providerName = provider.toString
+    implicit val ds = datastore
 
     try {
       // 检查签名是否正常
@@ -101,28 +103,35 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
             case _: NumberFormatException => throw GeneralPaymentException(s"Invalid out_trade_no: $tradeNumber")
           }
 
-          OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", s"paymentInfo.$providerName"))(datastore) flatMap
-            (opt => {
-              if (opt.isEmpty) throw ResourceNotFoundException(s"Invalid order id: $orderId")
-              else {
-                val order = opt.get
-                if (!(order.paymentInfo containsKey providerName))
-                  throw GeneralPaymentException(s"Order $orderId doesn't have payment information")
+          for {
+            order <- OrderAPI.fetchOrder(orderId)
+            _ <- StatedOrder(order).pay(order.consumerId, PaymentService.Provider.Alipay)
+          } yield {
+            "success"
+          }
 
-                // 订单数据中的价格
-                val orderPrice = order.totalPrice - order.discount
-                // 实际支付价格
-                val paidPrice = try {
-                  (data.getOrElse("total_fee", "").toFloat * 100).toInt
-                } catch {
-                  case _: NumberFormatException => Float.MinValue
-                }
-                // 如果二者不一致, 说明有误
-                if (paidPrice != orderPrice) throw GeneralPaymentException("Invalid alipay callback")
-              }
-              // 通过各种验证
-              OrderAPI.setPaid(orderId, provider)(datastore) map (_ => "success")
-            })
+        //          OrderAPI.getOrder(orderId, Seq("orderId", "totalPrice", "discount", s"paymentInfo.$providerName"))(datastore) flatMap
+        //            (opt => {
+        //              if (opt.isEmpty) throw ResourceNotFoundException(s"Invalid order id: $orderId")
+        //              else {
+        //                val order = opt.get
+        //                if (!(order.paymentInfo containsKey providerName))
+        //                  throw GeneralPaymentException(s"Order $orderId doesn't have payment information")
+        //
+        //                // 订单数据中的价格
+        //                val orderPrice = order.totalPrice - order.discount
+        //                // 实际支付价格
+        //                val paidPrice = try {
+        //                  (data.getOrElse("total_fee", "").toFloat * 100).toInt
+        //                } catch {
+        //                  case _: NumberFormatException => Float.MinValue
+        //                }
+        //                // 如果二者不一致, 说明有误
+        //                if (paidPrice != orderPrice) throw GeneralPaymentException("Invalid alipay callback")
+        //              }
+        //              // 通过各种验证
+        //              OrderAPI.setPaid(orderId, provider)(datastore) map (_ => "success")
+        //            })
       }
     } catch {
       case e: GeneralPaymentException => Future {
@@ -144,7 +153,7 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
    * @param refundPrice
    * @return
    */
-  override def refund(userId: Long, orderId: Long, refundPrice: Option[Int], memo: String): Future[Unit] = ???
+  override def refund(userId: Long, orderId: Long, refundPrice: Option[Int], memo: String): Future[Unit] = null
 
   //  {
   //    // TODO 当前支付宝不支持手机退款
@@ -200,10 +209,13 @@ class AlipayService @Inject() (private val morphiaMap: MorphiaMap) extends Payme
 
   /**
    * 退款操作
-   * @param refundPrice
    * @return
    */
-  override def refundProcess(userId: Long, order: Order, refundPrice: Option[Int], memo: String): Future[Unit] = ???
+  override def refundProcess(order: Order, amount: Int): Future[Unit] = Future {
+    val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+    val orderNode = OrderFormatter.instance.formatJsonNode(order)
+    viae.sendTask("viae.job.marketplace.alipayRefund", kwargs = Some(Map("order" -> orderNode, "amount" -> amount)))
+  }
 }
 
 object AlipayService {

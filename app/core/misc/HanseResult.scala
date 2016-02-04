@@ -62,4 +62,6 @@ object HanseResult {
 
   def unprocessableWithMsg(errorMsg: Option[String]): Result =
     HanseResult(UNPROCESSABLE_ENTITY, RetCode.INVALID_ARGUMENTS, None, errorMsg)
+
+  def conflict(errorMsg: Option[String] = None): Result = HanseResult(CONFLICT, RetCode.UNKNOWN, None, errorMsg)
 }

@@ -297,7 +297,7 @@ object CommodityAPI {
     Future {
       val query = ds.createQuery(classOf[CommodityComment]).field("order.commodity.commodityId").equal(commodityId).order("createTime")
       // 按照生成时间逆序排列且分页，为避免-createTime时的bug
-      query.asList().reverse.subList(start, start + count)
+      query.asList().reverse.slice(start, start + count)
     }
   }
 
