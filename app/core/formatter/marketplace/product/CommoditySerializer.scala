@@ -129,13 +129,13 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
 
     val cId = commodity.commodityId
     // 商品详情
-    gen.writeStringField("descUrl", s"http://h5.taozilvxing.com/poi/item.php?pid=$cId&field=desc")
+    gen.writeStringField("descUrl", s"http://h5.lvxingpai.com/poi/item.php?pid=$cId&field=desc")
     // 提示详情
-    gen.writeStringField("noticeUrl", s"http://h5.taozilvxing.com/poi/item.php?pid=$cId&field=notice")
+    gen.writeStringField("noticeUrl", s"http://h5.lvxingpai.com/poi/item.php?pid=$cId&field=notice")
     // 预订流程
-    gen.writeStringField("refundPolicyUrl", s"http://h5.taozilvxing.com/poi/item.php?pid=$cId&field=refundPolicy")
+    gen.writeStringField("refundPolicyUrl", s"http://h5.lvxingpai.com/poi/item.php?pid=$cId&field=refundPolicy")
     // 交通信息
-    gen.writeStringField("trafficInfoUrl", s"http://h5.taozilvxing.com/poi/item.php?pid=$cId&field=trafficInfo")
+    gen.writeStringField("trafficInfoUrl", s"http://h5.lvxingpai.com/poi/item.php?pid=$cId&field=trafficInfo")
 
     gen.writeEndObject()
   }
