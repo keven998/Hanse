@@ -136,16 +136,15 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    */
   def getOrders(userId: Long, status: Option[String], start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
-      val callerId = request.headers get "UserId"
-      for {
-        orders <- {
-          // 检查Header中的UserId是否匹配
-          if (callerId.isEmpty || callerId.get != userId.toString) Future(Seq())
-          else OrderAPI.getOrderList(userId, status, start, count)
-        }
-      } yield {
-        val node = SimpleOrderFormatter.instance.formatJsonNode(orders)
-        HanseResult(data = Some(node))
+      val callerId = request.auth.user map (_.userId)
+      if (callerId.isEmpty || callerId.get != userId) {
+        // 权限检查
+        Future.successful(HanseResult.forbidden())
+      } else {
+        val formatter = SimpleOrderFormatter.instance
+        OrderAPI.getOrderList(userId, status, start, count) map (
+          formatter.formatJsonNode _ andThen Some.apply andThen (HanseResult.forbidden(_, None))
+        )
       }
     }
   )
