@@ -11,12 +11,14 @@ import core.exception.OrderStatusException
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
+import org.bson.types.ObjectId
 import play.api.Configuration
 import play.api.mvc.Controller
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Try
 
 /**
  * Created by topy on 2015/11/26.
@@ -79,13 +81,15 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
 
   def getCommodityCategory(locId: String) = AuthenticatedAction.async2(
     request => {
-      for {
-        commodities <- CommodityAPI.getCommodityCategories(locId)
-      } yield {
-        val cas = if (commodities == null) Seq() else commodities.flatMap(_.category.asScala.toSeq).distinct
-        val node = CommodityCategoryFormatter.instance.formatJsonNode(cas)
-        HanseResult(data = Some(node))
-      }
+      (Try(new ObjectId(locId)) map (id => {
+        for {
+          commodities <- CommodityAPI.getCommodityCategories(id)
+        } yield {
+          val cas = if (commodities == null) Seq() else commodities.flatMap(_.category.asScala.toSeq).distinct
+          val node = CommodityCategoryFormatter.instance.formatJsonNode(cas)
+          HanseResult(data = Some(node))
+        }
+      })).toOption getOrElse Future.successful(HanseResult.unprocessable(errorMsg = Some(s"Invalid locality: $locId")))
     }
   )
 

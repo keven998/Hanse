@@ -164,10 +164,10 @@ object CommodityAPI {
    * @param localityId 目的地id
    * @return 商品分类
    */
-  def getCommodityCategories(localityId: String)(implicit ds: Datastore): Future[Seq[Commodity]] = {
+  def getCommodityCategories(localityId: ObjectId)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     Future {
       val query = ds.createQuery(classOf[Commodity]).retrievedFields(true, Seq("commodityId", "category"): _*)
-        .field("locality.id").equal(new ObjectId(localityId)).field("status").equal("pub")
+        .field("locality.id").equal(localityId).field("status").equal("pub")
       query.asList()
     }
   }
