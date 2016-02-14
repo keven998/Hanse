@@ -295,9 +295,9 @@ object CommodityAPI {
    */
   def getComments(commodityId: Long, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[CommodityComment]] = {
     Future {
-      val query = ds.createQuery(classOf[CommodityComment]).field("order.commodity.commodityId").equal(commodityId).order("createTime")
-      // 按照生成时间逆序排列且分页，为避免-createTime时的bug
-      query.asList().reverse.slice(start, start + count)
+      val query = ds.createQuery(classOf[CommodityComment]).field("order.commodity.commodityId").equal(commodityId)
+        .offset(start).limit(count).order("-createTime")
+      query.asList()
     }
   }
 

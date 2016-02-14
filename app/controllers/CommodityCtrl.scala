@@ -65,8 +65,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @return
    */
   def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String],
-    sortBy: String, sort: String,
-    start: Int, count: Int) = AuthenticatedAction.async2(
+    sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
         // 如果有query, 通过elasticsearch查找, 否则通过普通的查找

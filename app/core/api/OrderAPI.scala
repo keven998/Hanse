@@ -164,13 +164,12 @@ object OrderAPI {
    */
   def getOrderList(userId: Long, status: Option[String], start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Order]] = {
     Future {
-      val query = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).order("createTime") //生成时间逆序
+      val query = ds.createQuery(classOf[Order]).field("consumerId").equal(userId).order("-id").offset(start).limit(count) //生成时间逆序
       if (status.nonEmpty) {
         val queryList = status.get.split(",").toSeq
         query.field("status").in(queryList)
       }
-      // 按照生成时间逆序排列且分页，为避免-createTime时的bug
-      query.asList().reverse.slice(start, start + count)
+      query.asList()
     }
   }
 }
