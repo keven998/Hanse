@@ -5,13 +5,13 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.{ IdProof, RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Country
-import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
-import com.lvxingpai.model.marketplace.product.{ Pricing, Commodity, CommodityPlan }
+import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
+import com.lvxingpai.model.marketplace.product.{ BasicCommodity, CommodityPlan, Pricing }
 import com.lvxingpai.model.marketplace.seller.{ BankAccount, Seller }
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import core.formatter.BaseFormatter
 import core.formatter.geo.SimpleCountrySerializer
-import core.formatter.marketplace.product.{ PricingSerializer, CommoditySnapsSerializer, SimpleCommodityPlanSerializer }
+import core.formatter.marketplace.product.{ CommoditySnapsSerializer, PricingSerializer, SimpleCommodityPlanSerializer }
 import core.formatter.marketplace.seller.{ BankAccountSerializer, MiniSellerSerializer }
 import core.formatter.misc._
 import core.formatter.user.UserSerializer
@@ -26,7 +26,7 @@ class OrderFormatter extends BaseFormatter {
     val module = new SimpleModule()
     mapper.registerModule(DefaultScalaModule)
     module.addSerializer(classOf[Order], new OrderSerializer)
-    module.addSerializer(classOf[Commodity], new CommoditySnapsSerializer)
+    module.addSerializer(classOf[BasicCommodity], new CommoditySnapsSerializer)
     module.addSerializer(classOf[Seller], new MiniSellerSerializer)
     module.addSerializer(classOf[CommodityPlan], new SimpleCommodityPlanSerializer)
     module.addSerializer(classOf[RichText], new RichTextSerializer)

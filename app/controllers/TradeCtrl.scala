@@ -143,7 +143,7 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
       } else {
         val formatter = SimpleOrderFormatter.instance
         OrderAPI.getOrderList(userId, status, start, count) map (
-          formatter.formatJsonNode _ andThen Some.apply andThen (HanseResult.forbidden(_, None))
+          formatter.formatJsonNode _ andThen Some.apply andThen (v => HanseResult.ok(data = v))
         )
       }
     }
