@@ -94,6 +94,8 @@ object CommodityAPI {
           })
         }
       } yield {
+        import com.lvxingpai.model.marketplace.product.CommodityConversion._
+
         // 设置选定的价格
         plan.pricing = Seq(pricing)
         // 设置选定的套餐
