@@ -51,7 +51,7 @@ class ElasticsearchEngine(settings: ElasticsearchEngine.Settings) extends Search
                 matchQuery("desc.summary", q.get)
               )
             )
-          ) scorers fieldFactorScore("rating").modifier(FieldValueFactorFunction.Modifier.SQUARE)
+          ) scorers fieldFactorScore("rating").missing(0.5).modifier(FieldValueFactorFunction.Modifier.SQUARE)
         }
       } else {
         head
