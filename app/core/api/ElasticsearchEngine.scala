@@ -47,8 +47,8 @@ class ElasticsearchEngine(settings: ElasticsearchEngine.Settings) extends Search
           functionScoreQuery(
             bool(
               should(
-                matchQuery("title", q.get) boost 10,
-                matchQuery("desc.summary", q.get) boost 2
+                matchQuery("title", q.get) boost 3,
+                matchQuery("desc.summary", q.get)
               )
             )
           ) scorers fieldFactorScore("rating").modifier(FieldValueFactorFunction.Modifier.SQUARE)
