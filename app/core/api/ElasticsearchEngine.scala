@@ -43,7 +43,12 @@ class ElasticsearchEngine(settings: ElasticsearchEngine.Settings) extends Search
       val head = search in settings.index / "commodity"
       if (q.nonEmpty) {
         head query {
-          matchQuery("title", q.get)
+          bool(
+            should(
+              matchQuery("title", q.get) boost 5,
+              matchQuery("desc.summary", q.get)
+            )
+          )
         }
       } else {
         head
