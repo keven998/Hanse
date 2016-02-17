@@ -69,9 +69,9 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
     start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
-        // 如果有query, 通过elasticsearch查找, 否则通过普通的查找
-        commodities <- query map (q => CommodityAPI.searchCommodities(Some(q))) getOrElse
-          CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
+        // TODO 暂时去掉搜索功能
+        //commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
+        commodities <- CommodityAPI.searchCommodities(query)
       } yield {
         val node = SimpleCommodityFormatter.instance.formatJsonNode(commodities)
         HanseResult(data = Some(node))

@@ -157,7 +157,14 @@ object CommodityAPI {
   def getCommoditiesByIdList(ids: Seq[Long])(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity]).field("commodityId").in(seqAsJavaList(ids)).field("status").equal("pub")
     Future {
-      query.asList()
+      query.asList().sortBy(c => {
+        // 按照出现在ids中的位置进行排序
+        val index = ids.indexOf(c.commodityId)
+        if (index != -1)
+          index
+        else
+          Int.MaxValue
+      })
     }
   }
 

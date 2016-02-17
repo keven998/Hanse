@@ -4,6 +4,7 @@ import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.misc.ImageItem
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.{ ElasticClient, HitAs, RichSearchHit }
+import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction
 
 import scala.concurrent.Future
 
@@ -43,7 +44,14 @@ class ElasticsearchEngine(settings: ElasticsearchEngine.Settings) extends Search
       val head = search in settings.index / "commodity"
       if (q.nonEmpty) {
         head query {
-          matchQuery("title", q.get)
+          functionScoreQuery(
+            bool(
+              should(
+                matchQuery("title", q.get) boost 3,
+                matchQuery("desc.summary", q.get)
+              )
+            )
+          ) scorers fieldFactorScore("rating").modifier(FieldValueFactorFunction.Modifier.SQUARE)
         }
       } else {
         head
