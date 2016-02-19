@@ -187,9 +187,15 @@ object OrderAPI {
     }
   }
 
+  /**
+   * 获得某个用户的可用优惠券列表
+   * @param userId
+   * @param ds
+   * @return
+   */
   def getCouponList(userId: Long)(implicit ds: Datastore): Future[Seq[Coupon]] = {
     Future {
-      val query = ds.createQuery(classOf[Coupon]).field("userId").equal(userId)
+      val query = ds.createQuery(classOf[Coupon]).field("userId").equal(userId).field("available").equal(true)
       query.asList
     }
   }
