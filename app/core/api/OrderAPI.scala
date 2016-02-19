@@ -1,10 +1,10 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.misc.Coupon
-import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
+import com.lvxingpai.model.marketplace.order.{Order, OrderActivity}
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.OrderFormatter
-import core.payment.{ AlipayService, PaymentService, WeChatPaymentService }
+import core.payment.{AlipayService, PaymentService, WeChatPaymentService}
 import core.service.ViaeGateway
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
@@ -199,4 +199,17 @@ object OrderAPI {
       query.asList
     }
   }
+
+//  def createCouponTemp(userId: Long)(implicit ds: Datastore): Future[Unit] = {
+//    Future {
+//      val c = new BasicCoupon()
+//      c.threshold = 100
+//      c.desc = "清明节优惠卷"
+//      c.discount = 1
+//      c.expire = new Date()
+//      c.available = true
+//      c.userId = userId
+//      ds.save[Coupon](c)
+//    }
+//  }
 }

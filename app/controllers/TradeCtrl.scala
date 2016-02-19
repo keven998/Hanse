@@ -7,9 +7,9 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.OrderActivity
 import controllers.security.AuthenticatedAction
-import core.api.{ CommodityAPI, OrderAPI, StatedOrder, TravellerAPI }
+import core.api._
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
-import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
+import core.formatter.marketplace.order._
 import core.misc.HanseResult
 import core.service.ViaeGateway
 import org.bson.types.ObjectId
@@ -270,5 +270,19 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
   //    }
 
   //  }
-  def getCouponList(userId: Long) = play.mvc.Results.TODO
+  /**
+   * 获取我的优惠卷列表
+   *
+   * @return
+   */
+  def getCouponList(userId: Long) = AuthenticatedAction.async2(
+    request => {
+      for {
+        //t <- OrderAPI.createCouponTemp(userId)
+        couponList <- OrderAPI.getCouponList(userId)
+      } yield {
+        HanseResult(data = Some(CouponFormatter.instance.formatJsonNode(couponList)))
+      }
+    }
+  )
 }
