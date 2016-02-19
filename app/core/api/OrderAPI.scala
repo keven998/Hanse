@@ -1,10 +1,12 @@
 package core.api
 
+import com.lvxingpai.model.marketplace.misc.Coupon
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.OrderFormatter
 import core.payment.{ AlipayService, PaymentService, WeChatPaymentService }
 import core.service.ViaeGateway
+import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
 import org.mongodb.morphia.query.UpdateResults
@@ -170,6 +172,25 @@ object OrderAPI {
         query.field("status").in(queryList)
       }
       query.asList()
+    }
+  }
+
+  /**
+   * 获得优惠券信息
+   * @param id
+   * @return
+   */
+  def getCoupon(id: ObjectId)(implicit ds: Datastore): Future[Option[Coupon]] = {
+    Future {
+      val query = ds.createQuery(classOf[Coupon]).field("id").equal(id)
+      Option(query.get)
+    }
+  }
+
+  def getCouponList(userId: Long)(implicit ds: Datastore): Future[Seq[Coupon]] = {
+    Future {
+      val query = ds.createQuery(classOf[Coupon]).field("userId").equal(userId)
+      query.asList
     }
   }
 }

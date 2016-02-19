@@ -12,6 +12,7 @@ import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.{ OrderFormatter, OrderStatusFormatter, SimpleOrderFormatter, TravellersFormatter }
 import core.misc.HanseResult
 import core.service.ViaeGateway
+import org.bson.types.ObjectId
 import org.joda.time.format.{ DateTimeFormat, ISODateTimeFormat }
 import play.api.Configuration
 import play.api.libs.json._
@@ -47,13 +48,19 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
         quantity <- (body \ "quantity").asOpt[Int]
         travellers <- (body \ "travellers").asOpt[Array[String]]
         comment <- (body \ "comment").asOpt[String] orElse Option("")
+        coupons <- (body \ "coupons").asOpt[Seq[String]] orElse Option(Seq())
       } yield {
         // 读取预约时间
         val date = ISODateTimeFormat.date parseLocalDate rendezvousTime
         val contact = TravellersFormatter.instance.parse[RealNameInfo]((body \ "contact").asInstanceOf[JsDefined].value.toString())
         for {
           tls <- TravellerAPI.getTravellerByKeys(userId, travellers.toSeq)
-          order <- CommodityAPI.createOrder(commodityId, planId, date, userId, tls.getOrElse(Seq()), contact, quantity, comment)
+          order <- {
+            // 优惠券
+            val couponList = coupons map (v => Try(new ObjectId(v)).toOption) filter (_.nonEmpty) map (_.get)
+            CommodityAPI.createOrder(commodityId, planId, date, userId, tls.getOrElse(Seq()), contact, quantity,
+              comment, couponList)
+          }
         } yield {
           if (order.isEmpty)
             HanseResult.unprocessableWithMsg(Some("下单失败,订单不存在或商品计划选择不正确。"))
@@ -263,4 +270,5 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
   //    }
 
   //  }
+  def getCouponList(userId: Long) = play.mvc.Results.TODO
 }
