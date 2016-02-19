@@ -3,6 +3,7 @@ package core.formatter.marketplace.order
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.misc.{ BasicCoupon, Coupon }
+import core.misc.Utils
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, DateTimeZone }
 
@@ -17,7 +18,7 @@ class CouponSerializer extends JsonSerializer[Coupon] {
     gen.writeStringField("id", coupon.id.toString)
     gen.writeNumberField("userId", coupon.userId)
     gen.writeStringField("desc", coupon.desc)
-    gen.writeNumberField("discount", coupon.discount)
+    gen.writeNumberField("discount", Utils.getActualPrice(coupon.discount))
     gen.writeBooleanField("available", coupon.available)
 
     //    val fmt = new SimpleDateFormat("yyyy-MM-dd")
