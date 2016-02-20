@@ -24,12 +24,12 @@ class CouponSerializer extends JsonSerializer[Coupon] {
     //    val fmt = new SimpleDateFormat("yyyy-MM-dd")
     //    gen.writeStringField("expire", if (coupon.expire != null) fmt.format(coupon.expire) else "")
 
-    val rendezvous = Option(coupon.expire) map (date => {
+    val expire = Option(coupon.expire) map (date => {
       val tzDate = new DateTime(date) toDateTime DateTimeZone.forID("Asia/Shanghai")
       val fmt = ISODateTimeFormat.date()
       tzDate.toString(fmt)
     }) getOrElse ""
-    gen.writeStringField("rendezvousTime", rendezvous)
+    gen.writeStringField("expire", expire)
 
     coupon match {
       case s: BasicCoupon => gen.writeNumberField("threshold", s.threshold)
