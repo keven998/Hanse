@@ -32,7 +32,7 @@ class CouponSerializer extends JsonSerializer[Coupon] {
     gen.writeStringField("expire", expire)
 
     coupon match {
-      case s: BasicCoupon => gen.writeNumberField("threshold", s.threshold)
+      case s: BasicCoupon => gen.writeNumberField("threshold", Utils.getActualPrice(s.threshold))
     }
     gen.writeEndObject()
   }
