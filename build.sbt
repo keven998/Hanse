@@ -10,12 +10,13 @@ scalaVersion := "2.11.4"
 val morphiaVersion = "1.0.0"
 val finagleVersion = "6.30.0"
 
+
 libraryDependencies ++= Seq(
   jdbc,
   cache,
   ws,
   specs2 % Test,
-  "com.lvxingpai" %% "core-model" % "0.2.2-SNAPSHOT",
+  "com.lvxingpai" %% "core-model" % "0.2.4-SNAPSHOT",
   "com.lvxingpai" %% "etcd-store-play" % "0.1.1-SNAPSHOT",
   "com.lvxingpai" %% "morphia-play-injector" % "0.1.3-SNAPSHOT",
   "org.mongodb.morphia" % "morphia" % morphiaVersion,

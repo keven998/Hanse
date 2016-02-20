@@ -2,7 +2,7 @@ package core.formatter.marketplace.product
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.marketplace.product.{ CommodityPlan, Commodity }
+import com.lvxingpai.model.marketplace.product.{ BasicCommodity, CommodityPlan }
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.ImageItem
 
@@ -11,9 +11,9 @@ import scala.collection.JavaConversions._
 /**
  * Created by topy on 2015/11/3.
  */
-class CommoditySnapsSerializer extends JsonSerializer[Commodity] {
+class CommoditySnapsSerializer extends JsonSerializer[BasicCommodity] {
 
-  override def serialize(commodity: Commodity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
+  override def serialize(commodity: BasicCommodity, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
     gen.writeNumberField("commodityId", Option(commodity.commodityId) getOrElse 0L)
     gen.writeStringField("title", Option(commodity.title) getOrElse "")

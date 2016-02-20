@@ -1,10 +1,12 @@
 package core.api
 
+import com.lvxingpai.model.marketplace.misc.Coupon
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import core.exception.ResourceNotFoundException
 import core.formatter.marketplace.order.OrderFormatter
 import core.payment.{ AlipayService, PaymentService, WeChatPaymentService }
 import core.service.ViaeGateway
+import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
 import org.mongodb.morphia.query.UpdateResults
@@ -172,4 +174,42 @@ object OrderAPI {
       query.asList()
     }
   }
+
+  /**
+   * 获得优惠券信息
+   * @param id
+   * @return
+   */
+  def getCoupon(id: ObjectId)(implicit ds: Datastore): Future[Option[Coupon]] = {
+    Future {
+      val query = ds.createQuery(classOf[Coupon]).field("id").equal(id)
+      Option(query.get)
+    }
+  }
+
+  /**
+   * 获得某个用户的可用优惠券列表
+   * @param userId
+   * @param ds
+   * @return
+   */
+  def getCouponList(userId: Long)(implicit ds: Datastore): Future[Seq[Coupon]] = {
+    Future {
+      val query = ds.createQuery(classOf[Coupon]).field("userId").equal(userId).field("available").equal(true)
+      query.asList
+    }
+  }
+
+  //  def createCouponTemp(userId: Long)(implicit ds: Datastore): Future[Unit] = {
+  //    Future {
+  //      val c = new BasicCoupon()
+  //      c.threshold = 100
+  //      c.desc = "清明节优惠卷"
+  //      c.discount = 1
+  //      c.expire = new Date()
+  //      c.available = true
+  //      c.userId = userId
+  //      ds.save[Coupon](c)
+  //    }
+  //  }
 }

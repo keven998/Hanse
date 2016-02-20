@@ -4,6 +4,7 @@ import java.util
 import java.util.Date
 
 import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
+import com.lvxingpai.model.marketplace.misc.Coupon
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityComment, CommoditySnapshot }
 import com.lvxingpai.model.misc.ImageItem
@@ -72,10 +73,12 @@ object CommodityAPI {
   }
 
   def createOrder(commodityId: Long, planId: String, rendezvous: LocalDate, consumerId: Long,
-    travellers: Seq[RealNameInfo], contact: RealNameInfo, quantity: Int, comment: String)(implicit ds: Datastore): Future[Option[Order]] = {
+    travellers: Seq[RealNameInfo], contact: RealNameInfo, quantity: Int, comment: String,
+    coupons: Seq[ObjectId])(implicit ds: Datastore): Future[Option[Order]] = {
     val commoditySeq = Seq("_id", "commodityId", "title", "desc", "price", "plans", "seller", "category", "cover", "images", "version")
     val future = for {
       commodityOpt <- CommodityAPI.getCommodityById(commodityId, version = None, commoditySeq)
+      couponOpt <- coupons.headOption map OrderAPI.getCoupon getOrElse Future.successful(None) // 优惠券
     } yield {
       if (commodityOpt.isEmpty)
         throw ResourceNotFoundException("商品不存在或已下架")
@@ -94,6 +97,8 @@ object CommodityAPI {
           })
         }
       } yield {
+        import com.lvxingpai.model.marketplace.product.CommodityConversion._
+
         // 设置选定的价格
         plan.pricing = Seq(pricing)
         // 设置选定的套餐
@@ -109,6 +114,7 @@ object CommodityAPI {
         order.quantity = quantity
         // 设定订单价格
         order.totalPrice = quantity * pricing.price
+        order.discount = couponOpt map (_.discount) getOrElse 0
         order.comment = comment
         order.rendezvousTime = rendezvous.toDate
         order.status = "pending"
@@ -124,6 +130,12 @@ object CommodityAPI {
         act.data = Map[String, Any]("userId" -> consumerId)
         order.activities = util.Arrays.asList(act)
         ds.save[Order](order)
+
+        // 删除使用过后的优惠券
+        couponOpt foreach (coupon => {
+          coupon.available = false
+          ds.save[Coupon](coupon)
+        })
 
         val orderNode = OrderFormatter.instance.formatJsonNode(order)
 
