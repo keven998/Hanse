@@ -19,7 +19,6 @@ class CouponSerializer extends JsonSerializer[Coupon] {
     gen.writeNumberField("userId", coupon.userId)
     gen.writeStringField("desc", coupon.desc)
     gen.writeNumberField("discount", Utils.getActualPrice(coupon.discount))
-    gen.writeBooleanField("available", coupon.available)
 
     //    val fmt = new SimpleDateFormat("yyyy-MM-dd")
     //    gen.writeStringField("expire", if (coupon.expire != null) fmt.format(coupon.expire) else "")
