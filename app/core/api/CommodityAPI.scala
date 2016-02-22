@@ -10,6 +10,7 @@ import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
+import core.search.{ CategoryFilter, LocalityFilter, SellerFilter }
 import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
@@ -157,7 +158,14 @@ object CommodityAPI {
   def getCommoditiesByIdList(ids: Seq[Long])(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity]).field("commodityId").in(seqAsJavaList(ids)).field("status").equal("pub")
     Future {
-      query.asList()
+      query.asList().sortBy(c => {
+        // 按照出现在ids中的位置进行排序
+        val index = ids.indexOf(c.commodityId)
+        if (index != -1)
+          index
+        else
+          Int.MaxValue
+      })
     }
   }
 
@@ -203,9 +211,16 @@ object CommodityAPI {
    * 使用搜索引擎, 搜索商品
    * @return
    */
-  def searchCommodities(q: Option[String])(implicit ds: Datastore): Future[Seq[Commodity]] = {
+  def searchCommodities(q: Option[String], sellerId: Option[Long], localityId: Option[String],
+    coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val es = Play.application.injector instanceOf classOf[SearchEngine]
-    es.overallCommodities(q) flatMap (clist => {
+
+    val sellerFilter = if (sellerId.nonEmpty) Option(new SellerFilter(sellerId.get)) else None
+    val localityFilter = if (localityId.nonEmpty) Option(new LocalityFilter(localityId.get)) else None
+    val coTypeFilter = if (coType.nonEmpty) Option(new CategoryFilter(coType.get)) else None
+    val filters = Seq(sellerFilter, localityFilter, coTypeFilter) filter (_.nonEmpty) map (_.get)
+
+    es.overallCommodities(q, filters, sortBy, sort, start, count) flatMap (clist => {
       val idList = clist map (_.commodityId)
       if (idList.nonEmpty)
         getCommoditiesByIdList(idList)
