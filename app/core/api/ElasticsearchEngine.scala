@@ -44,26 +44,30 @@ class ElasticsearchEngine(settings: ElasticsearchEngine.Settings) extends Search
   override def overallCommodities(q: Option[String] = None, filters: Seq[ElasticsearchFilter], sortBy: String, sort: String, startIndex: Int, count: Int): Future[Seq[Commodity]] = {
     val s = {
       val head = search in settings.index / "commodity"
+
       // 定义搜索条件
-      val boolCondition = if (q.nonEmpty) {
-        bool(
-          should(
-            matchQuery("title", q.get) boost 3,
-            matchQuery("desc.summary", q.get)
-          ) filter filters.map(_.queryDefinition)
-        )
-      } else {
-        bool(
-          must(
-            filters.map(_.queryDefinition)
-          )
-        )
-      }
+      val queryClause = q map (v => should(
+        matchQuery("title", v) boost 3,
+        matchQuery("desc.summary", v)
+      ) minimumShouldMatch 1) getOrElse must(matchAllQuery)
+      // 筛选条件
+      val filterClause = filter(Option(filters) getOrElse Seq() map (_.queryDefinition))
+      // 综合
+      val boolCondition = queryClause filter filterClause
+
+      // 和rating相关的function score
+      val defaultRating = 0.7
+      val ratingFunction = fieldFactorScore("rating") missing defaultRating modifier FieldValueFactorFunction.Modifier.SQUARE
+      // 和salesVolume相关的function score
+      val salesFunction = fieldFactorScore("salesVolume") missing 1 modifier FieldValueFactorFunction.Modifier.LOG2P
+      // 和weightBoost相关的function score
+      val weightBoostFunction = fieldFactorScore("weightBoost") missing 1
+
       // 把搜索条件组织成查询语句
       val queryCondition = head start startIndex limit count query {
         functionScoreQuery(
           boolCondition
-        ) scorers fieldFactorScore("rating").missing(0.1).modifier(FieldValueFactorFunction.Modifier.SQUARE)
+        ) scorers (ratingFunction, salesFunction, weightBoostFunction)
       }
 
       // 定义排序条件
