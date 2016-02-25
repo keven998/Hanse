@@ -50,12 +50,12 @@ class ElasticsearchEngine(settings: ElasticsearchEngine.Settings) extends Search
           should(
             matchQuery("title", q.get) boost 3,
             matchQuery("desc.summary", q.get)
-          ) filter filters.map(_.getQueryDefinition())
+          ) filter filters.map(_.queryDefinition)
         )
       } else {
         bool(
           must(
-            filters.map(_.getQueryDefinition())
+            filters.map(_.queryDefinition)
           )
         )
       }
