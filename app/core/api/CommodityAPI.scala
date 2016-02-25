@@ -11,6 +11,7 @@ import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
+import core.search.{ CommodityStatusFilter, CategoryFilter, LocalityFilter, SellerFilter }
 import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
@@ -167,7 +168,14 @@ object CommodityAPI {
   def getCommoditiesByIdList(ids: Seq[Long])(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity]).field("commodityId").in(seqAsJavaList(ids)).field("status").equal("pub")
     Future {
-      query.asList()
+      query.asList().sortBy(c => {
+        // 按照出现在ids中的位置进行排序
+        val index = ids.indexOf(c.commodityId)
+        if (index != -1)
+          index
+        else
+          Int.MaxValue
+      })
     }
   }
 
@@ -213,9 +221,22 @@ object CommodityAPI {
    * 使用搜索引擎, 搜索商品
    * @return
    */
-  def searchCommodities(q: Option[String])(implicit ds: Datastore): Future[Seq[Commodity]] = {
+  def searchCommodities(q: Option[String], sellerId: Option[Long], localityId: Option[String],
+    coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val es = Play.application.injector instanceOf classOf[SearchEngine]
-    es.overallCommodities(q) flatMap (clist => {
+
+    // 根据商品状态筛选
+    val statusFilter = Some(CommodityStatusFilter())
+    // 按照商家筛选
+    val sellerFilter = sellerId map SellerFilter.apply
+    // 按照城市筛选
+    val localityFilter = localityId map LocalityFilter.apply
+    // 按照类别筛选
+    val categoryFilter = coType map CategoryFilter.apply
+
+    val filters = Seq(statusFilter, sellerFilter, localityFilter, categoryFilter) filter (_.nonEmpty) map (_.get)
+
+    es.overallCommodities(q, filters, sortBy, sort, start, count) flatMap (clist => {
       val idList = clist map (_.commodityId)
       if (idList.nonEmpty)
         getCommoditiesByIdList(idList)
