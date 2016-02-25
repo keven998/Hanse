@@ -57,7 +57,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap, implic
       Map("appid" -> WeChatPaymentService.appid, "mch_id" -> WeChatPaymentService.mchid)
     }
 
-    val totalFee = order.totalPrice
+    val totalFee = order.totalPrice - order.discount
     if (totalFee == 0) {
       throw new RuntimeException(s"Error in creating WeChat prepay. return_msg=订单价格不能为0")
     }
@@ -228,7 +228,7 @@ class WeChatPaymentService @Inject() (private val morphiaMap: MorphiaMap, implic
    * @return
    */
   override def refundProcess(order: Order, amount: Int): Future[Unit] = {
-    val content = Map("refund_fee" -> amount.toString, "total_fee" -> order.totalPrice.toString,
+    val content = Map("refund_fee" -> amount.toString, "total_fee" -> (order.totalPrice - order.discount).toString,
       "out_trade_no" -> order.orderId.toString)
 
     val url = WeChatPaymentService.refundOrderUrlUrl

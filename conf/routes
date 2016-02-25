@@ -94,3 +94,7 @@ POST          /users/$userId<\d+>/favorites                            @controll
 DELETE        /users/$userId<\d+>/favorites/:itemType/:itemId          @controllers.MiscCtrl.delFavorite(userId:Long,itemType:String,itemId:String)
 
 GET           /ping                                                    @controllers.MiscCtrl.ping()
+
+#----------优惠券接口---------
+# 获得优惠券列表
+GET           /marketplace/coupons                                     @controllers.TradeCtrl.getCouponList(userId: Long)
