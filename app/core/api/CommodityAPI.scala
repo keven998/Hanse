@@ -10,7 +10,7 @@ import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
-import core.search.{ CategoryFilter, LocalityFilter, SellerFilter }
+import core.search.{ CommodityStatusFilter, CategoryFilter, LocalityFilter, SellerFilter }
 import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
@@ -215,10 +215,16 @@ object CommodityAPI {
     coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val es = Play.application.injector instanceOf classOf[SearchEngine]
 
-    val sellerFilter = if (sellerId.nonEmpty) Option(new SellerFilter(sellerId.get)) else None
-    val localityFilter = if (localityId.nonEmpty) Option(new LocalityFilter(localityId.get)) else None
-    val coTypeFilter = if (coType.nonEmpty) Option(new CategoryFilter(coType.get)) else None
-    val filters = Seq(sellerFilter, localityFilter, coTypeFilter) filter (_.nonEmpty) map (_.get)
+    // 根据商品状态筛选
+    val statusFilter = Some(CommodityStatusFilter())
+    // 按照商家筛选
+    val sellerFilter = sellerId map SellerFilter.apply
+    // 按照城市筛选
+    val localityFilter = localityId map LocalityFilter.apply
+    // 按照类别筛选
+    val categoryFilter = coType map CategoryFilter.apply
+
+    val filters = Seq(statusFilter, sellerFilter, localityFilter, categoryFilter) filter (_.nonEmpty) map (_.get)
 
     es.overallCommodities(q, filters, sortBy, sort, start, count) flatMap (clist => {
       val idList = clist map (_.commodityId)
