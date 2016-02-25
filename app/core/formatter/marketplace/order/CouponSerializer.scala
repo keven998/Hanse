@@ -17,6 +17,7 @@ class CouponSerializer extends JsonSerializer[Coupon] {
 
     gen.writeStringField("id", coupon.id.toString)
     gen.writeNumberField("userId", coupon.userId)
+    gen.writeStringField("title", Option(coupon.title) getOrElse "")
     gen.writeStringField("desc", coupon.desc)
     gen.writeNumberField("discount", Utils.getActualPrice(coupon.discount))
 
