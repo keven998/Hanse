@@ -52,6 +52,8 @@ class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
     else serializers.findNullValueSerializer(null)
     retCover.serialize(cover, gen, serializers)
 
+    gen.writeStringField("status", Option(commodity.status) getOrElse "")
+
     gen.writeEndObject()
   }
 }

@@ -222,7 +222,7 @@ object CommodityAPI {
    * @return
    */
   def searchCommodities(q: Option[String], sellerId: Option[Long], localityId: Option[String],
-    coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    coType: Option[String], sortBy: String, sort: String, start: Int, count: Int, isSeller: Boolean)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val es = Play.application.injector instanceOf classOf[SearchEngine]
 
     // 根据商品状态筛选
@@ -234,7 +234,7 @@ object CommodityAPI {
     // 按照类别筛选
     val categoryFilter = coType map CategoryFilter.apply
 
-    val filters = Seq(statusFilter, sellerFilter, localityFilter, categoryFilter) filter (_.nonEmpty) map (_.get)
+    val filters = (Seq(sellerFilter, localityFilter, categoryFilter) ++ (if (isSeller) Seq(statusFilter) else Seq())) filter (_.nonEmpty) map (_.get)
 
     es.overallCommodities(q, filters, sortBy, sort, start, count) flatMap (clist => {
       val idList = clist map (_.commodityId)

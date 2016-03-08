@@ -22,3 +22,5 @@ project/*
 conf/credentials.conf
 conf/*.pem
 conf/local*.conf
+conf/application.conf
+conf/hanse.jks
