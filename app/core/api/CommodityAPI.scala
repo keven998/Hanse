@@ -48,16 +48,17 @@ object CommodityAPI {
     }
   }
 
-  def modCommodity(cmyId: Long, status: Option[String])(implicit ds: Datastore): Future[Unit] = {
-    val cmyQuery = ds.createQuery(classOf[Commodity]) field "commodityId" equal cmyId
+  def modCommodity(cmyId: Long, userId: Long, status: Option[String])(implicit ds: Datastore): Future[Int] = {
+    val cmyQuery = ds.createQuery(classOf[Commodity]) field "commodityId" equal cmyId field "seller.sellerId" equal userId
     val ups = ds.createUpdateOperations(classOf[Commodity])
     Future {
-      status match {
+      val ret = status match {
         case Some("pub") | Some("review") =>
           ups.set("status", status.get)
           ds.update(cmyQuery, ups)
         case _ => throw CommodityStatusException("非法的商品状态")
       }
+      ret.getUpdatedCount
     }
   }
 

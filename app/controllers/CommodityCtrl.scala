@@ -61,11 +61,14 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    */
   def modComment(commodityId: Long) = AuthenticatedAction.async2(
     request => {
+      val userOpt = request.headers.get("X-Lvxingpai-Id") map (_.toLong)
       (for {
         body <- request.body.wrapped.asJson
         status <- Option((body \ "status").asOpt[String])
       } yield {
-        CommodityAPI.modCommodity(commodityId, status) map (_ => HanseResult.ok()) recover {
+        CommodityAPI.modCommodity(commodityId, userOpt.get, status) map (cnt => {
+          if (cnt == 0) HanseResult.notFound() else HanseResult.ok()
+        }) recover {
           case e: CommodityStatusException => HanseResult.forbidden(errorMsg = Some(e.getMessage))
         }
       }) getOrElse Future {
