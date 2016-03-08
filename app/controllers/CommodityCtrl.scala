@@ -7,7 +7,7 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
 import controllers.security.AuthenticatedAction
 import core.api.{ CommodityAPI, MiscAPI, SellerAPI }
-import core.exception.OrderStatusException
+import core.exception.{ CommodityStatusException, OrderStatusException }
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
@@ -49,6 +49,27 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
           HanseResult(data = Some(node))
         } else
           HanseResult.notFound(Some(s"Commodity not found. sellId is $commodityId"))
+      }
+    }
+  )
+
+  /**
+   * 修改商品信息
+   *
+   * @param commodityId
+   * @return
+   */
+  def modComment(commodityId: Long) = AuthenticatedAction.async2(
+    request => {
+      (for {
+        body <- request.body.wrapped.asJson
+        status <- Option((body \ "status").asOpt[String])
+      } yield {
+        CommodityAPI.modCommodity(commodityId, status) map (_ => HanseResult.ok()) recover {
+          case e: CommodityStatusException => HanseResult.forbidden(errorMsg = Some(e.getMessage))
+        }
+      }) getOrElse Future {
+        HanseResult.unprocessable()
       }
     }
   )

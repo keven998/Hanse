@@ -9,7 +9,7 @@ import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityComment, CommoditySnapshot }
 import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
-import core.exception.{ OrderStatusException, ResourceNotFoundException }
+import core.exception.{ CommodityStatusException, OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
 import core.search.{ CommodityStatusFilter, CategoryFilter, LocalityFilter, SellerFilter }
 import core.service.ViaeGateway
@@ -45,6 +45,19 @@ object CommodityAPI {
       query.retrievedFields(true, fields: _*)
     Future {
       Option(query.get)
+    }
+  }
+
+  def modCommodity(cmyId: Long, status: Option[String])(implicit ds: Datastore): Future[Unit] = {
+    val cmyQuery = ds.createQuery(classOf[Commodity]) field "commodityId" equal cmyId
+    val ups = ds.createUpdateOperations(classOf[Commodity])
+    Future {
+      status match {
+        case Some("pub") | Some("review") =>
+          ups.set("status", status.get)
+          ds.update(cmyQuery, ups)
+        case _ => throw CommodityStatusException("非法的商品状态")
+      }
     }
   }
 
