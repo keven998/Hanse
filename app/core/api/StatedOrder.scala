@@ -310,7 +310,7 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
       (Try(Some(v.toString.toFloat)) recover {
         case _: NumberFormatException => None
       }).get
-    }) map (v => (v * 100).toInt) getOrElse (order.totalPrice - order.discount) // 默认情况下, 退还全款
+    }) map (v => v.toInt) getOrElse (order.totalPrice - order.discount) // 默认情况下, 退还全款
     // 是否存在退款申请
     val withApplication = order.status == RefundApplied.toString
 

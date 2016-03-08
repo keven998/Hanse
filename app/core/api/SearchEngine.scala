@@ -1,6 +1,7 @@
 package core.api
 
 import com.lvxingpai.model.marketplace.product.Commodity
+import core.search.ElasticsearchFilter
 
 import scala.concurrent.Future
 
@@ -13,5 +14,6 @@ trait SearchEngine {
    * 搜索商品: 综合排序
    * @param query 搜索的关键词
    */
-  def overallCommodities(query: Option[String] = None): Future[Seq[Commodity]]
+  def overallCommodities(query: Option[String] = None, filters: Seq[ElasticsearchFilter], sortBy: String, sort: String, start: Int, count: Int): Future[Seq[Commodity]]
+
 }
