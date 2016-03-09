@@ -26,7 +26,7 @@ GET           /marketplace/commodities/$id<\d+>                        @controll
 POST           /marketplace/commodities/$id<\d+>                        @controllers.CommodityCtrl.modComment(id: Long)
 
 #商品列表
-GET           /marketplace/commodities                                 @controllers.CommodityCtrl.getCommodities(query:Option[String]?=None, seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None, sortBy: String?="relevance", sort: String?="desc", start: Int?=0, count: Int?=10)
+GET           /marketplace/commodities                                 @controllers.CommodityCtrl.getCommodities(query:Option[String]?=None, seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None,status:Option[String] ?= None, sortBy: String?="relevance", sort: String?="desc", start: Int?=0, count: Int?=10)
 
 #商品分类列表
 GET           /marketplace/commodities/categories                      @controllers.CommodityCtrl.getCommodityCategory(locality:String)

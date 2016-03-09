@@ -88,13 +88,13 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @param count
    * @return
    */
-  def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String],
+  def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String], status: Option[String],
     sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
         //commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
         isSeller <- SellerAPI.getSeller(sellerId getOrElse 0L)
-        commodities <- CommodityAPI.searchCommodities(query, sellerId, locId, category, sortBy, sort, start, count, isSeller.nonEmpty)
+        commodities <- CommodityAPI.searchCommodities(query, sellerId, locId, category, status, sortBy, sort, start, count, isSeller.nonEmpty)
       } yield {
         val node = SimpleCommodityFormatter.instance.formatJsonNode(commodities)
         HanseResult(data = Some(node))
