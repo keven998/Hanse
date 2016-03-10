@@ -164,7 +164,7 @@ object OrderAPI {
    * @param status 订单状态
    * @return 订单列表
    */
-  def getOrderList(userId: Option[Long], sellerId: Option[Long], status: Option[String], start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Order]] = {
+  def getOrderList(userId: Option[Long], sellerId: Option[Long], status: Option[String], start: Int, count: Int, fields: Seq[String] = Seq())(implicit ds: Datastore): Future[Seq[Order]] = {
     Future {
       val query = ds.createQuery(classOf[Order])
       if (userId.nonEmpty)
@@ -172,11 +172,26 @@ object OrderAPI {
       if (sellerId.nonEmpty)
         query.field("commodity.seller.sellerId").equal(sellerId.get)
       query.order("-id").offset(start).limit(count) //生成时间逆序
+      if (status.nonEmpty)
+        query.field("status").in(status.get.split(",").toSeq)
+      if (fields.nonEmpty)
+        query.retrievedFields(true, fields: _*)
+      query.asList()
+    }
+  }
+
+  def getOrderCnt(userId: Option[Long], sellerId: Option[Long], status: Option[String])(implicit ds: Datastore): Future[Long] = {
+    Future {
+      val query = ds.createQuery(classOf[Order])
+      if (userId.nonEmpty)
+        query.field("consumerId").equal(userId.get)
+      if (sellerId.nonEmpty)
+        query.field("commodity.seller.sellerId").equal(sellerId.get)
       if (status.nonEmpty) {
         val queryList = status.get.split(",").toSeq
         query.field("status").in(queryList)
       }
-      query.asList()
+      query.countAll()
     }
   }
 
