@@ -141,15 +141,17 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
    * @param status 订单状态
    * @return 订单列表
    */
-  def getOrders(userId: Long, status: Option[String], start: Int, count: Int) = AuthenticatedAction.async2(
+  def getOrders(userId: Option[Long], sellerId: Option[Long], status: Option[String], start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       val callerId = request.auth.user map (_.userId)
-      if (callerId.isEmpty || callerId.get != userId) {
+      if (callerId.isEmpty ||
+        (userId.isEmpty && sellerId.isEmpty) ||
+        (callerId.get != userId.getOrElse(Long.MinValue) && callerId.get != sellerId.getOrElse(Long.MinValue))) {
         // 权限检查
         Future.successful(HanseResult.forbidden())
       } else {
         val formatter = SimpleOrderFormatter.instance
-        OrderAPI.getOrderList(userId, status, start, count) map (
+        OrderAPI.getOrderList(userId, sellerId, status, start, count) map (
           formatter.formatJsonNode _ andThen Some.apply andThen (v => HanseResult.ok(data = v))
         )
       }

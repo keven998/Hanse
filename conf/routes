@@ -52,7 +52,7 @@ POST          /marketplace/orders/$orderId<\d+>/actions                @controll
 POST          /marketplace/orders                                      @controllers.TradeCtrl.createOrder()
 
 #订单列表
-GET           /marketplace/orders                                      @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None,start: Int?=0, count: Int?=10)
+GET           /marketplace/orders                                      @controllers.TradeCtrl.getOrders(userId: Option[Long],sellerId: Option[Long], status: Option[String] ?= None,start: Int?=0, count: Int?=10)
 
 #订单详情
 GET           /marketplace/orders/$orderId<\d+>                        @controllers.TradeCtrl.getOrderInfo(orderId: Long)
