@@ -3,8 +3,8 @@ package core.formatter.marketplace.order
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.lvxingpai.model.account.UserInfo
-import com.lvxingpai.model.marketplace.order.Order
+import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
+import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
 import com.lvxingpai.model.marketplace.product.{ BasicCommodity, CommodityPlan, Pricing }
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.{ ImageItem, RichText }
@@ -31,6 +31,8 @@ class SimpleOrderFormatter extends BaseFormatter {
     module.addSerializer(classOf[UserInfo], new UserSerializer)
     module.addSerializer(classOf[ImageItem], new ImageItemSerializer)
     module.addSerializer(classOf[Pricing], new PricingSerializer)
+    module.addSerializer(classOf[RealNameInfo], new RealNameInfoSerializer)
+    module.addSerializer(classOf[OrderActivity], new OrderActivitySerializer)
     mapper.registerModule(module)
     mapper
   }

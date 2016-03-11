@@ -2,11 +2,14 @@ package core.formatter.marketplace.order
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.marketplace.order.Order
+import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.marketplace.order.{ OrderActivity, Order }
 import com.lvxingpai.model.marketplace.product.Commodity
 import core.misc.Utils
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTimeZone, DateTime }
+
+import scala.collection.JavaConversions._
 
 /**
  * Created by pengyt on 2015/11/21.
@@ -52,6 +55,24 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
       val fmt = ISODateTimeFormat.date()
       tzDate.toString(fmt)
     }) getOrElse ""
+
+    // travellers
+    gen.writeFieldName("travellers")
+    gen.writeStartArray()
+    val travellers = order.travellers
+    if (travellers != null) {
+      val ret = serializers.findValueSerializer(classOf[RealNameInfo], null)
+      for (traveller <- travellers)
+        ret.serialize(traveller, gen, serializers)
+    } else serializers.findNullValueSerializer(null)
+    gen.writeEndArray()
+
+    // activities
+    gen.writeFieldName("activities")
+    gen.writeStartArray()
+    val orderAct = serializers.findValueSerializer(classOf[OrderActivity], null)
+    Option(order.activities) map (_.toSeq) getOrElse Seq() foreach (orderAct.serialize(_, gen, serializers))
+    gen.writeEndArray()
 
     gen.writeStringField("rendezvousTime", rendezvous)
     gen.writeNumberField("createTime", if (order.createTime != null) order.createTime.getTime else 0)
