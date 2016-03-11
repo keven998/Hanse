@@ -48,13 +48,16 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
       }
       case (Pending, Action.cancel) => cancel(operator.get.userId, data)
       case (Pending, Action.expire) => expireOnPending(roles)
-      case (Paid, Action.commit) => commit()
+      case (Paid, Action.commit) => commit(operator.get.userId, data) // 商家发货
       case (Paid, Action.refundApply) => refundApply(operator.get.userId, data)
       case (Paid, Action.expire) => expireAndRefund(roles)
       case (Committed, Action.finish) => finish(roles)
       case (Committed, Action.refundApply) => refundApply(operator.get.userId, data)
-      case (RefundApplied, Action.refundApprove) => refundApprove(operator.get.userId, data)
+      case (RefundApplied, Action.refundApprove) => refundApprove(operator.get.userId, data) //商家同意退款
+      case (RefundApplied, Action.refundDeny) => refundDeny(operator.get.userId, data) //商家同意退款
+      case (Paid, Action.refundApprove) => refundApprove(operator.get.userId, data) //商家直接退款
       case (RefundApplied, Action.expire) => expireAndRefund(roles)
+      case (Pending, Action.cancel) => cancel(operator.get.userId, data)
       //      case (RefundApplied, Action.refundDeny) => refundDeny(operator)
     }
   }
@@ -306,13 +309,17 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
    * @return
    */
   def refundApprove(operator: Long, data: Option[Map[String, Any]]): Future[StatedOrder] = {
+    // 是否存在退款申请
+    val withApplication = order.status == RefundApplied.toString
+
     val amount = data getOrElse Map() get "amount" flatMap (v => {
       (Try(Some(v.toString.toFloat)) recover {
         case _: NumberFormatException => None
       }).get
-    }) map (v => v.toInt) getOrElse (order.totalPrice - order.discount) // 默认情况下, 退还全款
-    // 是否存在退款申请
-    val withApplication = order.status == RefundApplied.toString
+    }) map (v => {
+      // 如果不存在退款申请，就属于商家直接退款，则必须全额退款
+      if (!withApplication) order.totalPrice - order.discount else v.toInt
+    }) getOrElse (order.totalPrice - order.discount) // 默认情况下, 退还全款
 
     for {
       newOrder <- {
@@ -337,22 +344,41 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
     }
   }
 
-  //  /**
-  //    * 商家拒绝了用户的退款申请
-  //    * @param operator
-  //    * @return
-  //    */
-  //  def refundDeny(operator: Long): Future[StatedOrder] = {
-  //    for {
-  //      newOrder <- {
-  //        assertSeller(operator)
-  //        assertStatus(RefundApplied)
-  //
-  //        val activity=OrderActivity(Action.refundDeny, RefundApplied)
-  //        this applyActivity activity setStatus Paid
-  //      }
-  //    }
-  //  }
+  /**
+   * 商家拒绝了用户的退款申请,订单变为已支付状态,然后自动调用发货接口
+   * @param operator
+   * @return
+   */
+  def refundDeny(operator: Long, data: Option[Map[String, Any]]): Future[StatedOrder] = {
+    // 处理data
+    val newData = data map (m => {
+      val keys = Seq("memo", "reason", "userId")
+      m filterKeys (keys contains _) map {
+        case (k, v: String) => k -> v // memo和reason都是String
+        case (k, v: Long) => k -> v // userId是String
+        case (k, _) => k -> ""
+      }
+    })
+    for {
+      newOrder <- {
+        assertSeller(operator)
+        assertStatus(RefundApplied)
+
+        val activity = OrderActivity(Action.refundDeny, Paid)
+        this applyActivity activity setStatus Paid
+        this.save()
+      }
+      commitOrder <- commit(operator, data)
+    } yield {
+      // 拒绝退款并发货的事件
+      val (memo, reason) = {
+        val tmp = newData getOrElse Map()
+        (tmp.getOrElse("memo", ""), tmp.getOrElse("reason", ""))
+      }
+      emitEvent("onDenyAndCommitOrder", Some(Map("memo" -> memo, "reason" -> reason)))
+      commitOrder
+    }
+  }
 
   /**
    * 取消订单. 需要修改以下订单状态: status, 以及activities. 最后, 触发onCancelOrder事件
@@ -395,7 +421,50 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
     }
   }
 
-  def commit(): Future[StatedOrder] = {
+  /**
+   * 商家发货
+   *
+   * @param operator
+   * @param data
+   * @return
+   */
+  def commit(operator: Long, data: Option[Map[String, Any]]): Future[StatedOrder] = {
+
+    // 处理data
+    val newData = data map (m => {
+      val keys = Seq("memo", "reason", "userId")
+      m filterKeys (keys contains _) map {
+        case (k, v: String) => k -> v // memo和reason都是String
+        case (k, v: Long) => k -> v // userId是String
+        case (k, _) => k -> ""
+      }
+    })
+
+    for {
+      newOrder <- {
+        assertStatus(Pending)
+        // operator必须是商家
+        if (operator != order.commodity.seller.sellerId) {
+          throw ForbiddenException(s"The operator $operator is not the " +
+            s"seller ${order.commodity.seller.sellerId}.")
+        }
+
+        // 获得新的activity
+        val activity = OrderActivity(Action.commit, Pending, newData)
+        this applyActivity activity setStatus Committed
+        this.save()
+      }
+    } yield {
+      // 发送发货的事件
+      val (memo, reason) = {
+        val tmp = newData getOrElse Map()
+        (tmp.getOrElse("memo", ""), tmp.getOrElse("reason", ""))
+      }
+      emitEvent("onCommitOrder", Some(Map("memo" -> memo, "reason" -> reason)))
+      newOrder
+
+    }
+
     Future.successful(StatedOrder(this.order))
   }
 
