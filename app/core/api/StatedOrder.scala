@@ -375,7 +375,7 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
         val tmp = newData getOrElse Map()
         (tmp.getOrElse("memo", ""), tmp.getOrElse("reason", ""))
       }
-      emitEvent("onDenyAndCommitOrder", Some(Map("memo" -> memo, "reason" -> reason)))
+      emitEvent("onRefundDeny", Some(Map("memo" -> memo, "reason" -> reason)))
       commitOrder
     }
   }
