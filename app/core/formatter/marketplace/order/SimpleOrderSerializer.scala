@@ -56,16 +56,13 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
       tzDate.toString(fmt)
     }) getOrElse ""
 
-    // travellers
-    gen.writeFieldName("travellers")
-    gen.writeStartArray()
-    val travellers = order.travellers
-    if (travellers != null) {
-      val ret = serializers.findValueSerializer(classOf[RealNameInfo], null)
-      for (traveller <- travellers)
-        ret.serialize(traveller, gen, serializers)
-    } else serializers.findNullValueSerializer(null)
-    gen.writeEndArray()
+    // contact
+    gen.writeFieldName("contact")
+    val contact = order.contact
+    if (contact != null) {
+      val retSeller = serializers.findValueSerializer(classOf[RealNameInfo], null)
+      retSeller.serialize(contact, gen, serializers)
+    }
 
     // activities
     gen.writeFieldName("activities")
