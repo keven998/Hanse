@@ -54,7 +54,7 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
       case (Committed, Action.finish) => finish(roles)
       case (Committed, Action.refundApply) => refundApply(operator.get.userId, data)
       case (RefundApplied, Action.refundApprove) => refundApprove(operator.get.userId, data) //商家同意退款
-      case (RefundApplied, Action.refundDeny) => refundDeny(operator.get.userId, data) //商家同意退款
+      case (RefundApplied, Action.refundDeny) => refundDeny(operator.get.userId, data) //商家拒绝退款
       case (Paid, Action.refundApprove) => refundApprove(operator.get.userId, data) //商家直接退款
       case (RefundApplied, Action.expire) => expireAndRefund(roles)
       case (Pending, Action.cancel) => cancel(operator.get.userId, data)
@@ -239,7 +239,7 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
         assertConsumer(operator)
         assertStatuses(Seq(Status.Paid, Status.Committed))
 
-        val activity = OrderActivity(Action.refundApply, Status.RefundApplied, newData)
+        val activity = OrderActivity(Action.refundApply, Status.Paid, newData)
         this applyActivity activity setStatus Status.RefundApplied
         this.save()
       }
@@ -313,7 +313,7 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
     val withApplication = order.status == RefundApplied.toString
 
     val amount = data getOrElse Map() get "amount" flatMap (v => {
-      (Try(Some(v.toString.toFloat)) recover {
+      (Try(Some((v.toString.toFloat * 100).toInt)) recover {
         case _: NumberFormatException => None
       }).get
     }) map (v => {

@@ -64,12 +64,9 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
       retSeller.serialize(contact, gen, serializers)
     }
 
-    // activities
-    gen.writeFieldName("activities")
-    gen.writeStartArray()
-    val orderAct = serializers.findValueSerializer(classOf[OrderActivity], null)
-    Option(order.activities) map (_.toSeq) getOrElse Seq() foreach (orderAct.serialize(_, gen, serializers))
-    gen.writeEndArray()
+    // 是否已发货
+    val commit = Option(order.activities) map (_.toSeq) getOrElse Seq() filter (_.action.equals(OrderActivity.Action.commit))
+    gen.writeBooleanField("committed", commit.size > 0)
 
     gen.writeStringField("rendezvousTime", rendezvous)
     gen.writeNumberField("createTime", if (order.createTime != null) order.createTime.getTime else 0)

@@ -44,9 +44,9 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
         if (seller.nonEmpty) {
           val ret = seller map (r => {
             val node = SellerFormatter.instance.formatJsonNode(r).asInstanceOf[ObjectNode]
-            node.put("totalPrice", Utils.getActualPrice((orders map (_.totalPrice)).sum))
-            node.put("orderCnt", orders.size)
-            node.put("suspendingOrderCnt", suspendingOrders.size)
+            node.put("totalSales", Utils.getActualPrice((orders map (_.totalPrice)).sum))
+            node.put("totalOrderCnt", orders.size)
+            node.put("pendingOrderCnt", suspendingOrders.size)
           })
           HanseResult(data = ret)
         } else

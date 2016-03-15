@@ -202,7 +202,8 @@ class TradeCtrl @Inject() (@Named("default") configuration: Configuration, datas
             val statedOrder = StatedOrder(order)
 
             action match {
-              case a @ (Action.cancel | Action.refundApply | Action.expire | Action.finish) =>
+              case a @ (Action.cancel | Action.refundApply | Action.expire | Action.finish |
+                Action.refundApprove | Action.refundDeny | Action.commit) =>
                 statedOrder.applyAction(a, request.auth.roles, request.auth.user, Some(data))
             }
           }
