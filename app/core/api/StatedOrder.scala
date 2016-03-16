@@ -442,7 +442,7 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
 
     for {
       newOrder <- {
-        assertStatus(Pending)
+        assertStatus(Paid)
         // operator必须是商家
         if (operator != order.commodity.seller.sellerId) {
           throw ForbiddenException(s"The operator $operator is not the " +
