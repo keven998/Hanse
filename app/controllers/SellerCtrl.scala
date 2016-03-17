@@ -33,7 +33,8 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
   def getSeller(id: Long) = AuthenticatedAction.async2(
 
     request => {
-      val totalOrder = Order.Status.Committed + "," + Order.Status.Reviewed + "," + Order.Status.ToReview
+      val totalOrder = Seq(Order.Status.Committed, Order.Status.Reviewed, Order.Status.ToReview, Order.Status.Paid,
+        Order.Status.RefundApplied, Order.Status.Finished) map (_.toString) mkString ","
       val suspendingOrder = Order.Status.Paid.toString + "," + Order.Status.RefundApplied.toString
       val ret = for {
         seller <- SellerAPI.getSeller(id)
