@@ -7,7 +7,7 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
 import controllers.security.AuthenticatedAction
 import core.api.{ CommodityAPI, MiscAPI, SellerAPI }
-import core.exception.OrderStatusException
+import core.exception.{ CommodityStatusException, OrderStatusException }
 import core.formatter.marketplace.product.{ CommodityCategoryFormatter, CommodityCommentFormatter, CommodityFormatter, SimpleCommodityFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
@@ -54,6 +54,30 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
   )
 
   /**
+   * 修改商品信息
+   *
+   * @param commodityId
+   * @return
+   */
+  def modComment(commodityId: Long) = AuthenticatedAction.async2(
+    request => {
+      val userOpt = request.headers.get("X-Lvxingpai-Id") map (_.toLong)
+      (for {
+        body <- request.body.wrapped.asJson
+        status <- Option((body \ "status").asOpt[String])
+      } yield {
+        CommodityAPI.modCommodity(commodityId, userOpt.get, status) map (cnt => {
+          if (cnt == 0) HanseResult.notFound() else HanseResult.ok()
+        }) recover {
+          case e: CommodityStatusException => HanseResult.forbidden(errorMsg = Some(e.getMessage))
+        }
+      }) getOrElse Future {
+        HanseResult.unprocessable()
+      }
+    }
+  )
+
+  /**
    * 搜索商品列表
    * @param sellerId
    * @param locId
@@ -64,12 +88,13 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @param count
    * @return
    */
-  def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String],
+  def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String], status: Option[String],
     sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
         //commodities <- CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
-        commodities <- CommodityAPI.searchCommodities(query, sellerId, locId, category, sortBy, sort, start, count)
+        isSeller <- SellerAPI.getSeller(sellerId getOrElse 0L)
+        commodities <- CommodityAPI.searchCommodities(query, sellerId, locId, category, status, sortBy, sort, start, count, isSeller.nonEmpty)
       } yield {
         val node = SimpleCommodityFormatter.instance.formatJsonNode(commodities)
         HanseResult(data = Some(node))

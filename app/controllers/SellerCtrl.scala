@@ -2,12 +2,14 @@ package controllers
 
 import javax.inject.{ Inject, Named, Singleton }
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
+import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.yunkai.UserInfoProp
 import controllers.security.AuthenticatedAction
-import core.api.SellerAPI
+import core.api.{ OrderAPI, SellerAPI }
 import core.formatter.marketplace.seller.SellerFormatter
-import core.misc.HanseResult
+import core.misc.{ Utils, HanseResult }
 import core.misc.Implicits.PhoneNumberTemp
 import org.apache.commons.lang.StringUtils
 import play.api.Configuration
@@ -29,14 +31,25 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
   val fields = Seq(UserId, NickName, Avatar, Gender, Signature, Residence, Birthday)
 
   def getSeller(id: Long) = AuthenticatedAction.async2(
+
     request => {
+      val totalOrder = Order.Status.Committed + "," + Order.Status.Reviewed + "," + Order.Status.ToReview
+      val suspendingOrder = Order.Status.Paid.toString + "," + Order.Status.RefundApplied.toString
       val ret = for {
         seller <- SellerAPI.getSeller(id)
+        orders <- OrderAPI.getOrderList(userId = None, sellerId = Some(id), Some(totalOrder), 0, Int.MaxValue, Seq("totalPrice"))
+        suspendingOrders <- OrderAPI.getOrderList(userId = None, sellerId = Some(id), Some(suspendingOrder), 0, Int.MaxValue, Seq("_id"))
         //user <- FinagleFactory.client.getUserById(sId, Some(fields), selfId)
       } yield {
-        if (seller.nonEmpty)
-          HanseResult(data = seller map (SellerFormatter.instance.formatJsonNode(_)))
-        else
+        if (seller.nonEmpty) {
+          val ret = seller map (r => {
+            val node = SellerFormatter.instance.formatJsonNode(r).asInstanceOf[ObjectNode]
+            node.put("totalSales", Utils.getActualPrice((orders map (_.totalPrice)).sum))
+            node.put("totalOrderCnt", orders.size)
+            node.put("pendingOrderCnt", suspendingOrders.size)
+          })
+          HanseResult(data = ret)
+        } else
           HanseResult.notFound(Some(s"Seller not found. sellId is $id"))
       }
       ret

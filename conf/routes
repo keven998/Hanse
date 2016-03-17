@@ -22,8 +22,11 @@ GET           /marketplace/commodities/recommendations                 @controll
 # 商品详情
 GET           /marketplace/commodities/$id<\d+>                        @controllers.CommodityCtrl.getCommodityDetail(id: Long,version: Option[Long] ?= None)
 
+# 修改商品信息（商家）
+PATCH         /marketplace/commodities/$id<\d+>                        @controllers.CommodityCtrl.modComment(id: Long)
+
 #商品列表
-GET           /marketplace/commodities                                 @controllers.CommodityCtrl.getCommodities(query:Option[String]?=None, seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None, sortBy: String?="relevance", sort: String?="desc", start: Int?=0, count: Int?=10)
+GET           /marketplace/commodities                                 @controllers.CommodityCtrl.getCommodities(query:Option[String]?=None, seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None,status:Option[String] ?= None, sortBy: String?="relevance", sort: String?="desc", start: Int?=0, count: Int?=10)
 
 #商品分类列表
 GET           /marketplace/commodities/categories                      @controllers.CommodityCtrl.getCommodityCategory(locality:String)
@@ -49,7 +52,7 @@ POST          /marketplace/orders/$orderId<\d+>/actions                @controll
 POST          /marketplace/orders                                      @controllers.TradeCtrl.createOrder()
 
 #订单列表
-GET           /marketplace/orders                                      @controllers.TradeCtrl.getOrders(userId: Long, status: Option[String] ?= None,start: Int?=0, count: Int?=10)
+GET           /marketplace/orders                                      @controllers.TradeCtrl.getOrders(userId: Option[Long],sellerId: Option[Long], status: Option[String] ?= None,start: Int?=0, count: Int?=10)
 
 #订单详情
 GET           /marketplace/orders/$orderId<\d+>                        @controllers.TradeCtrl.getOrderInfo(orderId: Long)

@@ -9,9 +9,9 @@ import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
 import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityComment, CommoditySnapshot }
 import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
-import core.exception.{ OrderStatusException, ResourceNotFoundException }
+import core.exception.{ CommodityStatusException, OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
-import core.search.{ CommodityStatusFilter, CategoryFilter, LocalityFilter, SellerFilter }
+import core.search._
 import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
@@ -45,6 +45,20 @@ object CommodityAPI {
       query.retrievedFields(true, fields: _*)
     Future {
       Option(query.get)
+    }
+  }
+
+  def modCommodity(cmyId: Long, userId: Long, status: Option[String])(implicit ds: Datastore): Future[Int] = {
+    val cmyQuery = ds.createQuery(classOf[Commodity]) field "commodityId" equal cmyId field "seller.sellerId" equal userId
+    val ups = ds.createUpdateOperations(classOf[Commodity])
+    Future {
+      val ret = status match {
+        case Some("pub") | Some("disabled") =>
+          ups.set("status", status.get)
+          ds.update(cmyQuery, ups)
+        case _ => throw CommodityStatusException("非法的商品状态")
+      }
+      ret.getUpdatedCount
     }
   }
 
@@ -165,8 +179,10 @@ object CommodityAPI {
    * @param ids
    * @return
    */
-  def getCommoditiesByIdList(ids: Seq[Long])(implicit ds: Datastore): Future[Seq[Commodity]] = {
-    val query = ds.createQuery(classOf[Commodity]).field("commodityId").in(seqAsJavaList(ids)).field("status").equal("pub")
+  def getCommoditiesByIdList(ids: Seq[Long], isSeller: Boolean = false)(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    val query = ds.createQuery(classOf[Commodity]).field("commodityId").in(seqAsJavaList(ids))
+    if (!isSeller)
+      query.field("status").equal("pub")
     Future {
       query.asList().sortBy(c => {
         // 按照出现在ids中的位置进行排序
@@ -222,7 +238,7 @@ object CommodityAPI {
    * @return
    */
   def searchCommodities(q: Option[String], sellerId: Option[Long], localityId: Option[String],
-    coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    coType: Option[String], status: Option[String], sortBy: String, sort: String, start: Int, count: Int, isSeller: Boolean)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val es = Play.application.injector instanceOf classOf[SearchEngine]
 
     // 根据商品状态筛选
@@ -233,13 +249,15 @@ object CommodityAPI {
     val localityFilter = localityId map LocalityFilter.apply
     // 按照类别筛选
     val categoryFilter = coType map CategoryFilter.apply
+    // 商家根据不同的商品状态筛选
+    val statusOptFilter = status map CommodityStatusOptFilter.apply
 
-    val filters = Seq(statusFilter, sellerFilter, localityFilter, categoryFilter) filter (_.nonEmpty) map (_.get)
+    val filters = (Seq(sellerFilter, localityFilter, categoryFilter) ++ (if (isSeller) Seq(statusOptFilter) else Seq(statusFilter))) filter (_.nonEmpty) map (_.get)
 
     es.overallCommodities(q, filters, sortBy, sort, start, count) flatMap (clist => {
       val idList = clist map (_.commodityId)
       if (idList.nonEmpty)
-        getCommoditiesByIdList(idList)
+        getCommoditiesByIdList(idList, isSeller = true)
       else
         Future.successful(Seq())
     })

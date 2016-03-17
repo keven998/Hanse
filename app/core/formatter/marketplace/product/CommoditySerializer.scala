@@ -22,6 +22,7 @@ class CommoditySerializer extends JsonSerializer[Commodity] {
     gen.writeNumberField("commodityId", commodity.commodityId)
     gen.writeStringField("title", Option(commodity.title) getOrElse "")
     gen.writeNumberField("rating", commodity.rating)
+    gen.writeStringField("status", commodity.status)
     gen.writeNumberField("salesVolume", commodity.salesVolume)
     gen.writeNumberField("marketPrice", Utils.getActualPrice(commodity.marketPrice))
     gen.writeNumberField("price", Utils.getActualPrice(commodity.price))

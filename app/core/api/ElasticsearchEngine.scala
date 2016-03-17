@@ -32,6 +32,7 @@ class ElasticsearchEngine(settings: ElasticsearchEngine.Settings) extends Search
       commodity.salesVolume = source.getOrElse("salesVolume", 0).asInstanceOf[Number].intValue()
       commodity.marketPrice = source.getOrElse("marketPrice", 0).asInstanceOf[Number].intValue()
       commodity.price = source.getOrElse("price", 0).asInstanceOf[Number].intValue()
+      commodity.status = source.getOrElse("status", "").toString
 
       commodity
     }
