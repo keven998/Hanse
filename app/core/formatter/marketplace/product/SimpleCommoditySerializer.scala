@@ -53,6 +53,8 @@ class SimpleCommoditySerializer extends JsonSerializer[Commodity] {
     retCover.serialize(cover, gen, serializers)
 
     gen.writeStringField("status", Option(commodity.status) getOrElse "")
+    gen.writeNumberField("createTime", if (commodity.createTime != null) commodity.createTime.getTime else 0)
+    gen.writeNumberField("updateTime", if (commodity.updateTime != null) commodity.updateTime.getTime else 0)
 
     gen.writeEndObject()
   }
