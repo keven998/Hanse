@@ -31,7 +31,8 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
   def getColumns = AuthenticatedAction.async2(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
-      val columnMapper = new ColumnFormatter().objectMapper
+      val userId = request getQueryString ("userId") map (_.toLong)
+      val columnMapper = new ColumnFormatter(userId).objectMapper
       val columnTypes = Seq("slide", "special")
       for {
         columnsMap <- MiscAPI.getColumns(columnTypes)

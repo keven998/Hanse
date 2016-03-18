@@ -5,10 +5,11 @@ import com.fasterxml.jackson.databind.{ SerializerProvider, JsonSerializer }
 import com.lvxingpai.model.misc.ImageItem
 import core.model.misc.Column
 import scala.collection.JavaConversions._
+
 /**
  * Created by pengyt on 2015/11/13.
  */
-class ColumnSerializer extends JsonSerializer[Column] {
+class ColumnSerializer(userId: Option[Long]) extends JsonSerializer[Column] {
 
   override def serialize(column: Column, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
     gen.writeStartObject()
@@ -24,7 +25,14 @@ class ColumnSerializer extends JsonSerializer[Column] {
     }
     gen.writeEndArray()
 
-    gen.writeStringField("link", Option(column.link) getOrElse "")
+    val link = column.link
+    val linkUrl: Option[String] = userId map (u => Option(link) match {
+      case None => ""
+      case urls if urls.get.contains('?') => s"$link&userId=$u"
+      case url if !url.get.contains('?') => s"$link?userId=$u"
+      case _ => ""
+    })
+    gen.writeStringField("link", linkUrl.get)
 
     gen.writeEndObject()
   }
