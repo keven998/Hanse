@@ -65,7 +65,6 @@ class SimpleOrderSerializer extends JsonSerializer[Order] {
     }
 
     // 是否已发货
-
     val commit = Option(order.activities) map (_.toSeq) getOrElse Seq() filter (_.action equals OrderActivity.Action.commit.toString)
     gen.writeBooleanField("committed", commit.size > 0)
 
