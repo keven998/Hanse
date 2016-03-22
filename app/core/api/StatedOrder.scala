@@ -313,7 +313,7 @@ class StatedOrder(val order: Order)(implicit datastore: Datastore, viae: ViaeGat
     val withApplication = order.status == RefundApplied.toString
 
     val amount = data getOrElse Map() get "amount" flatMap (v => {
-      (Try(Some((v.toString.toFloat * 100).toInt)) recover {
+      (Try(Some(v.toString.toFloat)) recover {
         case _: NumberFormatException => None
       }).get
     }) map (v => {

@@ -33,11 +33,13 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
   def getSeller(id: Long) = AuthenticatedAction.async2(
 
     request => {
-      val totalOrder = Order.Status.Committed + "," + Order.Status.Reviewed + "," + Order.Status.ToReview
+      val totalOrder = Seq(Order.Status.Committed, Order.Status.Reviewed, Order.Status.ToReview, Order.Status.Paid,
+        Order.Status.RefundApplied, Order.Status.Finished) map (_.toString) mkString ","
       val suspendingOrder = Order.Status.Paid.toString + "," + Order.Status.RefundApplied.toString
       val ret = for {
         seller <- SellerAPI.getSeller(id)
         orders <- OrderAPI.getOrderList(userId = None, sellerId = Some(id), Some(totalOrder), 0, Int.MaxValue, Seq("totalPrice"))
+        ordersCnt <- OrderAPI.getOrderCnt(userId = None, sellerId = Some(id), None)
         suspendingOrders <- OrderAPI.getOrderList(userId = None, sellerId = Some(id), Some(suspendingOrder), 0, Int.MaxValue, Seq("_id"))
         //user <- FinagleFactory.client.getUserById(sId, Some(fields), selfId)
       } yield {
@@ -45,7 +47,7 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
           val ret = seller map (r => {
             val node = SellerFormatter.instance.formatJsonNode(r).asInstanceOf[ObjectNode]
             node.put("totalSales", Utils.getActualPrice((orders map (_.totalPrice)).sum))
-            node.put("totalOrderCnt", orders.size)
+            node.put("totalOrderCnt", ordersCnt)
             node.put("pendingOrderCnt", suspendingOrders.size)
           })
           HanseResult(data = ret)
