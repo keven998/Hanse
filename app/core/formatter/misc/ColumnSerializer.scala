@@ -31,7 +31,7 @@ class ColumnSerializer(userId: Option[Long]) extends JsonSerializer[Column] {
       case urls if urls.get.contains('?') => s"$link&userId=$u"
       case url if !url.get.contains('?') => s"$link?userId=$u"
       case _ => ""
-    })
+    }) orElse Some(link)
     gen.writeStringField("link", linkUrl.get)
 
     gen.writeEndObject()
