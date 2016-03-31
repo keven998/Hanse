@@ -101,3 +101,13 @@ GET           /ping                                                    @controll
 #----------优惠券接口---------
 # 获得优惠券列表
 GET           /marketplace/coupons                                     @controllers.TradeCtrl.getCouponList(userId: Long)
+
+#---------- ---------
+# 创建悬赏
+POST          /marketplace/bounties                                    @controllers.BountyCtrl.createBounty()
+# 获得悬赏列表
+GET           /marketplace/bounties                                    @controllers.BountyCtrl.getBounties()
+# 商家应征悬赏
+POST          /marketplace/bounties/:itemId/schedules                  @controllers.BountyCtrl.addSchedule(itemId:Long)
+
+GET          /marketplace/bounties/:itemId/schedules                  @controllers.BountyCtrl.getSchedules(itemId:Long)

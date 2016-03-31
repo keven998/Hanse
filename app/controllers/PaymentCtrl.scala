@@ -7,9 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import controllers.security.AuthenticatedAction
 import core.api.{ OrderAPI, StatedOrder }
-import core.exception.{ OrderStatusException, GeneralPaymentException, ResourceNotFoundException }
+import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceNotFoundException }
 import core.misc.HanseResult
-import core.misc.Implicits._
 import core.payment.PaymentService.Provider
 import core.payment.{ AlipayService, WeChatPaymentService }
 import core.service.ViaeGateway
