@@ -1,7 +1,9 @@
 package core.misc
 
+import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber }
 import com.twitter.{ util => twitter }
+import org.bson.types.ObjectId
 import org.mongodb.morphia.annotations.Entity
 import play.api.libs.json.Json
 
@@ -68,6 +70,20 @@ object Implicits {
       Option(ret)
     } else None
   }
+
+  @Entity(noClassnameStored = true)
+  case class TempLocality(id: String, zhName: String)
+
+  implicit val localityReads = Json.reads[TempLocality]
+
+  implicit def locality2Model(locality: TempLocality): Locality = {
+    val l: Locality = new Locality()
+    l.id = new ObjectId(locality.id)
+    l.zhName = locality.zhName
+    l
+  }
+
+  implicit def localities2ArrayModel(localities: Seq[TempLocality]): Seq[Locality] = localities map locality2Model
 
   implicit def NodeSeq2String(body: NodeSeq): String = {
     body match {
