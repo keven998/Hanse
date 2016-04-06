@@ -2,12 +2,12 @@ package core.api
 
 import java.util.Date
 
-import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.marketplace.order.Bounty
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
-import com.lvxingpai.yunkai.{UserInfo => YunkaiUser}
+import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.ResourceNotFoundException
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
@@ -48,9 +48,16 @@ object BountyAPI {
     }
   }
 
-  def getBounties()(implicit ds: Datastore): Future[Seq[Bounty]] = {
+  def getBounties(userId: Option[Long])(implicit ds: Datastore): Future[Seq[Bounty]] = {
     Future {
-      ds.createQuery(classOf[Bounty]).asList()
+      val query = ds.createQuery(classOf[Bounty])
+      if (userId.nonEmpty)
+        query.field("consumerId").equal(userId.get)
+      query.or(
+        query.criteria("paid").equal(true),
+        query.criteria("totalPrice").equal(0)
+      )
+      query.asList()
     }
   }
 

@@ -5,16 +5,16 @@ import javax.inject.{ Inject, Named }
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
 import controllers.security.AuthenticatedAction
-import core.api.{ SellerAPI, BountyAPI }
+import core.api.{ BountyAPI, SellerAPI }
 import core.exception.ResourceNotFoundException
-import core.formatter.marketplace.order.{ ScheduleFormatter, BountyFormatter, TravellersFormatter }
+import core.formatter.marketplace.order.{ BountyFormatter, ScheduleFormatter, SimpleBountyFormatter, TravellersFormatter }
 import core.misc.HanseResult
 import core.misc.Implicits._
 import core.service.ViaeGateway
 import org.joda.time.DateTime
-import play.api.Configuration
 import play.api.libs.json.JsDefined
 import play.api.mvc.Controller
+import play.api.{ Configuration, Play }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,6 +26,12 @@ import scala.concurrent.Future
  */
 class BountyCtrl @Inject() (@Named("default") configuration: Configuration, datastore: MorphiaMap,
     implicit val viaeGateway: ViaeGateway) extends Controller {
+
+  import com.lvxingpai.yunkai.Userservice.{ FinagledClient => YunkaiClient }
+  import play.api.Play.current
+
+  val yunkai = Play.application.injector instanceOf classOf[YunkaiClient]
+
   implicit lazy val ds = datastore.map.get("k2").get
 
   /**
@@ -71,16 +77,18 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
    *
    * @return 返回订单信息
    */
-  def getBounties = AuthenticatedAction.async2(
+  def getBounties(userId: Option[Long]) = AuthenticatedAction.async2(
     request => {
       val ret = for {
-        bounty <- BountyAPI.getBounties()
+        bounty <- BountyAPI.getBounties(userId)
       } yield {
-        HanseResult(data = Some(BountyFormatter.instance.formatJsonNode(bounty)))
+        HanseResult(data = Some(SimpleBountyFormatter.instance.formatJsonNode(bounty)))
       }
       ret
     }
   )
+
+  def getMyBounties(userId: Long) = getBounties(Some(userId))
 
   /**
    * 添加日程安排

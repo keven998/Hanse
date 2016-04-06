@@ -106,8 +106,10 @@ GET           /marketplace/coupons                                     @controll
 # 创建悬赏
 POST          /marketplace/bounties                                    @controllers.BountyCtrl.createBounty()
 # 获得悬赏列表
-GET           /marketplace/bounties                                    @controllers.BountyCtrl.getBounties()
+GET           /marketplace/bounties                                    @controllers.BountyCtrl.getBounties(userId:Option[Long]=None)
+# 我的悬赏
+GET           /marketplace/users/$userId<\d+>/bounties                 @controllers.BountyCtrl.getMyBounties(userId:Long)
 # 商家应征悬赏
 POST          /marketplace/bounties/:itemId/schedules                  @controllers.BountyCtrl.addSchedule(itemId:Long)
-
-GET          /marketplace/bounties/:itemId/schedules                  @controllers.BountyCtrl.getSchedules(itemId:Long)
+# 所有悬赏
+GET           /marketplace/bounties/:itemId/schedules                  @controllers.BountyCtrl.getSchedules(itemId:Long)
