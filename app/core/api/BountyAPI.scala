@@ -2,7 +2,7 @@ package core.api
 
 import java.util.Date
 
-import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
+import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.marketplace.order.Bounty
 import com.lvxingpai.model.marketplace.product.Schedule
@@ -86,6 +86,24 @@ object BountyAPI {
       sc.title = "日程安排"
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
       val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("schedules", sc)
+      ds.update(statusQuery, statusOps)
+    }
+  }
+
+  /**
+   * 商家接单
+   *
+   * @param bountyId
+   * @param seller
+   * @param ds
+   * @return
+   */
+  def addTakers(bountyId: Long, seller: Option[Seller])(implicit ds: Datastore): Future[Unit] = {
+    if (seller.isEmpty)
+      throw ResourceNotFoundException(s"Cannot find seller.")
+    Future {
+      val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
+      val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("takers", seller.get.userInfo)
       ds.update(statusQuery, statusOps)
     }
   }

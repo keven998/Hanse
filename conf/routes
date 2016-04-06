@@ -109,6 +109,8 @@ POST          /marketplace/bounties                                    @controll
 GET           /marketplace/bounties                                    @controllers.BountyCtrl.getBounties(userId:Option[Long]=None)
 # 我的悬赏
 GET           /marketplace/users/$userId<\d+>/bounties                 @controllers.BountyCtrl.getMyBounties(userId:Long)
+# 商家接单
+POST          /marketplace/bounties/:itemId/bounty-takers              @controllers.BountyCtrl.takeBounty(itemId:Long)
 # 商家应征悬赏
 POST          /marketplace/bounties/:itemId/schedules                  @controllers.BountyCtrl.addSchedule(itemId:Long)
 # 所有悬赏

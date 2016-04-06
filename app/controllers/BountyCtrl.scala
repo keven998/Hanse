@@ -133,4 +133,29 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
     }
   )
 
+  /**
+   * 商家接单
+   *
+   *
+   * @return 返回订单信息
+   */
+  def takeBounty(bountyId: Long) = AuthenticatedAction.async2(
+    request => {
+      val userId = (request.headers get "X-Lvxingpai-Id" getOrElse "").toLong
+      val ret = for {
+        body <- request.body.wrapped.asJson
+      } yield {
+        for {
+          seller <- SellerAPI.getSeller(userId)
+          _ <- BountyAPI.addTakers(bountyId, seller)
+        } yield HanseResult.ok()
+      } recover {
+        case e: ResourceNotFoundException => HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+      }
+      ret getOrElse Future {
+        HanseResult.unprocessable()
+      }
+    }
+  )
+
 }
