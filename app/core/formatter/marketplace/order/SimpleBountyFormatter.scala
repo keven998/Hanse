@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.marketplace.order.Bounty
+import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import core.formatter.BaseFormatter
@@ -66,7 +67,6 @@ class SimpleBountySerializer extends JsonSerializer[Bounty] {
     }
     gen.writeEndArray()
 
-    gen.writeNumberField("totalPrice", Utils.getActualPrice(bounty.totalPrice))
     gen.writeNumberField("timeCost", bounty.timeCost)
     gen.writeNumberField("budget", bounty.budget)
 
@@ -79,7 +79,23 @@ class SimpleBountySerializer extends JsonSerializer[Bounty] {
 
     gen.writeStringField("service", bounty.service)
     gen.writeStringField("topic", bounty.topic)
-    gen.writeBooleanField("paid", bounty.paid)
+
+    //gen.writeBooleanField("paid", bounty.paid)
+    // 是否已支付商家的行程安排
+    gen.writeBooleanField("schedulePaid", bounty.schedulePaid)
+    gen.writeNumberField("totalPrice", Utils.getActualPrice(bounty.totalPrice))
+    // 是否已支付赏金
+    gen.writeBooleanField("bountyPaid", bounty.bountyPaid)
+    gen.writeNumberField("bountyPrice", Utils.getActualPrice(bounty.bountyPrice))
+
+    gen.writeFieldName("scheduled")
+    val scheduled = bounty.scheduled
+    if (Option(scheduled).nonEmpty)
+      serializers.findValueSerializer(classOf[Schedule], null).serialize(scheduled, gen, serializers)
+    else {
+      gen.writeStartObject()
+      gen.writeEndObject()
+    }
 
     gen.writeNumberField("createTime", if (bounty.createTime != null) bounty.createTime.getTime else 0)
     gen.writeNumberField("updateTime", if (bounty.updateTime != null) bounty.updateTime.getTime else 0)

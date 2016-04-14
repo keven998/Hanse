@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
+import core.misc.Utils
 
 /**
  * Created by topy on 2016/3/30.
@@ -15,7 +16,9 @@ class ScheduleSerializer extends JsonSerializer[Schedule] {
 
     gen.writeNumberField("itemId", schedule.itemId)
     gen.writeStringField("desc", schedule.desc)
-    gen.writeNumberField("price", schedule.price)
+    gen.writeNumberField("price", Utils.getActualPrice(schedule.price))
+    gen.writeNumberField("bountyId", schedule.bountyId)
+    gen.writeStringField("status", schedule.status)
 
     gen.writeFieldName("seller")
     gen.writeStartArray()

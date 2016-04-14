@@ -115,3 +115,12 @@ POST          /marketplace/bounties/:itemId/bounty-takers              @controll
 POST          /marketplace/bounties/:itemId/schedules                  @controllers.BountyCtrl.addSchedule(itemId:Long)
 # 所有悬赏
 GET           /marketplace/bounties/:itemId/schedules                  @controllers.BountyCtrl.getSchedules(itemId:Long)
+
+# 生成悬赏订单
+POST          /marketplace/bounties/:itemId/prepay                     @controllers.BountyCtrl.createBountyOrder(itemId:Long)
+#微信预支付
+POST          /marketplace/bounties/$id<\d+>/payments                  @controllers.BountyCtrl.createPayments(id:Long)
+#微信回调
+POST          /marketplace/bounties/payment-webhook/wechat             @controllers.BountyCtrl.wechatCallback()
+#支付宝回调
+POST          /marketplace/bounties/payment-webhook/alipay             @controllers.BountyCtrl.alipayCallback()

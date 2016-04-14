@@ -2,10 +2,10 @@ package core.formatter.marketplace.order
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.account.{ UserInfo, RealNameInfo }
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.marketplace.order.Bounty
-import com.lvxingpai.yunkai.UserInfo
+import com.lvxingpai.model.marketplace.product.Schedule
 import core.misc.Utils
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, DateTimeZone }
@@ -42,8 +42,6 @@ class BountySerializer extends JsonSerializer[Bounty] {
       retSeller.serialize(contact, gen, serializers)
     }
     gen.writeEndArray()
-
-    gen.writeNumberField("totalPrice", Utils.getActualPrice(bounty.totalPrice))
 
     gen.writeFieldName("departure")
     gen.writeStartArray()
@@ -87,7 +85,23 @@ class BountySerializer extends JsonSerializer[Bounty] {
     }
     gen.writeEndArray()
 
-    gen.writeBooleanField("paid", bounty.paid)
+    gen.writeFieldName("scheduled")
+    val scheduled = bounty.scheduled
+    if (Option(scheduled).nonEmpty)
+      serializers.findValueSerializer(classOf[Schedule], null).serialize(scheduled, gen, serializers)
+    else {
+      gen.writeStartObject()
+      gen.writeEndObject()
+    }
+
+    //gen.writeBooleanField("paid", bounty.paid)
+    // 是否已支付商家的行程安排
+    gen.writeBooleanField("schedulePaid", bounty.schedulePaid)
+    gen.writeNumberField("totalPrice", Utils.getActualPrice(bounty.totalPrice))
+    // 是否已支付赏金
+    gen.writeBooleanField("bountyPaid", bounty.bountyPaid)
+    gen.writeNumberField("bountyPrice", Utils.getActualPrice(bounty.bountyPrice))
+
     gen.writeEndObject()
   }
 }

@@ -19,6 +19,12 @@ object SellerAPI {
     }
   }
 
+  def getSeller(id: Long, fields: Seq[String])(implicit ds: Datastore): Future[Option[Seller]] = {
+    Future {
+      Option(ds.find(classOf[Seller], "sellerId", id).retrievedFields(true, fields: _*).get)
+    }
+  }
+
   def getSeller(commodity: Option[Commodity])(implicit ds: Datastore): Future[Option[Seller]] = {
     Future {
       commodity match {

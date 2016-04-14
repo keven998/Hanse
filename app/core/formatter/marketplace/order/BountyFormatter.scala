@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.marketplace.order.Bounty
+import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber, RichText }
 import core.formatter.BaseFormatter
@@ -31,6 +32,7 @@ class BountyFormatter extends BaseFormatter {
     module.addSerializer(classOf[ImageItem], new ImageItemSerializer)
     module.addSerializer(classOf[RealNameInfo], new RealNameInfoSerializer)
     module.addSerializer(classOf[Locality], new SimpleLocalitySerializer)
+    module.addSerializer(classOf[Schedule], new ScheduleSerializer)
     mapper.registerModule(module)
     mapper
   }
