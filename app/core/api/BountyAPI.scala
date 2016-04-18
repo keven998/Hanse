@@ -29,10 +29,15 @@ object BountyAPI {
    * 根据Id取得悬赏信息
    *
    * @param bountyId
-   * @param fields
    * @param ds
    * @return
    */
+  def getBounty(bountyId: Long)(implicit ds: Datastore): Future[Option[Bounty]] = {
+    Future {
+      Option(ds.find(classOf[Bounty], "itemId", bountyId).get)
+    }
+  }
+
   def getBounty(bountyId: Long, fields: Seq[String])(implicit ds: Datastore): Future[Option[Bounty]] = {
     Future {
       Option(ds.find(classOf[Bounty], "itemId", bountyId).retrievedFields(true, fields: _*).get)
@@ -115,12 +120,13 @@ object BountyAPI {
     } yield {
       if (bounty.isEmpty)
         throw ResourceNotFoundException(s"Cannot find bounty.ItemId:" + bountyId)
-      val scheduledOp = bounty.get.schedules.find(sc => {
+      if (Option(bounty.get.schedules).isEmpty)
+        throw ResourceNotFoundException(s"Cannot find schedules in this bounty.ItemId:" + bountyId)
+      val scheduled = bounty.get.schedules.find(sc => {
         sc.itemId == scheduleId
-      })
-      val scheduled = scheduledOp match {
+      }) match {
         case None => throw ResourceNotFoundException(s"Cannot find schedule.ItemId:" + scheduleId)
-        case _ => scheduledOp.get
+        case x => x.get
       }
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
       val statusOps = ds.createUpdateOperations(classOf[Bounty]).set("scheduled", scheduled).set("totalPrice", scheduled.price)
@@ -136,7 +142,7 @@ object BountyAPI {
    * @param ds
    * @return
    */
-  def getBounties(userId: Option[Long])(implicit ds: Datastore): Future[Seq[Bounty]] = {
+  def getBounties(userId: Option[Long], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Bounty]] = {
     Future {
       val query = ds.createQuery(classOf[Bounty])
       if (userId.nonEmpty)
@@ -145,6 +151,8 @@ object BountyAPI {
         query.criteria("paid").equal(true),
         query.criteria("totalPrice").equal(0)
       )
+      val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
+      query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
       query.asList()
     }
   }
@@ -240,19 +248,19 @@ object BountyAPI {
    * 支付赏金订单
    * @return
    */
-  def payBounty(bounty: Bounty, provider: PaymentService.Provider.Value)(implicit ds: Datastore): Future[Bounty] = {
-    import PaymentService.Provider._
-    Future {
-      // 设置支付状态
-      provider match {
-        case Alipay =>
-          bounty.paymentInfo(Alipay.toString).paid = true
-        case WeChat =>
-          bounty.paymentInfo(WeChat.toString).paid = true
-      }
-      bounty.bountyPaid = true
-      ds.save[Bounty](bounty)
-      bounty
-    }
-  }
+  //  def payBounty(bounty: Bounty, provider: PaymentService.Provider.Value)(implicit ds: Datastore): Future[Bounty] = {
+  //    import PaymentService.Provider._
+  //    Future {
+  //      // 设置支付状态
+  //      provider match {
+  //        case Alipay =>
+  //          bounty.paymentInfo(Alipay.toString).paid = true
+  //        case WeChat =>
+  //          bounty.paymentInfo(WeChat.toString).paid = true
+  //      }
+  //      bounty.bountyPaid = true
+  //      ds.save[Bounty](bounty)
+  //      bounty
+  //    }
+  //  }
 }

@@ -2,7 +2,7 @@ package core.formatter.marketplace.order
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
-import com.lvxingpai.model.account.{ UserInfo, RealNameInfo }
+import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.marketplace.order.Bounty
 import com.lvxingpai.model.marketplace.product.Schedule
@@ -47,8 +47,8 @@ class BountySerializer extends JsonSerializer[Bounty] {
     gen.writeStartArray()
     val loc = bounty.departure
     if (loc != null) {
-      val retSeller = serializers.findValueSerializer(classOf[Locality], null)
-      retSeller.serialize(loc, gen, serializers)
+      val retLoc = serializers.findValueSerializer(classOf[Locality], null)
+      retLoc.serialize(loc, gen, serializers)
     }
     gen.writeEndArray()
 
@@ -80,8 +80,8 @@ class BountySerializer extends JsonSerializer[Bounty] {
     gen.writeStartArray()
     val takers = bounty.takers
     if (takers != null) {
-      val retSeller = serializers.findValueSerializer(classOf[UserInfo], null)
-      retSeller.serialize(contact, gen, serializers)
+      val retTakers = serializers.findValueSerializer(classOf[UserInfo], null)
+      retTakers.serialize(takers, gen, serializers)
     }
     gen.writeEndArray()
 
@@ -93,6 +93,12 @@ class BountySerializer extends JsonSerializer[Bounty] {
       gen.writeStartObject()
       gen.writeEndObject()
     }
+
+    gen.writeFieldName("schedules")
+    gen.writeStartArray()
+    val retSchedules = serializers.findValueSerializer(classOf[Schedule], null)
+    Option(bounty.schedules) map (_.toSeq) getOrElse Seq() foreach (retSchedules.serialize(_, gen, serializers))
+    gen.writeEndArray()
 
     //gen.writeBooleanField("paid", bounty.paid)
     // 是否已支付商家的行程安排

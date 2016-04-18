@@ -82,10 +82,26 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
    *
    * @return 返回订单信息
    */
-  def getBounties(userId: Option[Long]) = AuthenticatedAction.async2(
+  def getBounty(bountyId: Long) = AuthenticatedAction.async2(
     request => {
       val ret = for {
-        bounty <- BountyAPI.getBounties(userId)
+        bounty <- BountyAPI.getBounty(bountyId)
+      } yield {
+        HanseResult(data = Some(BountyFormatter.instance.formatJsonNode(bounty)))
+      }
+      ret
+    }
+  )
+
+  /**
+   * 取得悬赏列表
+   *
+   * @return 返回订单信息
+   */
+  def getBounties(userId: Option[Long], sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
+    request => {
+      val ret = for {
+        bounty <- BountyAPI.getBounties(userId, sortBy, sort, start, count)
       } yield {
         HanseResult(data = Some(SimpleBountyFormatter.instance.formatJsonNode(bounty)))
       }
@@ -93,7 +109,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
     }
   )
 
-  def getMyBounties(userId: Long) = getBounties(Some(userId))
+  def getMyBounties(userId: Long, sortBy: String, sort: String, start: Int, count: Int) = getBounties(Some(userId), sortBy, sort, start, count)
 
   /**
    * 添加日程安排

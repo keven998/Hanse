@@ -33,6 +33,7 @@ class BountyFormatter extends BaseFormatter {
     module.addSerializer(classOf[RealNameInfo], new RealNameInfoSerializer)
     module.addSerializer(classOf[Locality], new SimpleLocalitySerializer)
     module.addSerializer(classOf[Schedule], new ScheduleSerializer)
+    module.addSerializer(classOf[Seller], new MiniSellerSerializer)
     mapper.registerModule(module)
     mapper
   }

@@ -102,8 +102,7 @@ class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit priva
           }
 
           for {
-            order <- BountyAPI.fetchBounty(bountyId)
-            _ <- BountyAPI.payBounty(order, PaymentService.Provider.Alipay)
+            _ <- BountyAPI.setBountyPaid(bountyId, PaymentService.Provider.Alipay)
           } yield {
             "success"
           }

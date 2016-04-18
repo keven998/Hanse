@@ -21,13 +21,11 @@ class ScheduleSerializer extends JsonSerializer[Schedule] {
     gen.writeStringField("status", schedule.status)
 
     gen.writeFieldName("seller")
-    gen.writeStartArray()
     val seller = schedule.seller
     if (seller != null) {
       val retSeller = serializers.findValueSerializer(classOf[Seller], null)
       retSeller.serialize(seller, gen, serializers)
     }
-    gen.writeEndArray()
 
     gen.writeNumberField("createTime", if (schedule.createTime != null) schedule.createTime.getTime else 0)
     gen.writeNumberField("updateTime", if (schedule.updateTime != null) schedule.updateTime.getTime else 0)

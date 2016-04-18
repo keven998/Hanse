@@ -105,10 +105,12 @@ GET           /marketplace/coupons                                     @controll
 #---------- ---------
 # 创建悬赏
 POST          /marketplace/bounties                                    @controllers.BountyCtrl.createBounty()
+# 获得悬赏详情
+GET           /marketplace/bounties/:itemId                            @controllers.BountyCtrl.getBounty(itemId:Long)
 # 获得悬赏列表
-GET           /marketplace/bounties                                    @controllers.BountyCtrl.getBounties(userId:Option[Long]=None)
+GET           /marketplace/bounties                                    @controllers.BountyCtrl.getBounties(userId:Option[Long]=None,sortBy: String?="createTime", sort: String?="desc", start: Int?=0, count: Int?=10)
 # 我的悬赏
-GET           /marketplace/users/$userId<\d+>/bounties                 @controllers.BountyCtrl.getMyBounties(userId:Long)
+GET           /marketplace/users/$userId<\d+>/bounties                 @controllers.BountyCtrl.getMyBounties(userId:Long,sortBy: String?="createTime", sort: String?="desc", start: Int?=0, count: Int?=10)
 # 商家接单
 POST          /marketplace/bounties/:itemId/bounty-takers              @controllers.BountyCtrl.takeBounty(itemId:Long)
 # 商家应征悬赏

@@ -56,7 +56,7 @@ class BountyPayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit pr
 
     val totalFee = bounty.bountyPrice
     if (totalFee == 0) {
-      throw new RuntimeException(s"Error in creating WeChat prepay. return_msg=订单价格不能为0")
+      throw new RuntimeException(s"Error in creating WeChat prepay. return_msg=价格不能为0")
     }
 
     val content = Map(
@@ -203,8 +203,7 @@ class BountyPayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit pr
         }
 
         for {
-          order <- BountyAPI.fetchBounty(bountyId)
-          _ <- BountyAPI.payBounty(order, PaymentService.Provider.WeChat)
+          _ <- BountyAPI.setBountyPaid(bountyId, PaymentService.Provider.WeChat)
         } yield {
           BountyPayWeChat.wechatCallBackOK
         }
@@ -222,7 +221,7 @@ class BountyPayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit pr
    * @return
    */
   override def refundProcess(bounty: Bounty, amount: Int): Future[Unit] = {
-    val content = Map("refund_fee" -> amount.toString, "total_fee" -> (bounty.bountyPrice).toString,
+    val content = Map("refund_fee" -> amount.toString, "total_fee" -> bounty.bountyPrice.toString,
       "out_trade_no" -> bounty.itemId.toString)
 
     val url = BountyPayWeChat.refundOrderUrlUrl
