@@ -154,6 +154,7 @@ object BountyAPI {
       )
       val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
       query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
+      query.retrievedFields(false, Seq("schedules"): _*)
       query.asList()
     }
   }
@@ -232,16 +233,13 @@ object BountyAPI {
    * 商家接单
    *
    * @param bountyId
-   * @param seller
    * @param ds
    * @return
    */
-  def addTakers(bountyId: Long, seller: Option[Seller])(implicit ds: Datastore): Future[Unit] = {
-    if (seller.isEmpty)
-      throw ResourceNotFoundException(s"Cannot find seller.")
+  def addTakers(bountyId: Long, userInfo: UserInfo)(implicit ds: Datastore): Future[Unit] = {
     Future {
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
-      val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("takers", seller.get.userInfo)
+      val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("takers", userInfo)
       ds.update(statusQuery, statusOps)
     }
   }

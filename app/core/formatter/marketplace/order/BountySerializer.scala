@@ -87,7 +87,8 @@ class BountySerializer extends JsonSerializer[Bounty] {
     val takers = bounty.takers
     if (takers != null) {
       val retTakers = serializers.findValueSerializer(classOf[UserInfo], null)
-      retTakers.serialize(takers, gen, serializers)
+      for (pl <- takers)
+        retTakers.serialize(pl, gen, serializers)
     }
     gen.writeEndArray()
 

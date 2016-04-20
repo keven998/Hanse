@@ -54,6 +54,11 @@ class SimpleBountySerializer extends JsonSerializer[Bounty] {
 
     gen.writeNumberField("itemId", bounty.itemId)
     gen.writeNumberField("consumerId", bounty.consumerId)
+    gen.writeFieldName("consumer")
+    val userInfo = bounty.consumer
+    val retUserInfo = if (userInfo != null) serializers.findValueSerializer(classOf[UserInfo], null)
+    else serializers.findNullValueSerializer(null)
+    retUserInfo.serialize(userInfo, gen, serializers)
 
     gen.writeNumberField("takersCnt", (Option(bounty.takers) map (_.toSeq) getOrElse Seq()).size)
 

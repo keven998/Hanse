@@ -18,8 +18,8 @@ import core.payment.{ AlipayService, BountyPayWeChat }
 import core.service.ViaeGateway
 import org.joda.time.DateTime
 import play.api.libs.json.JsDefined
-import play.api.mvc.{ Results, Action, Controller, Result }
-import play.api.{ Logger, Configuration, Play }
+import play.api.mvc.{ Action, Controller, Result, Results }
+import play.api.{ Configuration, Logger, Play }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -185,8 +185,8 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         body <- request.body.wrapped.asJson
       } yield {
         for {
-          seller <- SellerAPI.getSeller(userId)
-          _ <- BountyAPI.addTakers(bountyId, seller)
+          userInfo <- TwitterConverter.twitterToScalaFuture(yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar))))
+          _ <- BountyAPI.addTakers(bountyId, userInfo)
         } yield HanseResult.ok()
       } recover {
         case e: ResourceNotFoundException => HanseResult.unprocessable(errorMsg = Some(e.getMessage))
