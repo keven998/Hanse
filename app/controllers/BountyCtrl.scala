@@ -6,6 +6,7 @@ import javax.inject.{ Inject, Named }
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.yunkai.UserInfoProp
 import controllers.security.AuthenticatedAction
 import core.api.{ BountyAPI, SellerAPI }
 import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceNotFoundException }
@@ -65,7 +66,8 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         val date = DateTime.parse(departureDate).toDate
         val contact = TravellersFormatter.instance.parse[RealNameInfo]((body \ "contact").asInstanceOf[JsDefined].value.toString())
         for {
-          bounty <- BountyAPI.createBounty(userId, contact, destination.toSeq, departure, date, timeCost, participantCnt, perBudget, participants,
+          userInfo <- TwitterConverter.twitterToScalaFuture(yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar))))
+          bounty <- BountyAPI.createBounty(userId, userInfo, contact, destination.toSeq, departure, date, timeCost, participantCnt, perBudget, participants,
             service, topic, memo, (bountyPrice * 100).toInt)
         } yield HanseResult(data = Some(BountyFormatter.instance.formatJsonNode(bounty)))
       } recover {
@@ -128,7 +130,8 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
       } yield {
         for {
           seller <- SellerAPI.getSeller(userId, Seq("sellerId", "userInfo", "name"))
-          _ <- BountyAPI.addSchedule(bountyId, seller, desc, (price * 100).toInt)
+          userInfo <- TwitterConverter.twitterToScalaFuture(yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar))))
+          _ <- BountyAPI.addSchedule(bountyId, seller, userInfo, desc, (price * 100).toInt)
         } yield HanseResult.ok()
       } recover {
         case e: ResourceNotFoundException => HanseResult.unprocessable(errorMsg = Some(e.getMessage))
@@ -148,7 +151,22 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
   def getSchedules(bountyId: Long) = AuthenticatedAction.async2(
     request => {
       val ret = for {
-        schedules <- BountyAPI.getSchedule(bountyId)
+        schedules <- BountyAPI.getSchedules(bountyId)
+      } yield HanseResult(data = Some(ScheduleFormatter.instance.formatJsonNode(schedules)))
+      ret
+    }
+  )
+
+  /**
+   * 取得某个悬赏的所有回复
+   *
+   * @param bountyId
+   * @return
+   */
+  def getScheduleById(bountyId: Long, scheduleId: Long) = AuthenticatedAction.async2(
+    request => {
+      val ret = for {
+        schedules <- BountyAPI.getScheduleById(bountyId, scheduleId)
       } yield HanseResult(data = Some(ScheduleFormatter.instance.formatJsonNode(schedules)))
       ret
     }

@@ -1,7 +1,9 @@
 package core.misc
 
+import com.lvxingpai.model.account.UserInfo
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.misc.{ ImageItem, PhoneNumber }
+import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import com.twitter.{ util => twitter }
 import org.bson.types.ObjectId
 import org.mongodb.morphia.annotations.Entity
@@ -28,6 +30,16 @@ object Implicits {
       case NodeSeq.Empty => ""
       case _ => body.toString()
     }
+  }
+
+  implicit def yunkaiUser2UserInfo(u: YunkaiUser): UserInfo = {
+    val userInfo = new UserInfo
+    userInfo.userId = u.userId
+    val i = new ImageItem
+    i.url = u.avatar getOrElse ""
+    userInfo.avatar = i
+    userInfo.nickname = u.nickName
+    userInfo
   }
 
   @Entity(noClassnameStored = true)

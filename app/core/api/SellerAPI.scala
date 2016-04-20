@@ -1,9 +1,11 @@
 package core.api
 
+import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
 import org.mongodb.morphia.Datastore
 
+import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -32,6 +34,21 @@ object SellerAPI {
         case c if c.get.seller == null => None
         case _ => Option(ds.find(classOf[Seller], "sellerId", commodity.get.seller.sellerId).get)
       }
+    }
+  }
+
+  def addSubLocalities(sellerId: Long, locality: Seq[GeoEntity])(implicit ds: Datastore): Future[Unit] = {
+    Future {
+      val statusQuery = ds.createQuery(classOf[Seller]) field "sellerId" equal sellerId
+      val statusOps = ds.createUpdateOperations(classOf[Seller]).addAll("subLocalities", locality, false)
+      ds.update(statusQuery, statusOps)
+    }
+  }
+
+  def getSubLocalities(sellerId: Long)(implicit ds: Datastore): Future[Option[Seq[GeoEntity]]] = {
+    Future {
+      val seller = ds.find(classOf[Seller], "sellerId", sellerId).retrievedFields(true, Seq("subLocalities"): _*).get()
+      Option(seller.subLocalities)
     }
   }
 }

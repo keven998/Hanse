@@ -23,6 +23,12 @@ class BountySerializer extends JsonSerializer[Bounty] {
     gen.writeNumberField("itemId", bounty.itemId)
     gen.writeNumberField("consumerId", bounty.consumerId)
 
+    gen.writeFieldName("consumer")
+    val userInfo = bounty.consumer
+    val retUserInfo = if (userInfo != null) serializers.findValueSerializer(classOf[UserInfo], null)
+    else serializers.findNullValueSerializer(null)
+    retUserInfo.serialize(userInfo, gen, serializers)
+
     gen.writeFieldName("destination")
     gen.writeStartArray()
     val plans = bounty.destination
