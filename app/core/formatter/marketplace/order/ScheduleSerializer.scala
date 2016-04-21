@@ -33,6 +33,9 @@ class ScheduleSerializer extends JsonSerializer[Schedule] {
     if (guide != null) {
       val retGuide = serializers.findValueSerializer(classOf[Guide], null)
       retGuide.serialize(guide, gen, serializers)
+    } else {
+      gen.writeStartObject()
+      gen.writeEndObject()
     }
 
     gen.writeNumberField("createTime", if (schedule.createTime != null) schedule.createTime.getTime else 0)

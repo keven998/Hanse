@@ -7,8 +7,10 @@ import com.lvxingpai.model.account.UserInfo
 import com.lvxingpai.model.guide.Guide
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
+import com.lvxingpai.model.misc.ImageItem
 import core.formatter.BaseFormatter
 import core.formatter.marketplace.seller.MiniSellerSerializer
+import core.formatter.misc.ImageItemSerializer
 import core.formatter.user.UserSerializer
 
 /**
@@ -24,6 +26,8 @@ class ScheduleFormatter extends BaseFormatter {
     module.addSerializer(classOf[Seller], new MiniSellerSerializer)
     module.addSerializer(classOf[UserInfo], new UserSerializer)
     module.addSerializer(classOf[Guide], new GuideSerializer)
+    module.addSerializer(classOf[ImageItem], new ImageItemSerializer)
+
     mapper.registerModule(module)
     mapper
   }
