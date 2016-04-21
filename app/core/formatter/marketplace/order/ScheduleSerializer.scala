@@ -2,6 +2,7 @@ package core.formatter.marketplace.order
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
+import com.lvxingpai.model.guide.Guide
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
 import core.misc.Utils
@@ -25,6 +26,13 @@ class ScheduleSerializer extends JsonSerializer[Schedule] {
     if (seller != null) {
       val retSeller = serializers.findValueSerializer(classOf[Seller], null)
       retSeller.serialize(seller, gen, serializers)
+    }
+
+    gen.writeFieldName("guide")
+    val guide = schedule.guide
+    if (guide != null) {
+      val retGuide = serializers.findValueSerializer(classOf[Guide], null)
+      retGuide.serialize(guide, gen, serializers)
     }
 
     gen.writeNumberField("createTime", if (schedule.createTime != null) schedule.createTime.getTime else 0)

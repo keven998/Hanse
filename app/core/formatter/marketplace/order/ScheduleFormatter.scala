@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.UserInfo
+import com.lvxingpai.model.guide.Guide
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
 import core.formatter.BaseFormatter
@@ -22,6 +23,7 @@ class ScheduleFormatter extends BaseFormatter {
     module.addSerializer(classOf[Schedule], new ScheduleSerializer)
     module.addSerializer(classOf[Seller], new MiniSellerSerializer)
     module.addSerializer(classOf[UserInfo], new UserSerializer)
+    module.addSerializer(classOf[Guide], new GuideSerializer)
     mapper.registerModule(module)
     mapper
   }

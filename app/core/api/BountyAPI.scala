@@ -4,12 +4,14 @@ import java.util.Date
 
 import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
+import com.lvxingpai.model.guide.Guide
 import com.lvxingpai.model.marketplace.order.Bounty
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.ResourceNotFoundException
 import core.payment.PaymentService
+import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
 import org.mongodb.morphia.query.UpdateResults
@@ -205,7 +207,7 @@ object BountyAPI {
    * @return
    */
 
-  def addSchedule(bountyId: Long, seller: Option[Seller], userInfo: UserInfo, desc: String, price: Int)(implicit ds: Datastore): Future[Unit] = {
+  def addSchedule(bountyId: Long, seller: Option[Seller], guide: Option[Guide], userInfo: UserInfo, desc: String, price: Int)(implicit ds: Datastore): Future[Unit] = {
     if (seller.isEmpty)
       throw ResourceNotFoundException(s"Cannot find seller.")
     Future {
@@ -223,6 +225,8 @@ object BountyAPI {
       sc.title = "行程安排"
       sc.bountyId = bountyId
       sc.status = "pub"
+      if (guide.nonEmpty)
+        sc.guide = guide.get
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
       val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("schedules", sc)
       ds.update(statusQuery, statusOps)
@@ -236,10 +240,10 @@ object BountyAPI {
    * @param ds
    * @return
    */
-  def addTakers(bountyId: Long, userInfo: UserInfo)(implicit ds: Datastore): Future[Unit] = {
+  def setTakers(bountyId: Long, userInfo: UserInfo)(implicit ds: Datastore): Future[Unit] = {
     Future {
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
-      val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("takers", userInfo)
+      val statusOps = ds.createUpdateOperations(classOf[Bounty]).set("takers", userInfo)
       ds.update(statusQuery, statusOps)
     }
   }
@@ -262,6 +266,13 @@ object BountyAPI {
       ds.update(paymentQuery, paymentOps)
     }
     ret map (_ => ())
+  }
+
+  def getGuide(id: String)(implicit ds: Datastore): Future[Option[Guide]] = {
+    Future {
+      val query = ds.createQuery(classOf[Guide]).field("_id").equal(new ObjectId(id)).retrievedFields(true, Seq("title", "images", "status", "summary", "updateTime"): _*)
+      Option(query.get())
+    }
   }
 
   /**

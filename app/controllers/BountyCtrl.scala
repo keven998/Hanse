@@ -125,13 +125,14 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
       val ret = for {
         body <- request.body.wrapped.asJson
         desc <- (body \ "desc").asOpt[String]
-        topic <- (body \ "guideId").asOpt[String]
+        guideId <- (body \ "guideId").asOpt[String]
         price <- (body \ "price").asOpt[Float]
       } yield {
         for {
           seller <- SellerAPI.getSeller(userId, Seq("sellerId", "userInfo", "name"))
           userInfo <- TwitterConverter.twitterToScalaFuture(yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar))))
-          _ <- BountyAPI.addSchedule(bountyId, seller, userInfo, desc, (price * 100).toInt)
+          guide <- BountyAPI.getGuide(guideId)
+          _ <- BountyAPI.addSchedule(bountyId, seller, guide, userInfo, desc, (price * 100).toInt)
         } yield HanseResult.ok()
       } recover {
         case e: ResourceNotFoundException => HanseResult.unprocessable(errorMsg = Some(e.getMessage))
@@ -186,7 +187,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
       } yield {
         for {
           userInfo <- TwitterConverter.twitterToScalaFuture(yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar))))
-          _ <- BountyAPI.addTakers(bountyId, userInfo)
+          _ <- BountyAPI.setTakers(bountyId, userInfo)
         } yield HanseResult.ok()
       } recover {
         case e: ResourceNotFoundException => HanseResult.unprocessable(errorMsg = Some(e.getMessage))

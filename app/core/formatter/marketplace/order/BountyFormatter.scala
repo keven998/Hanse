@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
+import com.lvxingpai.model.guide.Guide
 import com.lvxingpai.model.marketplace.order.Bounty
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
@@ -34,6 +35,7 @@ class BountyFormatter extends BaseFormatter {
     module.addSerializer(classOf[Locality], new SimpleLocalitySerializer)
     module.addSerializer(classOf[Schedule], new ScheduleSerializer)
     module.addSerializer(classOf[Seller], new MiniSellerSerializer)
+    module.addSerializer(classOf[Guide], new GuideSerializer)
     mapper.registerModule(module)
     mapper
   }
