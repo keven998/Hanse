@@ -20,6 +20,7 @@ import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
+import scala.util.Try
 
 /**
  *
@@ -102,7 +103,7 @@ object BountyAPI {
     bounty.consumerId = userId
     bounty.consumer = userInfo
     bounty.bountyPrice = bountyPrice
-    bounty.status = "pub"
+    bounty.status = "pending"
     Future {
       ds.save[Bounty](bounty)
       bounty
@@ -155,7 +156,7 @@ object BountyAPI {
         query.criteria("totalPrice").equal(0)
       )
       val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
-      query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
+      query.order(orderStr).offset(start).limit(count)
       query.retrievedFields(false, Seq("schedules"): _*)
       query.asList()
     }
@@ -197,6 +198,22 @@ object BountyAPI {
   }
 
   /**
+   * 取得商家的方案
+   *
+   * @param sellerId
+   * @param ds
+   * @return
+   */
+  def getScheduleBySellerId(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Schedule]] = {
+    Future {
+      val query = ds.createQuery(classOf[Schedule]) field "seller.sellerId" equal sellerId
+      val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
+      query.order(orderStr).offset(start).limit(count)
+      query.asList()
+    }
+  }
+
+  /**
    * 商家根据某个悬赏，发布行程安排来应征
    *
    * @param bountyId
@@ -210,27 +227,34 @@ object BountyAPI {
   def addSchedule(bountyId: Long, seller: Option[Seller], guide: Option[Guide], userInfo: UserInfo, desc: String, price: Int)(implicit ds: Datastore): Future[Unit] = {
     if (seller.isEmpty)
       throw ResourceNotFoundException(s"Cannot find seller.")
-    Future {
-      val sc = new Schedule
-      val now = DateTime.now().toDate
-      sc.desc = desc
-      sc.createTime = now
-      sc.updateTime = now
-      sc.price = price
+    val sc = new Schedule
+    val now = DateTime.now().toDate
+    sc.desc = desc
+    sc.createTime = now
+    sc.updateTime = now
+    sc.price = price
 
-      val sellerDetail = seller.get
-      sellerDetail.userInfo = userInfo
-      sc.seller = sellerDetail
-      sc.itemId = now.getTime
-      sc.title = "行程安排"
-      sc.bountyId = bountyId
-      sc.status = "pub"
-      if (guide.nonEmpty)
-        sc.guide = guide.get
+    val sellerDetail = seller.get
+    sellerDetail.userInfo = userInfo
+    sc.seller = sellerDetail
+    sc.itemId = now.getTime
+    sc.title = "行程安排"
+    sc.bountyId = bountyId
+    sc.status = "pub"
+    if (guide.nonEmpty)
+      sc.guide = guide.get
+
+    val future = Future {
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
       val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("schedules", sc)
       ds.update(statusQuery, statusOps)
     }
+    for {
+      _ <- future
+    } yield {
+      ds.save[Schedule](sc)
+    }
+
   }
 
   /**
@@ -268,10 +292,41 @@ object BountyAPI {
     ret map (_ => ())
   }
 
+  /**
+   * 将某个悬赏的方案，设为已支付
+   * @param bountyId
+   * @param provider
+   * @param ds
+   * @return
+   */
+  def setSchedulePaid(bountyId: Long, provider: PaymentService.Provider.Value)(implicit ds: Datastore): Future[Unit] = {
+    val providerName = provider.toString
+
+    // 设置payment状态
+    val paymentQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId field
+      s"scheduledPaymentInfo.$providerName" notEqual null
+    val paymentOps = ds.createUpdateOperations(classOf[Bounty]).set(s"scheduledPaymentInfo.$providerName.paid", true).set("schedulePaid", true).set("status", "paid")
+
+    val ret: Future[UpdateResults] = Future {
+      ds.update(paymentQuery, paymentOps)
+    }
+    ret map (_ => ())
+  }
+
+  /**
+   * 取得攻略信息
+   *
+   * @param id
+   * @param ds
+   * @return
+   */
   def getGuide(id: String)(implicit ds: Datastore): Future[Option[Guide]] = {
     Future {
-      val query = ds.createQuery(classOf[Guide]).field("_id").equal(new ObjectId(id)).retrievedFields(true, Seq("title", "images", "status", "summary", "updateTime"): _*)
-      Option(query.get())
+      (Try(new ObjectId(id)) map (oid => {
+        val query = ds.createQuery(classOf[Guide]).field("_id").equal(oid)
+          .retrievedFields(true, Seq("title", "images", "status", "summary", "updateTime"): _*)
+        Option(query.get())
+      })).toOption getOrElse None
     }
   }
 

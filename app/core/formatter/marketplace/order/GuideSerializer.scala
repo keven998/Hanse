@@ -30,6 +30,8 @@ class GuideSerializer extends JsonSerializer[Guide] {
     }
     gen.writeEndArray()
 
+    gen.writeNumberField("updateTime", if (g.updateTime != null) g.updateTime.getTime else 0)
+
     gen.writeEndObject()
   }
 }

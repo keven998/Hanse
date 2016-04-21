@@ -7,9 +7,10 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.yunkai.UserInfoProp
 import controllers.security.AuthenticatedAction
-import core.api.{ OrderAPI, SellerAPI }
+import core.api.{ BountyAPI, OrderAPI, SellerAPI }
 import core.exception.ResourceNotFoundException
 import core.formatter.geo.SimpleLocalityFormatter
+import core.formatter.marketplace.order.ScheduleFormatter
 import core.formatter.marketplace.seller.SellerFormatter
 import core.misc.Implicits.{ PhoneNumberTemp, TempLocality, _ }
 import core.misc.{ HanseResult, Utils }
@@ -117,6 +118,26 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
       val ret = for {
         localities <- SellerAPI.getSubLocalities(sellerId)
       } yield HanseResult(data = Some(SimpleLocalityFormatter.instance.formatJsonNode(localities getOrElse Seq())))
+      ret
+    }
+  )
+
+  /**
+   * 取得商家的方案
+   *
+   * @param sellerId
+   * @param sortBy
+   * @param sort
+   * @param start
+   * @param count
+   * @return
+   */
+  def getSchedules(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
+    request => {
+      val userId = (request.headers get "X-Lvxingpai-Id" getOrElse "").toLong
+      val ret = for {
+        schedule <- BountyAPI.getScheduleBySellerId(sellerId, sortBy, sort, start, count)
+      } yield HanseResult(data = Some(ScheduleFormatter.instance.formatJsonNode(schedule)))
       ret
     }
   )

@@ -13,8 +13,8 @@ import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceN
 import core.formatter.marketplace.order._
 import core.misc.HanseResult
 import core.misc.Implicits._
+import core.payment.{ BountyPayAli, BountyPayWeChat }
 import core.payment.PaymentService.Provider
-import core.payment.{ AlipayService, BountyPayWeChat }
 import core.service.ViaeGateway
 import org.joda.time.DateTime
 import play.api.libs.json.JsDefined
@@ -125,7 +125,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
       val ret = for {
         body <- request.body.wrapped.asJson
         desc <- (body \ "desc").asOpt[String]
-        guideId <- (body \ "guideId").asOpt[String]
+        guideId <- (body \ "guideId").asOpt[String] orElse Option("")
         price <- (body \ "price").asOpt[Float]
       } yield {
         for {
@@ -234,9 +234,14 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
    * @param userId
    * @return
    */
-  def createAlipayPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
-    val instance = AlipayService.instance
-    instance.getPrepay(orderId) map (entry => {
+  def createAlipayPayment(target: String, orderId: Long, ip: String, userId: Long): Future[Result] = {
+    val instance = target match {
+      case "bounty" => BountyPayAli.instance
+      case "schedule" => BountyPayAli.instance
+      case _ => throw ResourceNotFoundException(s"Cannot find target #$target")
+    }
+
+    instance.getPrepay(orderId, target) map (entry => {
       val sidecar = entry._2
       val node = new ObjectMapper().createObjectNode()
       node.put("requestString", sidecar("requestString").toString)
@@ -246,10 +251,14 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
     }
   }
 
-  def createWeChatPayment(orderId: Long, ip: String, userId: Long): Future[Result] = {
-    val instance = BountyPayWeChat.instance
+  def createWeChatPayment(target: String, orderId: Long, ip: String, userId: Long): Future[Result] = {
+    val instance = target match {
+      case "bounty" => BountyPayWeChat.instance
+      case "schedule" => BountyPayWeChat.instance
+      case _ => throw ResourceNotFoundException(s"Cannot find target #$target")
+    }
 
-    instance getPrepay orderId map (entry => {
+    instance getPrepay (orderId, target) map (entry => {
       val node = new ObjectMapper().createObjectNode()
       val sidecar = entry._2
       sidecar foreach (entry => {
@@ -281,10 +290,11 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         body <- request.body.wrapped.asJson
         userId <- request.headers.get("X-Lvxingpai-Id") map (_.toLong)
         provider <- (body \ "provider").asOpt[String]
+        target <- (body \ "target").asOpt[String]
       } yield {
         (provider match {
-          case s if s == Provider.Alipay.toString => createAlipayPayment(bountyId: Long, ip: String, userId: Long)
-          case s if s == Provider.WeChat.toString => createWeChatPayment(bountyId: Long, ip: String, userId: Long)
+          case s if s == Provider.Alipay.toString => createAlipayPayment(target, bountyId: Long, ip: String, userId: Long)
+          case s if s == Provider.WeChat.toString => createWeChatPayment(target, bountyId: Long, ip: String, userId: Long)
           case _ => Future(HanseResult.unprocessable(errorMsg = Some(s"Invalid provider: $provider")))
         }) recover {
           case e: Throwable =>

@@ -23,7 +23,7 @@ import scala.concurrent.Future
 /**
  * Created by topy on 2016/4/11.
  */
-class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit private val viaeGateway: ViaeGateway) extends BountyPay {
+class SchedulePayAli @Inject() (private val morphiaMap: MorphiaMap, implicit private val viaeGateway: ViaeGateway) extends BountyPay {
 
   override lazy val datastore: Datastore = morphiaMap.map("k2")
 
@@ -35,15 +35,15 @@ class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit priva
     // 创建新的Prepay对象
     val prepay = new Prepay
     prepay.provider = providerName
-    prepay.amount = bounty.bountyPrice
+    prepay.amount = bounty.totalPrice - bounty.bountyPrice
     prepay.createTime = new Date
     prepay.updateTime = new Date
-    prepay.prepayId = bounty.itemId.toString
+    prepay.prepayId = bounty.scheduled.itemId.toString
 
     val query = datastore.createQuery(classOf[Bounty]) field "itemId" equal bounty.itemId field
-      s"paymentInfo.$providerName" equal null
+      s"scheduledPaymentInfo.$providerName" equal null
     Future {
-      val ops = datastore.createUpdateOperations(classOf[Bounty]).set(s"paymentInfo.$providerName", prepay)
+      val ops = datastore.createUpdateOperations(classOf[Bounty]).set(s"scheduledPaymentInfo.$providerName", prepay)
       val updateResult = datastore.update(query, ops)
       if (updateResult.getUpdatedExisting) Some(prepay)
       else None
@@ -63,8 +63,8 @@ class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit priva
    */
   override protected def createSidecar(bounty: Bounty, prepay: Prepay): Map[String, Any] = {
     // 返回带有签名的请求字符串
-    val requestMap = AlipayService.RequestMap(prepay.prepayId, bounty.consumerId.toString, bounty.itemId.toString,
-      bounty.bountyPrice)
+    val requestMap = AlipayService.RequestMap(prepay.prepayId, bounty.consumerId.toString, bounty.scheduled.itemId.toString,
+      bounty.totalPrice)
     Map("requestString" -> requestMap.requestString)
   }
 
@@ -136,7 +136,7 @@ class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit priva
    */
   private def genSign(data: Map[String, String]): String = {
     val stringA = (for ((k, v) <- data.toList.sorted) yield s"$k=$v").mkString("&")
-    val stringSignTemp = stringA + "&key=" + BountyPayAli.md5Key
+    val stringSignTemp = stringA + "&key=" + SchedulePayAli.md5Key
     Utils.MD5(stringSignTemp).toUpperCase
   }
 
@@ -151,8 +151,8 @@ class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit priva
   }
 }
 
-object BountyPayAli {
-  lazy val instance = Play.application.injector.instanceOf[BountyPayAli]
+object SchedulePayAli {
+  lazy val instance = Play.application.injector.instanceOf[AlipayService]
 
   lazy private val conf = {
     val key = BindingKey(classOf[Configuration]) qualifiedWith "default"

@@ -41,7 +41,7 @@ trait BountyPay {
    * @param paymentId 订单号
    * @return
    */
-  def getPrepay(paymentId: Long): Future[(Prepay, Map[String, Any])] = {
+  def getPrepay(paymentId: Long, target: String): Future[(Prepay, Map[String, Any])] = {
     val providerName = provider.toString
 
     // 尝试从paymentInfo中获得Prepay, 否则就新建
@@ -50,7 +50,15 @@ trait BountyPay {
         "paymentInfo"))(datastore) flatMap (opt => {
         val bounty = if (opt.nonEmpty) opt.get else throw ResourceNotFoundException(s"Invalid bounty id: $paymentId")
 
-        val paymentInfo = (Option(bounty.paymentInfo) map mapAsScalaMap) getOrElse mutable.Map()
+        // 当支付商家提供的方案时，要先判断
+        if (target.equals("schedule")) {
+          if (bounty.scheduled == null || bounty.totalPrice == 0) throw ResourceNotFoundException(s"Cannot pay this bounty id: $paymentId")
+          if (bounty.bountyPrice > 0 && !bounty.bountyPaid) throw ResourceNotFoundException(s"This bounty has not paid the bounty price: $paymentId")
+        }
+        val paymentInfo = (target match {
+          case "bounty" => Option(bounty.paymentInfo)
+          case "schedule" => Option(bounty.scheduledPaymentInfo)
+        }) map mapAsScalaMap getOrElse mutable.Map()
 
         if (paymentInfo contains providerName) {
           // 获得prepay对象和相应的sidecar.
@@ -68,7 +76,7 @@ trait BountyPay {
       v map (Future(_)) getOrElse {
         // 乐观锁重试
         Thread sleep 200
-        getPrepay(paymentId)
+        getPrepay(paymentId, target)
       }
     })
   }
