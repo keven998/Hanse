@@ -115,6 +115,9 @@ class BountySerializer extends JsonSerializer[Bounty] {
     gen.writeBooleanField("bountyPaid", bounty.bountyPaid)
     gen.writeNumberField("bountyPrice", Utils.getActualPrice(bounty.bountyPrice))
 
+    gen.writeNumberField("createTime", if (bounty.createTime != null) bounty.createTime.getTime else 0)
+    gen.writeNumberField("updateTime", if (bounty.updateTime != null) bounty.updateTime.getTime else 0)
+
     gen.writeEndObject()
   }
 }

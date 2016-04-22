@@ -221,7 +221,7 @@ class BountyPayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit pr
    * @return
    */
   override def refundProcess(bounty: Bounty, amount: Int): Future[Unit] = {
-    val content = Map("refund_fee" -> amount.toString, "total_fee" -> bounty.bountyPrice.toString,
+    val content = Map("refund_fee" -> amount.toString, "total_fee" -> bounty.totalPrice.toString,
       "out_trade_no" -> bounty.itemId.toString)
 
     val url = BountyPayWeChat.refundOrderUrlUrl

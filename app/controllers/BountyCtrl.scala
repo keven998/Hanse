@@ -6,6 +6,7 @@ import javax.inject.{ Inject, Named }
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.account.RealNameInfo
+import com.lvxingpai.model.marketplace.order.OrderActivity
 import com.lvxingpai.yunkai.UserInfoProp
 import controllers.security.AuthenticatedAction
 import core.api.{ BountyAPI, SellerAPI }
@@ -13,16 +14,17 @@ import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceN
 import core.formatter.marketplace.order._
 import core.misc.HanseResult
 import core.misc.Implicits._
-import core.payment.{ BountyPayAli, BountyPayWeChat }
 import core.payment.PaymentService.Provider
+import core.payment._
 import core.service.ViaeGateway
 import org.joda.time.DateTime
-import play.api.libs.json.JsDefined
+import play.api.libs.json._
 import play.api.mvc.{ Action, Controller, Result, Results }
 import play.api.{ Configuration, Logger, Play }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Try
 import scala.xml.Elem
 
 /**
@@ -125,13 +127,13 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
       val ret = for {
         body <- request.body.wrapped.asJson
         desc <- (body \ "desc").asOpt[String]
-        guideId <- (body \ "guideId").asOpt[String] orElse Option("")
+        guideId <- Option((body \ "guideId").asOpt[String])
         price <- (body \ "price").asOpt[Float]
       } yield {
         for {
           seller <- SellerAPI.getSeller(userId, Seq("sellerId", "userInfo", "name"))
           userInfo <- TwitterConverter.twitterToScalaFuture(yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar))))
-          guide <- BountyAPI.getGuide(guideId)
+          guide <- BountyAPI.getGuide(guideId getOrElse "")
           _ <- BountyAPI.addSchedule(bountyId, seller, guide, userInfo, desc, (price * 100).toInt)
         } yield HanseResult.ok()
       } recover {
@@ -237,7 +239,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
   def createAlipayPayment(target: String, orderId: Long, ip: String, userId: Long): Future[Result] = {
     val instance = target match {
       case "bounty" => BountyPayAli.instance
-      case "schedule" => BountyPayAli.instance
+      case "schedule" => SchedulePayAli.instance
       case _ => throw ResourceNotFoundException(s"Cannot find target #$target")
     }
 
@@ -254,7 +256,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
   def createWeChatPayment(target: String, orderId: Long, ip: String, userId: Long): Future[Result] = {
     val instance = target match {
       case "bounty" => BountyPayWeChat.instance
-      case "schedule" => BountyPayWeChat.instance
+      case "schedule" => SchedulePayWeChat.instance
       case _ => throw ResourceNotFoundException(s"Cannot find target #$target")
     }
 
@@ -368,6 +370,114 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
       }) getOrElse Future {
         HanseResult.unprocessable()
       }
+  }
+
+  /**
+   * 退款
+   *
+   * @param bountyId
+   * @return
+   */
+  def refund(bountyId: Long) = AuthenticatedAction.async2(
+    request => {
+      val r = for {
+        body <- request.body.wrapped.asJson
+        userId <- request.headers.get("X-Lvxingpai-Id") map (_.toLong)
+        memo <- (body \ "memo").asOpt[String] orElse Option("")
+        target <- (body \ "target").asOpt[String]
+      } yield {
+        // 如果没设置退款金额，按照总价退款
+        val value = (body \ "refundFee").asOpt[Float] match {
+          case None => None
+          case x => Some((x.get * 100).toInt)
+        }
+
+        (for {
+          bounty <- BountyAPI.fetchBounty(bountyId)
+          _ <- {
+            val tmp = Map("memo" -> memo)
+            val data = if (value.nonEmpty)
+              tmp + ("amount" -> value.get)
+            else
+              tmp
+            BountyAPI.refundApprove(userId, Some(data), bounty, target)
+          }
+        } yield {
+          HanseResult.ok()
+        }) recover {
+          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+          case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
+            HanseResult.conflict(Some(e.getMessage))
+        }
+      }
+      r getOrElse Future(HanseResult.unprocessable())
+    }
+  )
+
+  /**
+   * 操作悬赏单-退款申请
+   * @param orderId
+   * @return
+   */
+  def operateBounty(orderId: Long) = AuthenticatedAction.async2(
+    request => {
+      import OrderActivity.Action
+
+      val ret = for {
+        body <- request.body.wrapped.asJson
+        action <- (body \ "action").asOpt[String] flatMap (v => {
+          Try(Some(Action withName v)) getOrElse None
+        })
+        data <- (body \ "data").asOpt[JsObject] orElse Some(JsObject(Seq())) map procOperateBountyData
+      } yield {
+        val future = for {
+          bounty <- BountyAPI.fetchBounty(orderId)
+          _ <- {
+            action match {
+              case a @ (Action.refundApply) =>
+                BountyAPI.refundApply(bounty)
+            }
+          }
+        } yield {
+          HanseResult.ok()
+        }
+        // 有几种异常情况需要处理:
+        // * 订单不存在
+        // * 订单状态有误
+        future recover {
+          case e: ResourceNotFoundException => HanseResult.notFound(Some(e.getMessage))
+          case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
+            HanseResult.conflict(Some(e.getMessage))
+          case _: MatchError => HanseResult.unprocessableWithMsg(Some(s"Invalid action: $action"))
+        }
+      }
+      ret.getOrElse(Future {
+        HanseResult.unprocessable()
+      })
+    }
+  )
+
+  /**
+   * 解析 operateBounty 参数
+   * @param data
+   * @return
+   */
+  private def procOperateBountyData(data: JsObject): Map[String, Any] = {
+    val kvSeq = data.fields map {
+      case ("amount", v: JsNumber) if v.value.isDecimalFloat => ("amount", (v.value.floatValue() * 100).toInt)
+      case ("userId", v: JsNumber) if v.value.isValidLong => ("userId", v.value.longValue())
+      case (k, v: JsNumber) if v.value.isValidInt => (k, v.value.intValue())
+      case (k, v: JsNumber) if v.value.isValidLong => (k, v.value.longValue())
+      case (k, v: JsNumber) if v.value.isDecimalFloat => (k, v.value.floatValue())
+      case (k, v: JsNumber) if v.value.isDecimalDouble => (k, v.value.doubleValue())
+      case (k, v: JsBoolean) => (k, v.value)
+      case (k, v: JsString) => (k, v.value)
+      case (k, JsNull) => (k, null)
+      case (k, _) => (k, JsNull) // 这一类数据稍后会被清除
+    } filterNot {
+      case (k, v) => v == JsNull
+    }
+    Map(kvSeq: _*)
   }
 
 }

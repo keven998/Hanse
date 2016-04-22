@@ -43,11 +43,12 @@ trait BountyPay {
    */
   def getPrepay(paymentId: Long, target: String): Future[(Prepay, Map[String, Any])] = {
     val providerName = provider.toString
+    val rr = BountyAPI.getBounty(paymentId, Seq("itemId", "bountyPrice", "bountyPaid", "schedulePaid", "status", "scheduled",
+      "paymentInfo", "scheduledPaymentInfo"))(datastore)
 
     // 尝试从paymentInfo中获得Prepay, 否则就新建
     val result: Future[Option[(Prepay, Map[String, Any])]] =
-      BountyAPI.getBounty(paymentId, Seq("itemId", "bountyPrice", "bountyPaid", "schedulePaid", "status", "scheduled",
-        "paymentInfo"))(datastore) flatMap (opt => {
+      rr flatMap (opt => {
         val bounty = if (opt.nonEmpty) opt.get else throw ResourceNotFoundException(s"Invalid bounty id: $paymentId")
 
         // 当支付商家提供的方案时，要先判断

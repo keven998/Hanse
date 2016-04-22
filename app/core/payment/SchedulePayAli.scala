@@ -152,7 +152,7 @@ class SchedulePayAli @Inject() (private val morphiaMap: MorphiaMap, implicit pri
 }
 
 object SchedulePayAli {
-  lazy val instance = Play.application.injector.instanceOf[AlipayService]
+  lazy val instance = Play.application.injector.instanceOf[SchedulePayAli]
 
   lazy private val conf = {
     val key = BindingKey(classOf[Configuration]) qualifiedWith "default"

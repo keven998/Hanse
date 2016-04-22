@@ -1,16 +1,18 @@
 package core.api
 
+import java.util
 import java.util.Date
 
 import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.guide.Guide
-import com.lvxingpai.model.marketplace.order.Bounty
+import com.lvxingpai.model.marketplace.order.{ Prepay, Bounty }
+import com.lvxingpai.model.marketplace.order.Order.Status._
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
-import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
-import core.exception.ResourceNotFoundException
-import core.payment.PaymentService
+import core.exception.{ OrderStatusException, ResourceNotFoundException }
+import core.payment.PaymentService.Provider._
+import core.payment._
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
@@ -95,6 +97,7 @@ object BountyAPI {
     bounty.departureDate = departureDate
     bounty.timeCost = timeCost
     bounty.participants = participants
+    bounty.participantCnt = participantCnt
     bounty.budget = perBudget
     bounty.destination = destination
     bounty.service = service
@@ -331,22 +334,67 @@ object BountyAPI {
   }
 
   /**
-   * 支付赏金订单
+   * 商家同意退款
+   * @param operator
+   * @param data
    * @return
    */
-  //  def payBounty(bounty: Bounty, provider: PaymentService.Provider.Value)(implicit ds: Datastore): Future[Bounty] = {
-  //    import PaymentService.Provider._
-  //    Future {
-  //      // 设置支付状态
-  //      provider match {
-  //        case Alipay =>
-  //          bounty.paymentInfo(Alipay.toString).paid = true
-  //        case WeChat =>
-  //          bounty.paymentInfo(WeChat.toString).paid = true
-  //      }
-  //      bounty.bountyPaid = true
-  //      ds.save[Bounty](bounty)
-  //      bounty
-  //    }
-  //  }
+  def refundApprove(operator: Long, data: Option[Map[String, Any]], bounty: Bounty, target: String)(implicit ds: Datastore): Future[Unit] = {
+    // 是否存在退款申请
+    val withApplication = bounty.status == RefundApplied.toString
+
+    val amount = data getOrElse Map() get "amount" flatMap (v => {
+      (Try(Some(v.toString.toFloat)) recover {
+        case _: NumberFormatException => None
+      }).get
+    }) map (v => {
+      // 如果不存在退款申请，就属于商家直接退款，则必须全额退款
+      if (!withApplication) bounty.totalPrice - bounty.discount else v.toInt
+    }) getOrElse (bounty.totalPrice - bounty.discount) // 默认情况下, 退还全款
+
+    val paymentInfo: util.Map[String, Prepay] = target match {
+      case "bounty" => bounty.paymentInfo
+      case "schedule" => bounty.scheduledPaymentInfo
+      case _ => throw OrderStatusException("Target Info error.")
+    }
+    val providerName: String =
+      if (Option(paymentInfo) map (_.toMap) getOrElse Map() contains WeChat.toString)
+        WeChat.toString
+      else
+        Alipay.toString
+
+    if (bounty.status == Pending.toString || bounty.status == Refunded.toString)
+      throw OrderStatusException("Can not refund.")
+
+    for {
+      newOrder <- {
+        if (providerName == WeChat.toString)
+          BountyPayWeChat.instance.refundProcess(bounty, amount)
+        else
+          BountyPayAli.instance.refundProcess(bounty, amount)
+      }
+    } yield {
+      val queryField = target match {
+        case "bounty" => s"paymentInfo.$providerName"
+        case "schedule" => s"scheduledPaymentInfo.$providerName"
+      }
+      // 设置payment状态
+      val paymentQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bounty.itemId
+      val paymentOps = ds.createUpdateOperations(classOf[Bounty]).set(s"$queryField.paid", true).set("status", Refunded.toString)
+      ds.update(paymentQuery, paymentOps)
+      //order, amount, with_application, memo=None
+      //emitEvent("onRefundApprove", Some(Map("amount" -> amount, "with_application" -> withApplication)))
+      newOrder
+    }
+  }
+
+  def refundApply(bounty: Bounty)(implicit ds: Datastore): Future[Unit] = {
+    if (!bounty.bountyPaid || !bounty.schedulePaid)
+      throw OrderStatusException("Can not refund apply.")
+    Future {
+      val paymentQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bounty.itemId
+      val paymentOps = ds.createUpdateOperations(classOf[Bounty]).set("status", RefundApplied.toString)
+      ds.update(paymentQuery, paymentOps)
+    }
+  }
 }

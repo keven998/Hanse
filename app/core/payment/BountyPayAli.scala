@@ -63,7 +63,7 @@ class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit priva
    */
   override protected def createSidecar(bounty: Bounty, prepay: Prepay): Map[String, Any] = {
     // 返回带有签名的请求字符串
-    val requestMap = AlipayService.RequestMap(prepay.prepayId, bounty.consumerId.toString, bounty.itemId.toString,
+    val requestMap = BountyPayAli.RequestMap(prepay.prepayId, bounty.consumerId.toString, bounty.itemId.toString,
       bounty.bountyPrice)
     Map("requestString" -> requestMap.requestString)
   }
@@ -84,7 +84,7 @@ class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit priva
 
     try {
       // 检查签名是否正常
-      if (!AlipayService.verifyAlipay(data, data("sign")))
+      if (!BountyPayAli.verifyAlipay(data, data("sign")))
         throw GeneralPaymentException("Alipay signature check failed.")
 
       // 检查交易状态
