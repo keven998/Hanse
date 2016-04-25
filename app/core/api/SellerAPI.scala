@@ -40,7 +40,7 @@ object SellerAPI {
   def addSubLocalities(sellerId: Long, locality: Seq[GeoEntity])(implicit ds: Datastore): Future[Unit] = {
     Future {
       val statusQuery = ds.createQuery(classOf[Seller]) field "sellerId" equal sellerId
-      val statusOps = ds.createUpdateOperations(classOf[Seller]).addAll("subLocalities", locality, false)
+      val statusOps = ds.createUpdateOperations(classOf[Seller]).set("subLocalities", seqAsJavaList(locality))
       ds.update(statusQuery, statusOps)
     }
   }

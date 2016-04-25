@@ -63,7 +63,7 @@ class BountyPayAli @Inject() (private val morphiaMap: MorphiaMap, implicit priva
    */
   override protected def createSidecar(bounty: Bounty, prepay: Prepay): Map[String, Any] = {
     // 返回带有签名的请求字符串
-    val requestMap = BountyPayAli.RequestMap(prepay.prepayId, bounty.consumerId.toString, bounty.itemId.toString,
+    val requestMap = BountyPayAli.RequestMap(prepay.prepayId, bounty.topic, bounty.itemId.toString + bounty.topic,
       bounty.bountyPrice)
     Map("requestString" -> requestMap.requestString)
   }

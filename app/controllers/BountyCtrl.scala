@@ -58,7 +58,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         timeCost <- (body \ "timeCost").asOpt[Int]
         participantCnt <- (body \ "participantCnt").asOpt[Int]
         participants <- (body \ "participants").asOpt[Seq[String]] orElse Option(Seq())
-        perBudget <- (body \ "budget").asOpt[Int]
+        perBudget <- (body \ "budget").asOpt[Float]
         service <- (body \ "service").asOpt[String]
         topic <- (body \ "topic").asOpt[String]
         memo <- (body \ "memo").asOpt[String]
@@ -69,7 +69,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         val contact = TravellersFormatter.instance.parse[RealNameInfo]((body \ "contact").asInstanceOf[JsDefined].value.toString())
         for {
           userInfo <- TwitterConverter.twitterToScalaFuture(yunkai.getUserById(userId, Some(Seq(UserInfoProp.UserId, UserInfoProp.NickName, UserInfoProp.Avatar))))
-          bounty <- BountyAPI.createBounty(userId, userInfo, contact, destination.toSeq, departure, date, timeCost, participantCnt, perBudget, participants,
+          bounty <- BountyAPI.createBounty(userId, userInfo, contact, destination.toSeq, departure, date, timeCost, participantCnt, perBudget.toInt, participants,
             service, topic, memo, (bountyPrice * 100).toInt)
         } yield HanseResult(data = Some(BountyFormatter.instance.formatJsonNode(bounty)))
       } recover {
@@ -428,6 +428,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         action <- (body \ "action").asOpt[String] flatMap (v => {
           Try(Some(Action withName v)) getOrElse None
         })
+        target <- (body \ "target").asOpt[String]
         data <- (body \ "data").asOpt[JsObject] orElse Some(JsObject(Seq())) map procOperateBountyData
       } yield {
         val future = for {

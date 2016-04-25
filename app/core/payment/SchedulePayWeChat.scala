@@ -60,8 +60,8 @@ class SchedulePayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit 
     }
 
     val content = Map(
-      "out_trade_no" -> bounty.scheduled.itemId.toString,
-      "body" -> "旅行派悬赏订金",
+      "out_trade_no" -> bounty.itemId.toString,
+      "body" -> "旅行派旅行方案支付",
       "trade_type" -> "APP",
       "total_fee" -> totalFee.toString
     )
@@ -123,7 +123,7 @@ class SchedulePayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit 
     val content = Map(
       // transaction_id 指微信订单号；out_trade_no指旅行派订单号
       //"transaction_id" -> prepayId
-      "out_trade_no" -> bounty.scheduled.itemId.toString
+      "out_trade_no" -> bounty.itemId.toString
     )
     val params: Map[String, String] = content ++ accountInfo ++ randomStr
     val sign = Map("sign" -> genSign(params))

@@ -6,8 +6,8 @@ import java.util.Date
 import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.guide.Guide
-import com.lvxingpai.model.marketplace.order.{ Prepay, Bounty }
 import com.lvxingpai.model.marketplace.order.Order.Status._
+import com.lvxingpai.model.marketplace.order.{ Bounty, Prepay }
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
@@ -177,8 +177,9 @@ object BountyAPI {
       val bounty = Option(ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId get)
       bounty match {
         case None => Seq()
-        case x => x.get.schedules
+        case x => Option(x.get.schedules) map (_.toSeq) getOrElse Seq()
       }
+
     }
   }
 
@@ -194,7 +195,7 @@ object BountyAPI {
       val bounty = Option(ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId retrievedFields (true, Seq("schedules"): _*) get)
       val ret: Seq[Schedule] = bounty match {
         case None => Seq()
-        case x => x.get.schedules
+        case x => Option(x.get.schedules) map (_.toSeq) getOrElse Seq()
       }
       ret filter (_.itemId == scheduleId) get 0
     }

@@ -38,7 +38,7 @@ class SchedulePayAli @Inject() (private val morphiaMap: MorphiaMap, implicit pri
     prepay.amount = bounty.totalPrice - bounty.bountyPrice
     prepay.createTime = new Date
     prepay.updateTime = new Date
-    prepay.prepayId = bounty.scheduled.itemId.toString
+    prepay.prepayId = bounty.itemId.toString
 
     val query = datastore.createQuery(classOf[Bounty]) field "itemId" equal bounty.itemId field
       s"scheduledPaymentInfo.$providerName" equal null
@@ -64,7 +64,7 @@ class SchedulePayAli @Inject() (private val morphiaMap: MorphiaMap, implicit pri
   override protected def createSidecar(bounty: Bounty, prepay: Prepay): Map[String, Any] = {
     // 返回带有签名的请求字符串
     val requestMap = AlipayService.RequestMap(prepay.prepayId, bounty.consumerId.toString, bounty.scheduled.itemId.toString,
-      bounty.totalPrice)
+      bounty.totalPrice - bounty.bountyPrice)
     Map("requestString" -> requestMap.requestString)
   }
 
