@@ -355,7 +355,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         Logger.info(s"Alipay callback: notify_id=$notifyId out_trade_no=$tradeId trade_status=$tradeStatus " +
           s"buyer_email=$buyer total_fee=$totalFee")
 
-        BountyPayWeChat.instance.handleCallback(formData) map (contents => {
+        BountyPayAli.instance.handleCallback(formData) map (contents => {
           Results.Ok(contents.toString)
         }) recover {
           case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
@@ -480,5 +480,18 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
     }
     Map(kvSeq: _*)
   }
+
+  def getBountyCnt() = AuthenticatedAction.async2(
+    request => {
+      val node = new ObjectMapper().createObjectNode()
+      val ret = for {
+        cnt <- BountyAPI.getBountyCnt()
+      } yield {
+        node.put("serviceCnt", cnt)
+        HanseResult(data = Some(node))
+      }
+      ret
+    }
+  )
 
 }
