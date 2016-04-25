@@ -311,7 +311,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
    * 微信的回调接口
    * @return
    */
-  def wechatCallback() = Action.async(
+  def wechatCallback(target: String) = Action.async(
     request => {
       val ret = for {
         body <- request.body.asXml
@@ -319,7 +319,12 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         val paymentData: Map[String, String] = body.head.child map { x => x.label.toString -> x.text.toString } filter
           (c => c._1 != "#PCDATA") toMap
 
-        BountyPayWeChat.instance.handleCallback(paymentData) map
+        val instance = target match {
+          case "bounties" => BountyPayWeChat.instance
+          case "schedules" => SchedulePayWeChat.instance
+          case _ => throw ResourceNotFoundException(s"Cannot find target #$target")
+        }
+        instance.handleCallback(paymentData) map
           (contents => Ok(contents.asInstanceOf[Elem])) recover {
             case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
               // 订单状态有误, 或者存在并发修改的情况
@@ -341,7 +346,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
    * 支付宝的回调接口
    * @return
    */
-  def alipayCallback() = Action.async {
+  def alipayCallback(target: String) = Action.async {
     request =>
       (for {
         formData <- request.body.asFormUrlEncoded
@@ -355,7 +360,12 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         Logger.info(s"Alipay callback: notify_id=$notifyId out_trade_no=$tradeId trade_status=$tradeStatus " +
           s"buyer_email=$buyer total_fee=$totalFee")
 
-        BountyPayAli.instance.handleCallback(formData) map (contents => {
+        val instance = target match {
+          case "bounties" => BountyPayAli.instance
+          case "schedules" => SchedulePayAli.instance
+          case _ => throw ResourceNotFoundException(s"Cannot find target #$target")
+        }
+        instance.handleCallback(formData) map (contents => {
           Results.Ok(contents.toString)
         }) recover {
           case e @ (_: OrderStatusException | _: ConcurrentModificationException) =>
@@ -481,6 +491,11 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
     Map(kvSeq: _*)
   }
 
+  /**
+   * 取得服务用户的个数
+   *
+   * @return
+   */
   def getBountyCnt() = AuthenticatedAction.async2(
     request => {
       val node = new ObjectMapper().createObjectNode()

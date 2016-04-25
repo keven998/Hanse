@@ -43,7 +43,7 @@ trait BountyPay {
    */
   def getPrepay(paymentId: Long, target: String): Future[(Prepay, Map[String, Any])] = {
     val providerName = provider.toString
-    val rr = BountyAPI.getBounty(paymentId, Seq("itemId", "bountyPrice", "bountyPaid", "schedulePaid", "status", "scheduled",
+    val rr = BountyAPI.getBounty(paymentId, Seq("itemId", "bountyPrice", "bountyPaid", "schedulePaid", "status", "totalPrice", "scheduled",
       "paymentInfo", "scheduledPaymentInfo"))(datastore)
 
     // 尝试从paymentInfo中获得Prepay, 否则就新建

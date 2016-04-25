@@ -133,9 +133,11 @@ POST          /marketplace/bounties/$id<\d+>/prepay                             
 # 微信预支付
 POST          /marketplace/bounties/$id<\d+>/payments                                @controllers.BountyCtrl.createPayments(id:Long)
 # 微信回调
-POST          /marketplace/bounties/payment-webhook/wechat                           @controllers.BountyCtrl.wechatCallback()
+POST          /marketplace/:target/payment-webhook/wechat                           @controllers.BountyCtrl.wechatCallback(target:String)
 # 支付宝回调
-POST          /marketplace/bounties/payment-webhook/alipay                           @controllers.BountyCtrl.alipayCallback()
+POST          /marketplace/:target/payment-webhook/alipay                           @controllers.BountyCtrl.alipayCallback(target:String)
+
+
 
 #修改悬赏状态-申请退款
 POST          /marketplace/bounties/$itemId<\d+>/actions                             @controllers.BountyCtrl.operateBounty(itemId:Long)

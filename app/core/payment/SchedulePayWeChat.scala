@@ -290,7 +290,7 @@ object SchedulePayWeChat {
     val host = baseUrl.getHost
     val port = Some(baseUrl.getPort) flatMap (p => if (p == -1 || p == 80) None else Some(p))
     val path1 = baseUrl.getPath
-    val path2 = controllers.routes.BountyCtrl.wechatCallback().url
+    val path2 = controllers.routes.BountyCtrl.wechatCallback("schedules").url
     s"$protocol://$host${port map (p => s":$p") getOrElse ""}$path1$path2"
   }
 
