@@ -60,7 +60,7 @@ class SchedulePayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit 
     }
 
     val content = Map(
-      "out_trade_no" -> bounty.itemId.toString,
+      "out_trade_no" -> bounty.scheduled.itemId.toString,
       "body" -> "旅行派旅行方案支付",
       "trade_type" -> "APP",
       "total_fee" -> totalFee.toString
@@ -123,7 +123,7 @@ class SchedulePayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit 
     val content = Map(
       // transaction_id 指微信订单号；out_trade_no指旅行派订单号
       //"transaction_id" -> prepayId
-      "out_trade_no" -> bounty.itemId.toString
+      "out_trade_no" -> bounty.scheduled.itemId.toString
     )
     val params: Map[String, String] = content ++ accountInfo ++ randomStr
     val sign = Map("sign" -> genSign(params))
@@ -196,14 +196,15 @@ class SchedulePayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit 
       } else {
         // 更新数据库
         val tradeNumber = params.getOrElse("out_trade_no", "").toString
-        val bountyId = try {
+        val scheduleId = try {
           tradeNumber.toLong
         } catch {
           case _: NumberFormatException => throw GeneralPaymentException(s"Invalid out_trade_no: $tradeNumber")
         }
 
         for {
-          _ <- BountyAPI.setBountyPaid(bountyId, PaymentService.Provider.WeChat)
+          schedule <- BountyAPI.getScheduleById(scheduleId)
+          _ <- BountyAPI.setSchedulePaid(schedule.bountyId, PaymentService.Provider.WeChat)
         } yield {
           SchedulePayWeChat.wechatCallBackOK
         }
@@ -222,7 +223,7 @@ class SchedulePayWeChat @Inject() (private val morphiaMap: MorphiaMap, implicit 
    */
   override def refundProcess(bounty: Bounty, amount: Int): Future[Unit] = {
     val content = Map("refund_fee" -> amount.toString, "total_fee" -> bounty.bountyPrice.toString,
-      "out_trade_no" -> bounty.itemId.toString)
+      "out_trade_no" -> bounty.scheduled.itemId.toString)
 
     val url = SchedulePayWeChat.refundOrderUrlUrl
     val randomStr = Map("nonce_str" -> Utils.nonceStr())

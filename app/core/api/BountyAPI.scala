@@ -66,6 +66,12 @@ object BountyAPI {
     })
   }
 
+  def getBountyCnt()(implicit ds: Datastore): Future[Int] = {
+    Future {
+      36
+    }
+  }
+
   /**
    * 用户创建悬赏
    *
@@ -198,6 +204,22 @@ object BountyAPI {
         case x => Option(x.get.schedules) map (_.toSeq) getOrElse Seq()
       }
       ret filter (_.itemId == scheduleId) get 0
+    }
+  }
+
+  /**
+   * 取得方案详情
+   * @param scheduleId
+   * @param ds
+   * @return
+   */
+  def getScheduleById(scheduleId: Long)(implicit ds: Datastore): Future[Schedule] = {
+    Future {
+      val ret = Option(ds.createQuery(classOf[Schedule]) field "itemId" equal scheduleId get)
+      if (ret.isEmpty)
+        throw ResourceNotFoundException(s"Cannot find scheduleId:" + scheduleId)
+      else
+        ret.get
     }
   }
 

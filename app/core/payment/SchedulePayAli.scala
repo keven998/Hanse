@@ -38,7 +38,7 @@ class SchedulePayAli @Inject() (private val morphiaMap: MorphiaMap, implicit pri
     prepay.amount = bounty.totalPrice - bounty.bountyPrice
     prepay.createTime = new Date
     prepay.updateTime = new Date
-    prepay.prepayId = bounty.itemId.toString
+    prepay.prepayId = bounty.scheduled.itemId.toString
 
     val query = datastore.createQuery(classOf[Bounty]) field "itemId" equal bounty.itemId field
       s"scheduledPaymentInfo.$providerName" equal null
@@ -95,14 +95,15 @@ class SchedulePayAli @Inject() (private val morphiaMap: MorphiaMap, implicit pri
           // 订单支付成功
           // 获得订单状态
           val tradeNumber = data.getOrElse("out_trade_no", "")
-          val bountyId = try {
+          val scheduleId = try {
             tradeNumber.toLong
           } catch {
             case _: NumberFormatException => throw GeneralPaymentException(s"Invalid out_trade_no: $tradeNumber")
           }
 
           for {
-            _ <- BountyAPI.setBountyPaid(bountyId, PaymentService.Provider.Alipay)
+            schedule <- BountyAPI.getScheduleById(scheduleId)
+            _ <- BountyAPI.setSchedulePaid(schedule.bountyId, PaymentService.Provider.Alipay)
           } yield {
             "success"
           }
