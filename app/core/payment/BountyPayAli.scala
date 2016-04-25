@@ -166,14 +166,14 @@ object BountyPayAli {
   lazy private val refundOrderUrl = (conf getString "hanse.payment.alipay.refundOrderUrl").get
   lazy private val md5Key = (conf getString "hanse.payment.alipay.md5Key").get
 
-  private val notifyUrl = {
+  lazy private val notifyUrl = {
     val baseUrl = new URL(conf getString "hanse.baseUrl" getOrElse "http://localhost:9000")
 
     val protocol = baseUrl.getProtocol
     val host = baseUrl.getHost
     val port = Some(baseUrl.getPort) flatMap (p => if (p == -1 || p == 80) None else Some(p))
     val path1 = baseUrl.getPath
-    val path2 = controllers.routes.BountyCtrl.alipayCallback().url
+    val path2 = controllers.routes.BountyCtrl.alipayCallback("bounties").url
     s"$protocol://$host${port map (p => s":$p") getOrElse ""}$path1$path2"
   }
 

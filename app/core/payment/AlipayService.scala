@@ -232,7 +232,7 @@ object AlipayService {
   lazy private val refundOrderUrl = (conf getString "hanse.payment.alipay.refundOrderUrl").get
   lazy private val md5Key = (conf getString "hanse.payment.alipay.md5Key").get
 
-  private val notifyUrl = {
+  lazy private val notifyUrl = {
     val baseUrl = new URL(conf getString "hanse.baseUrl" getOrElse "http://localhost:9000")
 
     val protocol = baseUrl.getProtocol

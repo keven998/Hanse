@@ -63,7 +63,7 @@ class SchedulePayAli @Inject() (private val morphiaMap: MorphiaMap, implicit pri
    */
   override protected def createSidecar(bounty: Bounty, prepay: Prepay): Map[String, Any] = {
     // 返回带有签名的请求字符串
-    val requestMap = AlipayService.RequestMap(prepay.prepayId, bounty.consumerId.toString, bounty.scheduled.itemId.toString,
+    val requestMap = SchedulePayAli.RequestMap(prepay.prepayId, bounty.consumerId.toString, bounty.scheduled.itemId.toString,
       bounty.totalPrice - bounty.bountyPrice)
     Map("requestString" -> requestMap.requestString)
   }
@@ -84,7 +84,7 @@ class SchedulePayAli @Inject() (private val morphiaMap: MorphiaMap, implicit pri
 
     try {
       // 检查签名是否正常
-      if (!AlipayService.verifyAlipay(data, data("sign")))
+      if (!SchedulePayAli.verifyAlipay(data, data("sign")))
         throw GeneralPaymentException("Alipay signature check failed.")
 
       // 检查交易状态
@@ -173,7 +173,7 @@ object SchedulePayAli {
     val host = baseUrl.getHost
     val port = Some(baseUrl.getPort) flatMap (p => if (p == -1 || p == 80) None else Some(p))
     val path1 = baseUrl.getPath
-    val path2 = controllers.routes.BountyCtrl.alipayCallback().url
+    val path2 = controllers.routes.BountyCtrl.alipayCallback("schedules").url
     s"$protocol://$host${port map (p => s":$p") getOrElse ""}$path1$path2"
   }
 
