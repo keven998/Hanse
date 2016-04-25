@@ -7,10 +7,13 @@ import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.model.marketplace.order.Order
 import com.lvxingpai.yunkai.UserInfoProp
 import controllers.security.AuthenticatedAction
-import core.api.{ OrderAPI, SellerAPI }
+import core.api.{ BountyAPI, OrderAPI, SellerAPI }
+import core.exception.ResourceNotFoundException
+import core.formatter.geo.SimpleLocalityFormatter
+import core.formatter.marketplace.order.ScheduleFormatter
 import core.formatter.marketplace.seller.SellerFormatter
-import core.misc.{ Utils, HanseResult }
-import core.misc.Implicits.PhoneNumberTemp
+import core.misc.Implicits.{ PhoneNumberTemp, TempLocality, _ }
+import core.misc.{ HanseResult, Utils }
 import org.apache.commons.lang.StringUtils
 import play.api.Configuration
 import play.api.mvc.Controller
@@ -77,6 +80,65 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
       ret.getOrElse(Future {
         HanseResult.unprocessable()
       })
+    }
+  )
+
+  /**
+   * 添加商家的订阅城市
+   *
+   * @return 返回订单信息
+   */
+  def addSubLocalities() = AuthenticatedAction.async2(
+    request => {
+      val userId = (request.headers get "X-Lvxingpai-Id" getOrElse "").toLong
+      val ret = for {
+        body <- request.body.wrapped.asJson
+        localities <- (body \ "localities").asOpt[Array[TempLocality]]
+      } yield {
+        for {
+          bounty <- SellerAPI.addSubLocalities(userId, localities.toSeq)
+        } yield HanseResult.ok()
+      } recover {
+        case e: ResourceNotFoundException => HanseResult.unprocessable(errorMsg = Some(e.getMessage))
+      }
+      ret getOrElse Future {
+        HanseResult.unprocessable()
+      }
+    }
+  )
+
+  /**
+   * 取得商家的订阅城市列表
+   *
+   * @return
+   */
+  def getSubLocalities(sellerId: Long) = AuthenticatedAction.async2(
+    request => {
+      val userId = (request.headers get "X-Lvxingpai-Id" getOrElse "").toLong
+      val ret = for {
+        localities <- SellerAPI.getSubLocalities(sellerId)
+      } yield HanseResult(data = Some(SimpleLocalityFormatter.instance.formatJsonNode(localities getOrElse Seq())))
+      ret
+    }
+  )
+
+  /**
+   * 取得商家的方案
+   *
+   * @param sellerId
+   * @param sortBy
+   * @param sort
+   * @param start
+   * @param count
+   * @return
+   */
+  def getSchedules(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
+    request => {
+      val userId = (request.headers get "X-Lvxingpai-Id" getOrElse "").toLong
+      val ret = for {
+        schedule <- BountyAPI.getScheduleBySellerId(sellerId, sortBy, sort, start, count)
+      } yield HanseResult(data = Some(ScheduleFormatter.instance.formatJsonNode(schedule)))
+      ret
     }
   )
 
