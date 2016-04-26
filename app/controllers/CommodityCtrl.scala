@@ -96,7 +96,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         isSeller <- SellerAPI.getSeller(sellerId getOrElse 0L)
         commodities <- {
           if (locId.nonEmpty)
-            CommodityAPI.getCommodities(sellerId, locId, category, sortBy, sort, start, count)
+            CommodityAPI.getCommodities(sellerId, locId, category, "createTime", sort, start, count)
           else
             CommodityAPI.searchCommodities(query, sellerId, locId, category, status, sortBy, sort, start, count, isSeller.nonEmpty)
         }
