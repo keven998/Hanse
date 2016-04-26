@@ -66,6 +66,12 @@ object BountyAPI {
     })
   }
 
+  /**
+   * 取得服务过的用户数量
+   *
+   * @param ds
+   * @return
+   */
   def getBountyCnt()(implicit ds: Datastore): Future[Int] = {
     Future {
       36
@@ -159,11 +165,16 @@ object BountyAPI {
     Future {
       val query = ds.createQuery(classOf[Bounty])
       if (userId.nonEmpty)
+        // 取得某用户的悬赏
         query.field("consumerId").equal(userId.get)
-      query.or(
-        query.criteria("paid").equal(true),
-        query.criteria("totalPrice").equal(0)
-      )
+      else {
+        // 取得发布在首页的悬赏
+        query.or(
+          query.criteria("bountyPaid").equal(true),
+          query.criteria("bountyPrice").equal(0)
+        )
+        query.field("status").equals("pending")
+      }
       val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
       query.order(orderStr).offset(start).limit(count)
       query.retrievedFields(false, Seq("schedules"): _*)
@@ -250,7 +261,13 @@ object BountyAPI {
       schedules <- future
     } yield {
       val ids = schedules map (_.toSeq) getOrElse Seq() map (_.bountyId)
-      ds.createQuery(classOf[Bounty]) field "itemId" in ids retrievedFields (false, Seq("schedules"): _*) asList ()
+      val query = ds.createQuery(classOf[Bounty])
+      //field "itemId" in ids field "takers.userId" equal sellerId retrievedFields (false, Seq("schedules"): _*) asList ()
+      query.or(
+        query.criteria("itemId").in(ids),
+        query.criteria("takers.userId").equal(sellerId)
+      )
+      query.retrievedFields(false, Seq("schedules"): _*) asList ()
     }
   }
 
