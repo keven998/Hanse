@@ -133,9 +133,9 @@ POST          /marketplace/bounties/$id<\d+>/prepay                             
 # 微信预支付
 POST          /marketplace/bounties/$id<\d+>/payments                                @controllers.BountyCtrl.createPayments(id:Long)
 # 微信回调
-POST          /marketplace/:target/payment-webhook/wechat                           @controllers.BountyCtrl.wechatCallback(target:String)
+POST          /marketplace/:target/payment-webhook/wechat                            @controllers.BountyCtrl.wechatCallback(target:String)
 # 支付宝回调
-POST          /marketplace/:target/payment-webhook/alipay                           @controllers.BountyCtrl.alipayCallback(target:String)
+POST          /marketplace/:target/payment-webhook/alipay                            @controllers.BountyCtrl.alipayCallback(target:String)
 
 
 
@@ -146,3 +146,4 @@ POST          /marketplace/bounties/$id<\d+>/refund                             
 
 # 商家发布过的应征列表
 GET           /marketplace/sellers/$sellerId<\d+>/schedules                          @controllers.SellerCtrl.getSchedules(sellerId:Long,sortBy: String?="updateTime", sort: String?="desc", start: Int?=0, count: Int?=10)
+GET           /marketplace/sellers/$sellerId<\d+>/bounties                           @controllers.SellerCtrl.getBounties(sellerId:Long,sortBy: String?="updateTime", sort: String?="desc", start: Int?=0, count: Int?=10)

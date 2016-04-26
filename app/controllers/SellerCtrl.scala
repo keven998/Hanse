@@ -10,7 +10,7 @@ import controllers.security.AuthenticatedAction
 import core.api.{ BountyAPI, OrderAPI, SellerAPI }
 import core.exception.ResourceNotFoundException
 import core.formatter.geo.SimpleLocalityFormatter
-import core.formatter.marketplace.order.ScheduleFormatter
+import core.formatter.marketplace.order.{ SimpleBountyFormatter, BountyFormatter, ScheduleFormatter }
 import core.formatter.marketplace.seller.SellerFormatter
 import core.misc.Implicits.{ PhoneNumberTemp, TempLocality, _ }
 import core.misc.{ HanseResult, Utils }
@@ -123,7 +123,7 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
   )
 
   /**
-   * 取得商家的方案
+   * 取得商家提交过的方案
    *
    * @param sellerId
    * @param sortBy
@@ -138,6 +138,26 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
       val ret = for {
         schedule <- BountyAPI.getScheduleBySellerId(sellerId, sortBy, sort, start, count)
       } yield HanseResult(data = Some(ScheduleFormatter.instance.formatJsonNode(schedule)))
+      ret
+    }
+  )
+
+  /**
+   * 商家接过的单
+   *
+   * @param sellerId
+   * @param sortBy
+   * @param sort
+   * @param start
+   * @param count
+   * @return
+   */
+  def getBounties(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
+    request => {
+      val userId = (request.headers get "X-Lvxingpai-Id" getOrElse "").toLong
+      val ret = for {
+        schedule <- BountyAPI.getBountyBySellerId(sellerId, sortBy, sort, start, count)
+      } yield HanseResult(data = Some(SimpleBountyFormatter.instance.formatJsonNode(schedule)))
       ret
     }
   )

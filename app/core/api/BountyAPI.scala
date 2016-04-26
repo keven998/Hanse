@@ -239,6 +239,21 @@ object BountyAPI {
     }
   }
 
+  def getBountyBySellerId(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Bounty]] = {
+    val future = Future {
+      val query = ds.createQuery(classOf[Schedule]) field "seller.sellerId" equal sellerId retrievedFields (true, Seq("bountyId"): _*)
+      val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
+      query.order(orderStr).offset(start).limit(count)
+      Option(query.asList())
+    }
+    for {
+      schedules <- future
+    } yield {
+      val ids = schedules map (_.toSeq) getOrElse Seq() map (_.bountyId)
+      ds.createQuery(classOf[Bounty]) field "itemId" in ids retrievedFields (false, Seq("schedules"): _*) asList ()
+    }
+  }
+
   /**
    * 商家根据某个悬赏，发布行程安排来应征
    *
@@ -412,7 +427,7 @@ object BountyAPI {
   }
 
   def refundApply(bounty: Bounty)(implicit ds: Datastore): Future[Unit] = {
-    if (!bounty.bountyPaid || !bounty.schedulePaid)
+    if (!bounty.bountyPaid && !bounty.schedulePaid)
       throw OrderStatusException("Can not refund apply.")
     Future {
       val paymentQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bounty.itemId
