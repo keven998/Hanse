@@ -217,15 +217,21 @@ object CommodityAPI {
    * @param count 返回商品的个数
    * @return 返回商品列表
    */
-  def getCommodities(sellerId: Option[Long], localityId: Option[String], coType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
+  def getCommodities(sellerId: Option[Long], localityId: Option[String], category: Option[String], cType: Option[String], sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val query = ds.createQuery(classOf[Commodity])
       .retrievedFields(true, Seq("_id", "status", "commodityId", "title", "marketPrice", "price", "rating", "salesVolume", "images", "cover", "locality", "seller"): _*)
     if (sellerId.nonEmpty)
       query.field("seller.sellerId").equal(sellerId.get)
     if (localityId.nonEmpty)
-      query.field("locality.id").equal(new ObjectId(localityId.get))
-    if (coType.nonEmpty && !coType.get.equals(""))
-      query.field("category").hasThisOne(coType.get)
+      //query.field("locality.id").equal(new ObjectId(localityId.get))
+      query.or(
+        query.criteria("country.id").equal(new ObjectId(localityId.get)),
+        query.criteria("locality.id").equal(new ObjectId(localityId.get))
+      )
+    if (category.nonEmpty && !category.get.equals(""))
+      query.field("category").hasThisOne(category.get)
+    if (category.nonEmpty && !category.get.equals(""))
+      query.field("commodityType").equal(cType.get)
     val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
     query.field("status").equal("pub").order(orderStr).offset(start).limit(count)
     Future {
@@ -238,7 +244,7 @@ object CommodityAPI {
    * @return
    */
   def searchCommodities(q: Option[String], sellerId: Option[Long], localityId: Option[String],
-    coType: Option[String], status: Option[String], sortBy: String, sort: String, start: Int, count: Int, isSeller: Boolean)(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    category: Option[String], status: Option[String], cType: Option[String], sortBy: String, sort: String, start: Int, count: Int, isSeller: Boolean)(implicit ds: Datastore): Future[Seq[Commodity]] = {
     val es = Play.application.injector instanceOf classOf[SearchEngine]
 
     // 根据商品状态筛选
@@ -248,11 +254,13 @@ object CommodityAPI {
     // 按照城市筛选
     val localityFilter = localityId map LocalityFilter.apply
     // 按照类别筛选
-    val categoryFilter = coType map CategoryFilter.apply
+    val categoryFilter = category map CategoryFilter.apply
+    // 根据商品的类别选-1.original:原始类型的商品 2.scheme:方案商品
+    val cTypeFilter = cType map CommodityTypeFilter.apply
     // 商家根据不同的商品状态筛选
     val statusOptFilter = status map CommodityStatusOptFilter.apply
 
-    val filters = (Seq(sellerFilter, localityFilter, categoryFilter) ++ (if (isSeller) Seq(statusOptFilter) else Seq(statusFilter))) filter (_.nonEmpty) map (_.get)
+    val filters = (Seq(sellerFilter, localityFilter, categoryFilter, cTypeFilter) ++ (if (isSeller) Seq(statusOptFilter) else Seq(statusFilter))) filter (_.nonEmpty) map (_.get)
 
     es.overallCommodities(q, filters, sortBy, sort, start, count) flatMap (clist => {
       val idList = clist map (_.commodityId)

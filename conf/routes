@@ -18,6 +18,11 @@ GET           /columns/commodities                                              
 #首页推荐商品列表
 GET           /marketplace/commodities/recommendations                               @controllers.MiscCtrl.getRecommendCommodities()
 
+#----------地理接口----------
+#国家详情
+GET           /marketplace/geo/countries/:id                                         @controllers.GeoCtrl.getCountry(id: String)
+GET           /marketplace/geo/localities/:id                                        @controllers.GeoCtrl.getLocality(id: String)
+
 #----------商品接口----------
 # 商品详情
 GET           /marketplace/commodities/$id<\d+>                                      @controllers.CommodityCtrl.getCommodityDetail(id: Long,version: Option[Long] ?= None)
@@ -26,7 +31,7 @@ GET           /marketplace/commodities/$id<\d+>                                 
 PATCH         /marketplace/commodities/$id<\d+>                                      @controllers.CommodityCtrl.modComment(id: Long)
 
 #商品列表
-GET           /marketplace/commodities                                               @controllers.CommodityCtrl.getCommodities(query:Option[String]?=None, seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None,status:Option[String] ?= None, sortBy: String?="relevance", sort: String?="desc", start: Int?=0, count: Int?=10)
+GET           /marketplace/commodities                                               @controllers.CommodityCtrl.getCommodities(query:Option[String]?=None, seller: Option[Long] ?= None,locality: Option[String] ?= None,category:Option[String] ?= None,status:Option[String] ?= None,cType:Option[String] ?= Option("original"), sortBy: String?="relevance", sort: String?="desc", start: Int?=0, count: Int?=10)
 
 #商品分类列表
 GET           /marketplace/commodities/categories                                    @controllers.CommodityCtrl.getCommodityCategory(locality:String)
@@ -136,7 +141,6 @@ POST          /marketplace/bounties/$id<\d+>/payments                           
 POST          /marketplace/:target/payment-webhook/wechat                            @controllers.BountyCtrl.wechatCallback(target:String)
 # 支付宝回调
 POST          /marketplace/:target/payment-webhook/alipay                            @controllers.BountyCtrl.alipayCallback(target:String)
-
 
 
 #修改悬赏状态-申请退款
