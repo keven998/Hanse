@@ -11,6 +11,7 @@ import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.{ CommodityStatusException, OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
+import core.model.misc.GeoCommodity
 import core.search._
 import core.service.ViaeGateway
 import org.apache.commons.lang.StringUtils
@@ -29,6 +30,47 @@ import scala.language.postfixOps
  * Created by pengyt on 2015/11/4.
  */
 object CommodityAPI {
+
+  def getAllCommodities()(implicit ds: Datastore): Future[Seq[Commodity]] = {
+    val query = ds.createQuery(classOf[Commodity]).field("commodityType").equal("original").field("status").equal("pub")
+      .retrievedFields(true, Seq("_id", "status", "commodityId", "seller", "country", "locality"): _*)
+    Future {
+      query.asList()
+    }
+  }
+
+  def saveCountrySellers(all: Seq[Commodity])(implicit ds: Datastore): Future[Unit] = {
+    val countryMap = all.groupBy(_.country)
+    val cCountry = countryMap.filter(_._1 != null).map(x => {
+      val geoCommodity = new GeoCommodity
+      geoCommodity.geoId = x._1.id
+      geoCommodity.sellers = x._2.map(_.seller)
+      geoCommodity
+    })
+    Future {
+      ds.save[GeoCommodity](cCountry.toList)
+    }
+  }
+
+  def saveLocalitySellers(all: Seq[Commodity])(implicit ds: Datastore): Future[Unit] = {
+    val countryMap = all.groupBy(_.locality)
+    val cCountry = countryMap.filter(_._1 != null).map(x => {
+      val geoCommodity = new GeoCommodity
+      geoCommodity.geoId = x._1.id
+      geoCommodity.sellers = x._2.map(_.seller)
+      geoCommodity
+    })
+    Future {
+      ds.save[GeoCommodity](cCountry.toList)
+    }
+  }
+
+  def getGeoSeller(id: String)(implicit ds: Datastore): Future[GeoCommodity] = {
+    val query = ds.createQuery(classOf[GeoCommodity]).field("geoId").equal(new ObjectId(id))
+    Future {
+      query.get
+    }
+  }
 
   /**
    * 根据商品Id取得商品信息

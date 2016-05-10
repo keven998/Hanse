@@ -3,7 +3,7 @@ package core.formatter.geo
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.{ JsonSerializer, SerializerProvider }
 import com.lvxingpai.model.geo.Locality
-import com.lvxingpai.model.misc.ImageItem
+import com.lvxingpai.model.misc.{ IconText, ImageItem }
 
 import scala.collection.JavaConversions._
 
@@ -29,6 +29,16 @@ class LocalitySerializer extends JsonSerializer[Locality] {
       val ret = serializers.findValueSerializer(classOf[ImageItem], null)
       for (image <- images)
         ret.serialize(image, gen, serializers)
+    }
+    gen.writeEndArray()
+
+    gen.writeFieldName("remarks")
+    gen.writeStartArray()
+    val remarks = Option(geo.remarks) map (_.toSeq) getOrElse Seq()
+    if (remarks.nonEmpty) {
+      val ret = serializers.findValueSerializer(classOf[IconText], null)
+      for (r <- remarks)
+        ret.serialize(r, gen, serializers)
     }
     gen.writeEndArray()
 

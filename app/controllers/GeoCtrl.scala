@@ -2,10 +2,11 @@ package controllers
 
 import javax.inject.{ Inject, Named, Singleton }
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.yunkai.UserInfoProp
 import core.api._
-import core.formatter.geo.{ LocalityFormatter, CountryFormatter }
+import core.formatter.geo.{ CountryFormatter, GeoCommodityFormatter, LocalityFormatter }
 import core.misc.HanseResult
 import org.bson.types.ObjectId
 import play.api.Configuration
@@ -29,7 +30,21 @@ class GeoCtrl @Inject() (@Named("default") configuration: Configuration, datasto
     request => {
       for {
         country <- GeoAPI.getCountryById(new ObjectId(id))
-      } yield HanseResult(data = Some(CountryFormatter.instance.formatJsonNode(country)))
+        sellers <- CommodityAPI.getGeoSeller(id)
+      } yield {
+        val node = CountryFormatter.instance.formatJsonNode(country).asInstanceOf[ObjectNode]
+        HanseResult(data = Some(node))
+      }
+    }
+  )
+
+  def getGeoSellers(id: String, countryType: String) = Action.async(
+    request => {
+      for {
+        sellers <- CommodityAPI.getGeoSeller(id)
+      } yield {
+        HanseResult(data = Some(GeoCommodityFormatter.instance.formatJsonNode(sellers)))
+      }
     }
   )
 
@@ -39,6 +54,18 @@ class GeoCtrl @Inject() (@Named("default") configuration: Configuration, datasto
       for {
         locality <- GeoAPI.getLocalityById(new ObjectId(id), Option(fields))
       } yield HanseResult(data = Some(LocalityFormatter.instance.formatJsonNode(locality)))
+    }
+  )
+
+  def countSellerInCountry() = Action.async(
+    request => {
+      for {
+        all <- CommodityAPI.getAllCommodities()
+        _ <- CommodityAPI.saveCountrySellers(all)
+        _ <- CommodityAPI.saveLocalitySellers(all)
+      } yield {
+        HanseResult.ok()
+      }
     }
   )
 
