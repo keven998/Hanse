@@ -81,6 +81,26 @@ class SellerSerializer extends JsonSerializer[Seller] {
     Option(seller.images) map (_.toSeq) getOrElse Seq() foreach (retImg.serialize(_, gen, serializers))
     gen.writeEndArray()
 
+    // TODO 商家退款数
+    gen.writeNumberField("refundCnt", 0)
+    // 商家退款率
+    gen.writeNumberField("refundRate", 0)
+    // 商家纠纷数
+    gen.writeNumberField("disputeCnt", 0)
+    // 商家纠纷率
+    gen.writeNumberField("disputeRate", 0)
+
+    // 商家的订阅城市
+    gen.writeFieldName("subLocalities")
+    gen.writeStartArray()
+    val retSubLocalities = serializers.findValueSerializer(classOf[GeoEntity], null)
+    Option(seller.subLocalities) map (_.toSeq filter (_.isInstanceOf[Locality])) getOrElse Seq() foreach
+      (retSubLocalities.serialize(_, gen, serializers))
+    gen.writeEndArray()
+
+    // 商家介绍
+    gen.writeStringField("introduceURL", "http://h5.taozilvxing.com/poi/traffic.php?tid=547bfdbfb8ce043eb2d81fdb")
+
     gen.writeEndObject()
   }
 }

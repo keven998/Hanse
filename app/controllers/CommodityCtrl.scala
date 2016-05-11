@@ -88,7 +88,7 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
    * @param count
    * @return
    */
-  def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String], status: Option[String],
+  def getCommodities(query: Option[String], sellerId: Option[Long], locId: Option[String], category: Option[String], status: Option[String], cType: Option[String],
     sortBy: String, sort: String, start: Int, count: Int) = AuthenticatedAction.async2(
     request => {
       for {
@@ -96,9 +96,9 @@ class CommodityCtrl @Inject() (@Named("default") configuration: Configuration, d
         isSeller <- SellerAPI.getSeller(sellerId getOrElse 0L)
         commodities <- {
           if (locId.nonEmpty)
-            CommodityAPI.getCommodities(sellerId, locId, category, "createTime", sort, start, count)
+            CommodityAPI.getCommodities(sellerId, locId, category, cType, "createTime", sort, start, count)
           else
-            CommodityAPI.searchCommodities(query, sellerId, locId, category, status, sortBy, sort, start, count, isSeller.nonEmpty)
+            CommodityAPI.searchCommodities(query, sellerId, locId, category, status, cType, sortBy, sort, start, count, isSeller.nonEmpty)
         }
       } yield {
         val node = SimpleCommodityFormatter.instance.formatJsonNode(commodities)

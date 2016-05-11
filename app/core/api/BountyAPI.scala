@@ -74,7 +74,8 @@ object BountyAPI {
    */
   def getBountyCnt()(implicit ds: Datastore): Future[Int] = {
     Future {
-      36
+      val bounties = ds.find(classOf[Bounty]).retrievedFields(true, Seq("takers"): _*).asList()
+      bounties.map(_.schedules).size
     }
   }
 
@@ -325,7 +326,7 @@ object BountyAPI {
   def setTakers(bountyId: Long, userInfo: UserInfo)(implicit ds: Datastore): Future[Unit] = {
     Future {
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
-      val statusOps = ds.createUpdateOperations(classOf[Bounty]).set("takers", userInfo)
+      val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("takers", userInfo)
       ds.update(statusQuery, statusOps)
     }
   }

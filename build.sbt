@@ -29,6 +29,8 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "finagle-core" % finagleVersion,
   "com.twitter" %% "finagle-thrift" % finagleVersion,
   "com.twitter" %% "finagle-thriftmux" % finagleVersion
+
+
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
