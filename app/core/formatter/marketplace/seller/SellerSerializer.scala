@@ -83,8 +83,12 @@ class SellerSerializer extends JsonSerializer[Seller] {
 
     // TODO 商家退款数
     gen.writeNumberField("refundCnt", 0)
+    // 上个月的退款数
+    gen.writeNumberField("lastRefundCnt", 0)
     // 商家退款率
     gen.writeNumberField("refundRate", 0)
+    // 上个月的退款率
+    gen.writeNumberField("lastRefundRate", 0)
     // 商家纠纷数
     gen.writeNumberField("disputeCnt", 0)
     // 商家纠纷率

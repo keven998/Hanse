@@ -503,6 +503,7 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
         cnt <- BountyAPI.getBountyCnt()
       } yield {
         node.put("serviceCnt", cnt)
+        node.put("cover", "http://")
         HanseResult(data = Some(node))
       }
       ret
