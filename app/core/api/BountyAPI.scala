@@ -3,14 +3,14 @@ package core.api
 import java.util
 import java.util.Date
 
-import com.lvxingpai.model.account.{RealNameInfo, UserInfo}
+import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.geo.Locality
 import com.lvxingpai.model.guide.Guide
 import com.lvxingpai.model.marketplace.order.Order.Status._
-import com.lvxingpai.model.marketplace.order.{Bounty, Prepay}
+import com.lvxingpai.model.marketplace.order.{ Bounty, Prepay }
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
-import core.exception.{OrderStatusException, ResourceNotFoundException}
+import core.exception.{ OrderStatusException, ResourceNotFoundException }
 import core.payment.PaymentService.Provider._
 import core.payment._
 import org.bson.types.ObjectId
@@ -100,7 +100,7 @@ object BountyAPI {
    * @return
    */
   def createBounty(userId: Long, userInfo: UserInfo, contact: RealNameInfo, destination: Seq[Locality], departure: Locality, departureDate: Date, timeCost: Int,
-                   participantCnt: Int, perBudget: Int, participants: Seq[String], service: String, topic: String, memo: String, bountyPrice: Int)(implicit ds: Datastore): Future[Bounty] = {
+    participantCnt: Int, perBudget: Int, participants: Seq[String], service: String, topic: String, memo: String, bountyPrice: Int)(implicit ds: Datastore): Future[Bounty] = {
     val bounty = new Bounty()
     val now = DateTime.now().toDate
     bounty.itemId = now.getTime
@@ -139,20 +139,20 @@ object BountyAPI {
     val future = for {
       bounty <- BountyAPI.getBounty(bountyId, Seq("schedules"))
     } yield {
-        if (bounty.isEmpty)
-          throw ResourceNotFoundException(s"Cannot find bounty.ItemId:" + bountyId)
-        if (Option(bounty.get.schedules).isEmpty)
-          throw ResourceNotFoundException(s"Cannot find schedules in this bounty.ItemId:" + bountyId)
-        val scheduled = bounty.get.schedules.find(sc => {
-          sc.itemId == scheduleId
-        }) match {
-          case None => throw ResourceNotFoundException(s"Cannot find schedule.ItemId:" + scheduleId)
-          case x => x.get
-        }
-        val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
-        val statusOps = ds.createUpdateOperations(classOf[Bounty]).set("scheduled", scheduled).set("totalPrice", scheduled.price)
-        ds.update(statusQuery, statusOps)
+      if (bounty.isEmpty)
+        throw ResourceNotFoundException(s"Cannot find bounty.ItemId:" + bountyId)
+      if (Option(bounty.get.schedules).isEmpty)
+        throw ResourceNotFoundException(s"Cannot find schedules in this bounty.ItemId:" + bountyId)
+      val scheduled = bounty.get.schedules.find(sc => {
+        sc.itemId == scheduleId
+      }) match {
+        case None => throw ResourceNotFoundException(s"Cannot find schedule.ItemId:" + scheduleId)
+        case x => x.get
       }
+      val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
+      val statusOps = ds.createUpdateOperations(classOf[Bounty]).set("scheduled", scheduled).set("totalPrice", scheduled.price)
+      ds.update(statusQuery, statusOps)
+    }
     future
   }
 
@@ -167,7 +167,7 @@ object BountyAPI {
     Future {
       val query = ds.createQuery(classOf[Bounty])
       if (userId.nonEmpty)
-      // 取得某用户的悬赏
+        // 取得某用户的悬赏
         query.field("consumerId").equal(userId.get)
       else {
         // 取得发布在首页的悬赏
@@ -175,7 +175,7 @@ object BountyAPI {
           query.criteria("bountyPaid").equal(true),
           query.criteria("bountyPrice").equal(0)
         )
-        query.field("status").equals("pending")
+        query.field("status").equal("pending")
       }
       val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
       query.order(orderStr).offset(start).limit(count)
@@ -211,7 +211,7 @@ object BountyAPI {
    */
   def getScheduleById(bountyId: Long, scheduleId: Long)(implicit ds: Datastore): Future[Schedule] = {
     Future {
-      val bounty = Option(ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId retrievedFields(true, Seq("schedules"): _*) get)
+      val bounty = Option(ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId retrievedFields (true, Seq("schedules"): _*) get)
       val ret: Seq[Schedule] = bounty match {
         case None => Seq()
         case x => Option(x.get.schedules) map (_.toSeq) getOrElse Seq()
@@ -254,7 +254,7 @@ object BountyAPI {
 
   def getBountyBySellerId(sellerId: Long, sortBy: String, sort: String, start: Int, count: Int)(implicit ds: Datastore): Future[Seq[Bounty]] = {
     val future = Future {
-      val query = ds.createQuery(classOf[Schedule]) field "seller.sellerId" equal sellerId retrievedFields(true, Seq("bountyId"): _*)
+      val query = ds.createQuery(classOf[Schedule]) field "seller.sellerId" equal sellerId retrievedFields (true, Seq("bountyId"): _*)
       val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
       query.order(orderStr).offset(start).limit(count)
       Option(query.asList())
@@ -269,7 +269,7 @@ object BountyAPI {
         query.criteria("itemId").in(ids),
         query.criteria("takers.userId").equal(sellerId)
       )
-      query.retrievedFields(false, Seq("schedules"): _*) asList()
+      query.retrievedFields(false, Seq("schedules"): _*) asList ()
     }
   }
 

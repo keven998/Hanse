@@ -2,7 +2,7 @@ package core.api
 
 import com.lvxingpai.model.account.Favorite
 import com.lvxingpai.model.marketplace.product.Commodity
-import core.model.misc.{ Column, RecommendCategory, TopicCommodity }
+import core.model.misc.{ MiscInfo, Column, RecommendCategory, TopicCommodity }
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
@@ -125,5 +125,12 @@ object MiscAPI {
 
   def getFavoriteFields(fType: String) = fType match {
     case "commodity" => "commodities"
+  }
+
+  def getMiscInfo(key: String)(implicit ds: Datastore): Future[Option[MiscInfo]] = {
+    Future {
+      val query = ds.createQuery(classOf[MiscInfo]).field("key").equal(key)
+      Option(query.get())
+    }
   }
 }

@@ -3,10 +3,12 @@ package controllers
 import javax.inject.{ Inject, Named, Singleton }
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.{ JsonNode, ObjectMapper }
 import com.lvxingpai.inject.morphia.MorphiaMap
 import com.lvxingpai.yunkai.UserInfoProp
 import core.api._
 import core.formatter.geo.{ CountryFormatter, GeoCommodityFormatter, LocalityFormatter }
+import core.formatter.misc.LocalityArticleFormatter
 import core.misc.HanseResult
 import org.bson.types.ObjectId
 import play.api.Configuration
@@ -50,10 +52,17 @@ class GeoCtrl @Inject() (@Named("default") configuration: Configuration, datasto
 
   def getLocality(id: String) = Action.async(
     request => {
+      val arrayNode = new ObjectMapper().createArrayNode()
+      val mapper = new LocalityArticleFormatter().objectMapper
       val fields = Seq("zhName", "enName", "desc", "travelMonth", "images", "remarks")
       for {
         locality <- GeoAPI.getLocalityById(new ObjectId(id), Option(fields))
-      } yield HanseResult(data = Some(LocalityFormatter.instance.formatJsonNode(locality)))
+        arts <- GeoAPI.getArticleByLocalityId(new ObjectId(id))
+      } yield {
+        val node = LocalityFormatter.instance.formatJsonNode(locality).asInstanceOf[ObjectNode]
+        node.set("remarks", mapper.valueToTree[JsonNode](arts))
+        HanseResult(data = Some(node))
+      }
     }
   )
 
