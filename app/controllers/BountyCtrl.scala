@@ -9,11 +9,12 @@ import com.lvxingpai.model.account.RealNameInfo
 import com.lvxingpai.model.marketplace.order.OrderActivity
 import com.lvxingpai.yunkai.UserInfoProp
 import controllers.security.AuthenticatedAction
-import core.api.{ BountyAPI, SellerAPI }
+import core.api.{ MiscAPI, BountyAPI, SellerAPI }
 import core.exception.{ GeneralPaymentException, OrderStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order._
 import core.misc.HanseResult
 import core.misc.Implicits._
+import core.model.misc.MiscInfo
 import core.payment.PaymentService.Provider
 import core.payment._
 import core.service.ViaeGateway
@@ -501,9 +502,10 @@ class BountyCtrl @Inject() (@Named("default") configuration: Configuration, data
       val node = new ObjectMapper().createObjectNode()
       val ret = for {
         cnt <- BountyAPI.getBountyCnt()
+        misc <- MiscAPI.getMiscInfo(MiscInfo.KEY_BOUNTY_IMG)
       } yield {
         node.put("serviceCnt", cnt)
-        node.put("cover", "http://")
+        node.put("cover", misc.get.value)
         HanseResult(data = Some(node))
       }
       ret
