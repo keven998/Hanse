@@ -15,7 +15,9 @@ class LocalityArticleSerializer() extends JsonSerializer[LocalityArticle] {
     gen.writeStringField("title", Option(art.title) getOrElse "")
 
     gen.writeStringField("desc", Option(art.desc) getOrElse "")
-    gen.writeStringField("contents", Option(art.contents) getOrElse "")
+
+    // TODO 链接
+    gen.writeStringField("url", "http://")
 
     //    gen.writeFieldName("country")
     //    val country = art.country

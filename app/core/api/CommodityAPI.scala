@@ -132,7 +132,7 @@ object CommodityAPI {
   def createOrder(commodityId: Long, planId: String, rendezvous: LocalDate, consumerId: Long,
     travellers: Seq[RealNameInfo], contact: RealNameInfo, quantity: Int, comment: String,
     coupons: Seq[ObjectId])(implicit ds: Datastore): Future[Option[Order]] = {
-    val commoditySeq = Seq("_id", "commodityId", "title", "desc", "price", "plans", "seller", "category", "cover", "images", "version")
+    val commoditySeq = Seq("_id", "commodityId", "title", "price", "plans", "seller", "category", "cover", "images", "version")
     val future = for {
       commodityOpt <- CommodityAPI.getCommodityById(commodityId, version = None, commoditySeq)
       couponOpt <- coupons.headOption map OrderAPI.getCoupon getOrElse Future.successful(None) // 优惠券
