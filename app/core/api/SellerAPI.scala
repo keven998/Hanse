@@ -3,6 +3,7 @@ package core.api
 import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
+import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
 import scala.collection.JavaConversions._
@@ -49,6 +50,19 @@ object SellerAPI {
     Future {
       val seller = ds.find(classOf[Seller], "sellerId", sellerId).retrievedFields(true, Seq("subLocalities"): _*).get()
       Option(seller.subLocalities)
+    }
+  }
+
+  def getSellers(locId: Seq[ObjectId])(implicit ds: Datastore): Future[Option[Seq[Long]]] = {
+    Future {
+      val query = ds.createQuery(classOf[Seller])
+      query.or(
+        query.criteria("serviceZones.id").in(locId),
+        query.criteria("subLocalities.id").in(locId)
+      )
+      query.retrievedFields(true, Seq("sellerId"): _*)
+      val sellers = query.asList()
+      Option(sellers.map(_.sellerId))
     }
   }
 }

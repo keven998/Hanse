@@ -10,7 +10,7 @@ import controllers.security.AuthenticatedAction
 import core.api.{ BountyAPI, OrderAPI, SellerAPI }
 import core.exception.ResourceNotFoundException
 import core.formatter.geo.SimpleLocalityFormatter
-import core.formatter.marketplace.order.{ SimpleBountyFormatter, BountyFormatter, ScheduleFormatter }
+import core.formatter.marketplace.order.{ ScheduleFormatter, SimpleBountyFormatter }
 import core.formatter.marketplace.seller.SellerFormatter
 import core.misc.Implicits.{ PhoneNumberTemp, TempLocality, _ }
 import core.misc.{ HanseResult, Utils }
@@ -52,6 +52,9 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
             node.put("totalSales", Utils.getActualPrice((orders map (_.totalPrice)).sum))
             node.put("totalOrderCnt", ordersCnt)
             node.put("pendingOrderCnt", suspendingOrders.size)
+            // TODO
+            node.put("detailUrl", "http://")
+            node.put("shareUrl", "http://")
           })
           HanseResult(data = ret)
         } else

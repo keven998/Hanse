@@ -10,13 +10,18 @@ import com.lvxingpai.model.marketplace.order.Order.Status._
 import com.lvxingpai.model.marketplace.order.{ Bounty, Prepay }
 import com.lvxingpai.model.marketplace.product.Schedule
 import com.lvxingpai.model.marketplace.seller.Seller
+import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
 import core.exception.{ OrderStatusException, ResourceNotFoundException }
+import core.formatter.marketplace.order.BountyFormatter
 import core.payment.PaymentService.Provider._
 import core.payment._
+import core.service.ViaeGateway
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.morphia.Datastore
 import org.mongodb.morphia.query.UpdateResults
+import play.api.Play
+import play.api.Play.current
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -121,8 +126,22 @@ object BountyAPI {
     bounty.consumer = userInfo
     bounty.bountyPrice = bountyPrice
     bounty.status = "pending"
-    Future {
+    val future = Future {
       ds.save[Bounty](bounty)
+      bounty
+    }
+
+    for {
+      bounty <- future
+      sellerIdList <- SellerAPI.getSellers(bounty.destination.map(_.id))
+    } yield {
+      val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+      val bountyNode = BountyFormatter.instance.formatJsonNode(bounty)
+      // 发消息，发布悬赏
+      if (bounty.bountyPaid)
+        viae.sendTask("viae.event.marketplace.onPubBountyPaid", kwargs = Some(Map("bounty" -> bountyNode, "sellers" -> sellerIdList)))
+      else
+        viae.sendTask("viae.event.marketplace.onPubBountyUnPaid", kwargs = Some(Map("bounty" -> bountyNode, "sellers" -> sellerIdList)))
       bounty
     }
   }
@@ -307,14 +326,18 @@ object BountyAPI {
     val future = Future {
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
       val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("schedules", sc)
-      ds.update(statusQuery, statusOps)
+      //ds.update(statusQuery, statusOps)
+      ds.findAndModify(statusQuery, statusOps)
     }
     for {
-      _ <- future
+      bounty <- future
     } yield {
       ds.save[Schedule](sc)
+      val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+      val bountyNode = BountyFormatter.instance.formatJsonNode(bounty)
+      // 发消息，已提交方案
+      viae.sendTask("viae.event.marketplace.onBountyScheduled", kwargs = Some(Map("user" -> bounty.consumer.userId)))
     }
-
   }
 
   /**
@@ -329,6 +352,9 @@ object BountyAPI {
       val statusQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bountyId
       val statusOps = ds.createUpdateOperations(classOf[Bounty]).add("takers", userInfo)
       ds.update(statusQuery, statusOps)
+      val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+      // 发消息，申请退款
+      viae.sendTask("viae.event.marketplace.onBountyRefundApply")
     }
   }
 
@@ -439,8 +465,10 @@ object BountyAPI {
       val paymentQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bounty.itemId
       val paymentOps = ds.createUpdateOperations(classOf[Bounty]).set(s"$queryField.paid", true).set("status", Refunded.toString)
       ds.update(paymentQuery, paymentOps)
-      //order, amount, with_application, memo=None
-      //emitEvent("onRefundApprove", Some(Map("amount" -> amount, "with_application" -> withApplication)))
+      val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+      val bountyNode = BountyFormatter.instance.formatJsonNode(bounty)
+      // 发消息，同意退款
+      viae.sendTask("viae.event.marketplace.onBountyRefundApprove", kwargs = Some(Map("bounty" -> bountyNode, "amount" -> (bounty.totalPrice - bounty.discount))))
       newOrder
     }
   }
@@ -452,6 +480,10 @@ object BountyAPI {
       val paymentQuery = ds.createQuery(classOf[Bounty]) field "itemId" equal bounty.itemId
       val paymentOps = ds.createUpdateOperations(classOf[Bounty]).set("status", RefundApplied.toString)
       ds.update(paymentQuery, paymentOps)
+      val viae = Play.application.injector instanceOf classOf[ViaeGateway]
+      val bountyNode = BountyFormatter.instance.formatJsonNode(bounty)
+      // 发消息，申请退款
+      viae.sendTask("viae.event.marketplace.onBountyRefundApply", kwargs = Some(Map("bounty" -> bountyNode)))
     }
   }
 }
