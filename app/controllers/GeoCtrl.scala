@@ -15,6 +15,7 @@ import org.bson.types.ObjectId
 import play.api.Configuration
 import play.api.mvc.{ Action, Controller }
 
+import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -53,9 +54,10 @@ class GeoCtrl @Inject() (@Named("default") configuration: Configuration, datasto
   def getGeoSellers(id: String, countryType: String) = Action.async(
     request => {
       for {
-        sellers <- CommodityAPI.getGeoSeller(id)
+        seller <- CommodityAPI.getGeoSeller(id)
+        sellerAdd <- SellerAPI.getSeller(seller.sellers, Seq("lang", "services", "userInfo", "name", "sellerId"))
       } yield {
-        HanseResult(data = Some(GeoCommodityFormatter.instance.formatJsonNode(sellers)))
+        HanseResult(data = Some(GeoCommodityFormatter.instance.formatJsonNode(sellerAdd)))
       }
     }
   )

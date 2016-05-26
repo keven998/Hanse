@@ -46,6 +46,9 @@ object CommodityAPI {
       geoCommodity.geoId = x._1.id
       geoCommodity.sellers = x._2.map(_.seller)
       geoCommodity
+    }) map (c => {
+      c.sellers = c.sellers.groupBy(_.sellerId).map(_._2.head).toList
+      c
     })
     Future {
       ds.save[GeoCommodity](cCountry.toList)
@@ -59,6 +62,9 @@ object CommodityAPI {
       geoCommodity.geoId = x._1.id
       geoCommodity.sellers = x._2.map(_.seller)
       geoCommodity
+    }) map (c => {
+      c.sellers = c.sellers.groupBy(_.sellerId).map(_._2.head).toList
+      c
     })
     Future {
       ds.save[GeoCommodity](cCountry.toList)
