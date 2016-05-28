@@ -48,6 +48,26 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
     }
   )
 
+  def getBountyColumns = AuthenticatedAction.async2(
+    request => {
+      val arrayNode = new ObjectMapper().createArrayNode()
+      val userId = request getQueryString ("userId") map (_.toLong)
+      val columnMapper = new ColumnFormatter(userId).objectMapper
+      val columnTypes = Seq("slide", "special")
+      for {
+        columnsMap <- MiscAPI.getColumns(columnTypes)
+      } yield {
+        columnTypes map (columnType => {
+          val node = new ObjectMapper().createObjectNode()
+          node.put("columnType", columnType)
+          node.set("columns", columnMapper.valueToTree[JsonNode](columnsMap(columnType).sortBy(_.rank)))
+          arrayNode.add(node)
+        })
+        HanseResult(data = Some(arrayNode))
+      }
+    }
+  )
+
   /**
    * 根据话题类型查找商品列表
    * @param topicType 话题类型

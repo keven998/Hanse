@@ -2,7 +2,7 @@ package core.api
 
 import com.lvxingpai.model.account.Favorite
 import com.lvxingpai.model.marketplace.product.Commodity
-import core.model.misc.{ MiscInfo, Column, RecommendCategory, TopicCommodity }
+import core.model.misc._
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
@@ -23,6 +23,13 @@ object MiscAPI {
     val query = ds.createQuery(classOf[Column]).field("columnType").in(seqAsJavaList(columnTypeList))
     Future {
       query.asList().groupBy(_.columnType) map (columnMap => columnMap._1 -> columnMap._2.toSeq)
+    }
+  }
+
+  def getBountyColumns()(implicit ds: Datastore): Future[Seq[ColumnBounty]] = {
+    val query = ds.createQuery(classOf[ColumnBounty])
+    Future {
+      query.asList()
     }
   }
 

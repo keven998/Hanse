@@ -12,11 +12,11 @@ import core.exception.ResourceNotFoundException
 import core.formatter.geo.SimpleLocalityFormatter
 import core.formatter.marketplace.order.{ ScheduleFormatter, SimpleBountyFormatter }
 import core.formatter.marketplace.seller.SellerFormatter
-import core.misc.Implicits.{ PhoneNumberTemp, TempLocality, _ }
+import core.misc.Implicits.{ TempLocality, _ }
 import core.misc.{ HanseResult, Utils }
 import org.apache.commons.lang.StringUtils
 import play.api.Configuration
-import play.api.mvc.Controller
+import play.api.mvc.{ Action, Controller }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -68,17 +68,24 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
    * 申请成为商家
    * @return
    */
-  def becomeSeller() = AuthenticatedAction.async2(
+  def becomeSeller() = Action.async(
     request => {
       val ret = for {
-        body <- request.body.wrapped.asJson
-        userId <- (body \ "userId").asOpt[Long]
+        body <- request.body.asJson
         memo <- (body \ "memo").asOpt[String] orElse Some(StringUtils.EMPTY)
         email <- (body \ "email").asOpt[String] orElse Some(StringUtils.EMPTY)
-        tel <- (body \ "tel").asOpt[PhoneNumberTemp] // TODO 弃用PhoneNumberTemp之类的辅助类
+        tel <- (body \ "tel").asOpt[String] orElse Some(StringUtils.EMPTY)
+        name <- (body \ "name").asOpt[String]
+        province <- (body \ "province").asOpt[String] orElse Some(StringUtils.EMPTY)
+        city <- (body \ "city").asOpt[String] orElse Some(StringUtils.EMPTY)
+        travel <- (body \ "travel").asOpt[String] orElse Some(StringUtils.EMPTY)
+        license <- (body \ "license").asOpt[String] orElse Some(StringUtils.EMPTY)
       } yield {
-        // TODO 用户申请成为商家的时候,可以发送相应的邮件给BD部门
-        Future(HanseResult.ok())
+        for {
+          _ <- SellerAPI.addApplySeller(name, tel, province, city, travel, license, email, memo)
+        } yield {
+          HanseResult.ok()
+        }
       }
       ret.getOrElse(Future {
         HanseResult.unprocessable()

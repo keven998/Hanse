@@ -94,6 +94,11 @@ class SellerSerializer extends JsonSerializer[Seller] {
     // 商家纠纷率
     gen.writeNumberField("disputeRate", 0)
 
+    // 好评率
+    gen.writeNumberField("goodRate", 1)
+    // 满意度
+    gen.writeNumberField("satisfactionRate", 1)
+
     // 商家的订阅城市
     gen.writeFieldName("subLocalities")
     gen.writeStartArray()

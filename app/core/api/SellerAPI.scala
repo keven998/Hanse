@@ -3,6 +3,7 @@ package core.api
 import com.lvxingpai.model.geo.GeoEntity
 import com.lvxingpai.model.marketplace.product.Commodity
 import com.lvxingpai.model.marketplace.seller.Seller
+import core.model.misc.ApplySeller
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
 
@@ -69,6 +70,21 @@ object SellerAPI {
       query.retrievedFields(true, Seq("sellerId"): _*)
       val sellers = query.asList()
       Option(sellers.map(_.sellerId))
+    }
+  }
+
+  def addApplySeller(name: String, tel: String, province: String, city: String, travel: String, license: String, email: String, memo: String)(implicit ds: Datastore): Future[Unit] = {
+    Future {
+      val applySeller = new ApplySeller
+      applySeller.name = name
+      applySeller.tel = tel
+      applySeller.province = province
+      applySeller.city = city
+      applySeller.travel = travel
+      applySeller.license = license
+      applySeller.email = email
+      applySeller.memo = memo
+      ds.save[ApplySeller](applySeller)
     }
   }
 }
