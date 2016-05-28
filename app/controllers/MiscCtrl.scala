@@ -28,12 +28,12 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
    * 首页专题
    * @return
    */
-  def getColumns = AuthenticatedAction.async2(
+  def getColumns = Action.async(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
       val userId = request getQueryString ("userId") map (_.toLong)
       val columnMapper = new ColumnFormatter(userId).objectMapper
-      val columnTypes = Seq("slide", "special")
+      val columnTypes = Seq("slide", "special", "bounty")
       for {
         columnsMap <- MiscAPI.getColumns(columnTypes)
       } yield {
@@ -48,6 +48,10 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
     }
   )
 
+  /**
+   * 悬赏的封面图
+   * @return
+   */
   def getBountyColumns = AuthenticatedAction.async2(
     request => {
       val arrayNode = new ObjectMapper().createArrayNode()
