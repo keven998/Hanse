@@ -55,7 +55,7 @@ class GeoCtrl @Inject() (@Named("default") configuration: Configuration, datasto
     request => {
       for {
         seller <- CommodityAPI.getGeoSeller(id)
-        sellerAdd <- SellerAPI.getSeller(seller.sellers, Seq("lang", "services", "userInfo", "name", "sellerId"))
+        sellerAdd <- SellerAPI.getSeller(seller.sellers, Seq("lang", "services", "userInfo", "name", "sellerId", "level", "qualifications", "lastSalesVolume"))
       } yield {
         HanseResult(data = Some(GeoCommodityFormatter.instance.formatJsonNode(sellerAdd)))
       }

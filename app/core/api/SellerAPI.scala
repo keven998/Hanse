@@ -31,7 +31,7 @@ object SellerAPI {
 
   def getSeller(sellers: Seq[Seller], fields: Seq[String])(implicit ds: Datastore): Future[Option[Seq[Seller]]] = {
     Future {
-      Option(ds.createQuery(classOf[Seller]).field("sellerId").in(sellers.map(_.sellerId)).retrievedFields(true, fields: _*).asList())
+      Option(ds.createQuery(classOf[Seller]).field("sellerId").in(sellers.map(_.sellerId)).retrievedFields(true, fields: _*).order("-lastSalesVolume").asList())
     }
   }
 

@@ -81,23 +81,29 @@ class SellerSerializer extends JsonSerializer[Seller] {
     Option(seller.images) map (_.toSeq) getOrElse Seq() foreach (retImg.serialize(_, gen, serializers))
     gen.writeEndArray()
 
-    // TODO 商家退款数
+    // 商家退款数-废弃
     gen.writeNumberField("refundCnt", 0)
-    // 上个月的退款数
+    // 上个月的退款数-废弃
     gen.writeNumberField("lastRefundCnt", 0)
-    // 商家退款率
+    // 商家退款率-废弃
     gen.writeNumberField("refundRate", 0)
-    // 上个月的退款率
+    // 上个月的退款率-废弃
     gen.writeNumberField("lastRefundRate", 0)
-    // 商家纠纷数
+    // 商家纠纷数-废弃
     gen.writeNumberField("disputeCnt", 0)
-    // 商家纠纷率
+    // 商家纠纷率-废弃
     gen.writeNumberField("disputeRate", 0)
 
     // 好评率
-    gen.writeNumberField("goodRate", 1)
-    // 满意度
-    gen.writeNumberField("satisfactionRate", 1)
+    gen.writeNumberField("goodRate", seller.goodRate)
+    // 诚信度
+    gen.writeNumberField("satisfactionRate", seller.creditRate)
+    // 等级
+    gen.writeNumberField("level", seller.level)
+    // 成交量
+    gen.writeNumberField("lastSalesVolume", seller.lastSalesVolume)
+    // 成交额
+    gen.writeNumberField("lastSalesMoney", seller.lastSalesMoney)
 
     // 商家的订阅城市
     gen.writeFieldName("subLocalities")

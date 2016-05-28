@@ -43,6 +43,19 @@ class MiniSellerSerializer extends JsonSerializer[Seller] {
     } foreach (gen writeString _)
     gen.writeEndArray()
 
+    // 商户资质
+    gen.writeFieldName("qualifications")
+    gen.writeStartArray()
+    Option(seller.qualifications) map (_.toSeq) getOrElse Seq() foreach (gen writeString _)
+    gen.writeEndArray()
+
+    // 等级
+    gen.writeNumberField("level", seller.level)
+    // 成交量
+    gen.writeNumberField("lastSalesVolume", seller.lastSalesVolume)
+    // 成交额
+    gen.writeNumberField("lastSalesMoney", seller.lastSalesMoney)
+
     gen.writeEndObject()
   }
 }
