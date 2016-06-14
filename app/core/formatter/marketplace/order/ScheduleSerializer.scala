@@ -37,7 +37,8 @@ class ScheduleSerializer extends JsonSerializer[Schedule] {
       gen.writeStartObject()
       gen.writeEndObject()
     }
-
+    // 方案详情URL
+    gen.writeStringField("detailURL", "http://h5.lvxingpai.com/project/project_detail.php?tid=" + schedule.itemId)
     gen.writeNumberField("createTime", if (schedule.createTime != null) schedule.createTime.getTime else 0)
     gen.writeNumberField("updateTime", if (schedule.updateTime != null) schedule.updateTime.getTime else 0)
 

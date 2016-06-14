@@ -118,6 +118,8 @@ class BountySerializer extends JsonSerializer[Bounty] {
 
     gen.writeNumberField("createTime", if (bounty.createTime != null) bounty.createTime.getTime else 0)
     gen.writeNumberField("updateTime", if (bounty.updateTime != null) bounty.updateTime.getTime else 0)
+    // 悬赏分享
+    gen.writeStringField("shareURL", "http://h5.lvxingpai.com/task/task_detail.php?tid=" + bounty.itemId)
 
     gen.writeEndObject()
   }

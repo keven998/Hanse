@@ -6,10 +6,10 @@ import java.util.Date
 import com.lvxingpai.model.account.{ RealNameInfo, UserInfo }
 import com.lvxingpai.model.marketplace.misc.Coupon
 import com.lvxingpai.model.marketplace.order.{ Order, OrderActivity }
-import com.lvxingpai.model.marketplace.product.{ Commodity, CommodityComment, CommoditySnapshot }
+import com.lvxingpai.model.marketplace.product.{ EmbeddedCommodity, Commodity, CommodityComment, CommoditySnapshot }
 import com.lvxingpai.model.misc.ImageItem
 import com.lvxingpai.yunkai.{ UserInfo => YunkaiUser }
-import core.exception.{ CommodityStatusException, OrderStatusException, ResourceNotFoundException }
+import core.exception.{ CommodityStatusException, ResourceNotFoundException }
 import core.formatter.marketplace.order.OrderFormatter
 import core.model.misc.GeoCommodity
 import core.search._
@@ -335,43 +335,54 @@ object CommodityAPI {
     (for {
       order <- getBoughtOrder(orderId, user.userId)
     } yield {
-      if (order.nonEmpty) {
-        val comment = new CommodityComment()
-        comment.id = new ObjectId()
+      // TODO 临时修改为未购买也可评价
+      // if (order.nonEmpty) {
+      val comment = new CommodityComment()
+      comment.id = new ObjectId()
+      if (order.nonEmpty)
         comment.order = order.get
-        comment.contents = contents
-
-        val userInfo = new UserInfo
-        userInfo.nickname = user.nickName
-        user.avatar foreach (avatar => {
-          if (avatar.nonEmpty && (avatar startsWith "http")) {
-            val item = new ImageItem
-            item.url = avatar
-            userInfo.avatar = item
-          }
-        })
-        userInfo.userId = user.userId
-        comment.user = userInfo
-
-        rating foreach (comment.rating = _)
-        img foreach (comment.images = _)
-        val now = DateTime.now().toDate
-        comment.createTime = now
-        comment.updateTime = now
-        comment.anonymous = anonymous
-        ds.save[CommodityComment](comment)
-        comment
-      } else {
-        // 如果没有购买商品, 则没有资格评论
-        throw OrderStatusException(s"User ${user.userId} have not bought commodity $commodityId yet, " +
-          s"cannot post comments.")
+      else {
+        val commodity = new EmbeddedCommodity
+        commodity.commodityId = commodityId
+        val order = new Order
+        order.commodity = commodity
+        comment.order = order
       }
-    }) map (_ => {
-      // 刷新订单状态为已评价
-      val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId.get
-      val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.Reviewed.toString)
-      ds.update(statusQuery, statusOps)
+      comment.contents = contents
+
+      val userInfo = new UserInfo
+      userInfo.nickname = user.nickName
+      user.avatar foreach (avatar => {
+        if (avatar.nonEmpty && (avatar startsWith "http")) {
+          val item = new ImageItem
+          item.url = avatar
+          userInfo.avatar = item
+        }
+      })
+      userInfo.userId = user.userId
+      comment.user = userInfo
+
+      rating foreach (comment.rating = _)
+      img foreach (comment.images = _)
+      val now = DateTime.now().toDate
+      comment.createTime = now
+      comment.updateTime = now
+      comment.anonymous = anonymous
+      ds.save[CommodityComment](comment)
+      comment
+      //      } else {
+      //        // 如果没有购买商品, 则没有资格评论
+      //        throw OrderStatusException(s"User ${user.userId} have not bought commodity $commodityId yet, " +
+      //          s"cannot post comments.")
+      //      }
     })
+    //    map (_ => {
+    //
+    //      // 刷新订单状态为已评价
+    //      val statusQuery = ds.createQuery(classOf[Order]) field "orderId" equal orderId.get
+    //      val statusOps = ds.createUpdateOperations(classOf[Order]).set("status", Order.Status.Reviewed.toString)
+    //      ds.update(statusQuery, statusOps)
+    //    })
   }
 
   /**
@@ -387,7 +398,8 @@ object CommodityAPI {
         Option(ds.createQuery(classOf[Order])
           .field("orderId").equal(orderId.get)
           .field("consumerId").equal(userId)
-          .field("status").equal(Order.Status.ToReview.toString)
+          // TODO 临时开放评论接口,任何人都可以评论
+          //.field("status").equal(Order.Status.ToReview.toString)
           .retrievedFields(true, Seq("orderId", "commodity", "status"): _*).get)
       else None
     }

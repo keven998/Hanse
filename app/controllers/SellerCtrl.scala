@@ -52,9 +52,9 @@ class SellerCtrl @Inject() (@Named("default") configuration: Configuration, data
             node.put("totalSales", Utils.getActualPrice((orders map (_.totalPrice)).sum))
             node.put("totalOrderCnt", ordersCnt)
             node.put("pendingOrderCnt", suspendingOrders.size)
-            // TODO
-            node.put("detailUrl", "http://")
-            node.put("shareUrl", "http://")
+
+            //node.put("detailUrl", "http://h5.lvxingpai.com/shop/myshop.php?sid"+id)
+            //node.put("shareUrl", "http://h5.lvxingpai.com/shop/myshop.php?sid="+id)
           })
           HanseResult(data = ret)
         } else

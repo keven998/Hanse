@@ -30,6 +30,11 @@ class LocalityArticle extends TimestampEnabled {
   var articleId: Long = _
 
   /**
+   * 文章详情
+   */
+  var url: String = "zzhttp://h5.lvxingpai.com/project/project_detail.php?tid=" + articleId
+
+  /**
    * 商品所属目的地
    */
   var locality: Locality = _

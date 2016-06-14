@@ -113,8 +113,10 @@ class SellerSerializer extends JsonSerializer[Seller] {
       (retSubLocalities.serialize(_, gen, serializers))
     gen.writeEndArray()
 
-    // 商家介绍
+    // TODO 商家介绍
     gen.writeStringField("introduceURL", "http://h5.taozilvxing.com/poi/traffic.php?tid=547bfdbfb8ce043eb2d81fdb")
+    // 店铺分享
+    gen.writeStringField("shareURL", "http://h5.lvxingpai.com/shop/myshop.php?sid=" + seller.sellerId)
 
     gen.writeEndObject()
   }

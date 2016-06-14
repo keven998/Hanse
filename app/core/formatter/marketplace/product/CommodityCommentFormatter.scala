@@ -73,14 +73,15 @@ class CommodityCommentFormatter extends BaseFormatter {
         serializers.findValueSerializer(classOf[BaseCommodityComment], null).serialize(reply, gen, serializers)
       gen.writeEndObject()
 
-      gen.writeFieldName("order")
-      val order = c.order
-      if (Option(order).nonEmpty)
-        serializers.findValueSerializer(classOf[Order], null).serialize(order, gen, serializers)
-      else {
-        gen.writeStartObject()
-        gen.writeEndObject()
-      }
+      // TODO 由于Order中的商品类型问题,暂时注掉
+      //      gen.writeFieldName("order")
+      //      val order = c.order
+      //      if (Option(order).nonEmpty)
+      //        serializers.findValueSerializer(classOf[Order], null).serialize(order, gen, serializers)
+      //      else {
+      //        gen.writeStartObject()
+      //        gen.writeEndObject()
+      //      }
 
       gen.writeNumberField("createTime", if (c.createTime != null) c.createTime.getTime else 0)
       gen.writeNumberField("updateTime", if (c.updateTime != null) c.updateTime.getTime else 0)
