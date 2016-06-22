@@ -278,7 +278,7 @@ object CommodityAPI {
       )
     if (category.nonEmpty && !category.get.equals(""))
       query.field("category").hasThisOne(category.get)
-    if (category.nonEmpty && !category.get.equals(""))
+    if (cType.nonEmpty && !cType.get.equals(""))
       query.field("commodityType").equal(cType.get)
     val orderStr = if (sort.equals("asc")) sortBy else s"-$sortBy"
     query.field("status").equal("pub").order(orderStr).offset(start).limit(count)

@@ -140,4 +140,11 @@ object MiscAPI {
       Option(query.get())
     }
   }
+
+  def getArticle(id: Long)(implicit ds: Datastore): Future[Option[LocalityArticle]] = {
+    Future {
+      val query = ds.createQuery(classOf[LocalityArticle]).field("articleId").equal(id)
+      Option(query.get())
+    }
+  }
 }

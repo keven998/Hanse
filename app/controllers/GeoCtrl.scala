@@ -9,7 +9,7 @@ import com.lvxingpai.model.geo.Country
 import com.lvxingpai.yunkai.UserInfoProp
 import core.api._
 import core.formatter.geo._
-import core.formatter.misc.LocalityArticleFormatter
+import core.formatter.misc.{ LocalityArticleDetailFormatter, LocalityArticleFormatter }
 import core.misc.HanseResult
 import org.bson.types.ObjectId
 import play.api.Configuration
@@ -86,6 +86,15 @@ class GeoCtrl @Inject() (@Named("default") configuration: Configuration, datasto
       } yield {
         HanseResult.ok()
       }
+    }
+  )
+
+  def getArticle(id: Long) = Action.async(
+    request => {
+      val aMapper = new LocalityArticleDetailFormatter().objectMapper
+      for {
+        art <- MiscAPI.getArticle(id)
+      } yield HanseResult(data = Some(aMapper.valueToTree[JsonNode](art)))
     }
   )
 

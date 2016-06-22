@@ -12,7 +12,7 @@ import core.misc.HanseResult
 import play.api.Configuration
 import play.api.inject.Injector
 import play.api.mvc._
-
+import core.formatter.misc.LocalityArticleFormatter
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -158,3 +158,4 @@ class MiscCtrl @Inject() (@Named("default") configuration: Configuration, datast
 
   def ping() = Action(Results.Ok("pong"))
 }
+
